@@ -1,0 +1,15 @@
+version: "3.9"
+
+services:
+  python-service:
+    container_name: python-service
+    build: ./services/python-service
+    ports:
+      - "50051:50051"
+  express-service:
+    container_name: express-service
+    build: ./services/express-service
+    ports:
+      - "3000:3000"
+    depends_on:
+      - python-service
