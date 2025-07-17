@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pkl
+
+# Virtual env
+virtual_env/
+.env/
+venv/
+
+# VSCode
+.vscode/
+
+# Mac/Linux swap
+*.swp
+
+node_modules/
+package-lock.json
+yarn.lock
+
+*.pyc
+.gitignore

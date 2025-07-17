@@ -5,6 +5,15 @@ package base;
 service BaseService {
   rpc SayHello (HelloRequest) returns (HelloReply);
   rpc SayGoodBye(GoodByeRequest) returns (ByeReply);
+  rpc Predict(PredictReq) returns (PredictRes);
+}
+
+message PredictReq{
+  repeated float features = 1;  
+}
+
+message PredictRes{
+  repeated float prediction = 1;
 }
 
 message HelloRequest {

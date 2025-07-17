@@ -1,4 +1,4 @@
-#!/home/nndthang/git/Attacker-BackEnd/services/python-service/virtual_env/bin/python3
+#!/home/ngothang/github/Attacker-Bankend/services/python-service/virtual_env/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys

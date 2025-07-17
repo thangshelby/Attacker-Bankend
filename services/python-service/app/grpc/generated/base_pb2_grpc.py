@@ -3,7 +3,7 @@
 import grpc
 import warnings
 
-from app.grpc.generated import base_pb2 as base__pb2
+from . import base_pb2 as base__pb2
 
 GRPC_GENERATED_VERSION = '1.73.1'
 GRPC_VERSION = grpc.__version__
@@ -44,6 +44,11 @@ class BaseServiceStub(object):
                 request_serializer=base__pb2.GoodByeRequest.SerializeToString,
                 response_deserializer=base__pb2.ByeReply.FromString,
                 _registered_method=True)
+        self.Predict = channel.unary_unary(
+                '/base.BaseService/Predict',
+                request_serializer=base__pb2.PredictReq.SerializeToString,
+                response_deserializer=base__pb2.PredictRes.FromString,
+                _registered_method=True)
 
 
 class BaseServiceServicer(object):
@@ -61,6 +66,12 @@ class BaseServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def Predict(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_BaseServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -73,6 +84,11 @@ def add_BaseServiceServicer_to_server(servicer, server):
                     servicer.SayGoodBye,
                     request_deserializer=base__pb2.GoodByeRequest.FromString,
                     response_serializer=base__pb2.ByeReply.SerializeToString,
+            ),
+            'Predict': grpc.unary_unary_rpc_method_handler(
+                    servicer.Predict,
+                    request_deserializer=base__pb2.PredictReq.FromString,
+                    response_serializer=base__pb2.PredictRes.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -129,6 +145,33 @@ class BaseService(object):
             '/base.BaseService/SayGoodBye',
             base__pb2.GoodByeRequest.SerializeToString,
             base__pb2.ByeReply.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def Predict(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/base.BaseService/Predict',
+            base__pb2.PredictReq.SerializeToString,
+            base__pb2.PredictRes.FromString,
             options,
             channel_credentials,
             insecure,

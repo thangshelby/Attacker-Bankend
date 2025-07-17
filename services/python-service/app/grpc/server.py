@@ -2,6 +2,7 @@ import grpc
 from concurrent import futures
 
 from app.core.service import say_hello
+from app.core.predict import predict as model_predict
 from app.grpc.generated import base_pb2, base_pb2_grpc
 
 class BaseService(base_pb2_grpc.BaseServiceServicer):
@@ -14,6 +15,13 @@ class BaseService(base_pb2_grpc.BaseServiceServicer):
         response= f"Good Bye {name}"
 
         return base_pb2.ByeReply(message=f"Good Bye {name}")  
+    def Predict(self, request, context):
+        print(f"Received features: {request.features}")
+        features = list(request.features)
+        prediction_result = model_predict(features)
+        # Extract the prediction list from the result
+        prediction = prediction_result["prediction"]
+        return base_pb2.PredictRes(prediction=prediction)
 
 def serve():
 

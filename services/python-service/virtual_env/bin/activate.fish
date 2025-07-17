@@ -33,7 +33,7 @@ end
 # Unset irrelevant variables.
 deactivate nondestructive
 
-set -gx VIRTUAL_ENV /home/nndthang/git/Attacker-BackEnd/services/python-service/virtual_env
+set -gx VIRTUAL_ENV /home/ngothang/github/Attacker-Bankend/services/python-service/virtual_env
 
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV/"bin $PATH
