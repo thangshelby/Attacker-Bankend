@@ -1,15 +1,30 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import UserModel from "../models/userModel.js";
-
+import { sendVerificationEmail } from "../services/mailService.js";
 // [POST] /signup
 export const signUp = async (req, res) => {
+  console.log(req.body)
   try {
     const hash = await bcrypt.hash(req.body.password, 10);
+
+
+    await sendVerificationEmail(req.body.email, hash);
+    console.log("Verification email sent to:", req.body.email);
+    return res.status(200).json({
+      message: "This is a test response",
+      status: true,
+      data: {
+        name: req.body.name || "Anonymous",
+        username: req.body.username || "Anonymous",
+        email: req.body.email,
+        password: hash,
+      },  
+    })
     const user = new UserModel({
-      name: req.body.name,
-      username: req.body.username,
-      gmail: req.body.gmail,
+      name: req.body.name|| "Anonymous",
+      username: req.body.username|| "Anonymous",
+      email: req.body.email,
       password: hash,
       userFirstSignUp: req.body.userFirstSignUp,
       category: [],
@@ -18,7 +33,7 @@ export const signUp = async (req, res) => {
     const result = await user.save();
 
     const token = jwt.sign(
-      { gmail: req.body.gmail, userId: result._id },
+      { email: req.body.email, userId: result._id },
       "jwt_key",
       { expiresIn: "1h" }
     );
@@ -36,6 +51,7 @@ export const signUp = async (req, res) => {
       },
     });
   } catch (err) {
+    console.error("Error creating user:", err);
     res.status(500).json({
       message: "Failed to create user",
       error: err.message,
@@ -46,7 +62,7 @@ export const signUp = async (req, res) => {
 // [POST] /login
 export const login = async (req, res) => {
   try {
-    const user = await UserModel.findOne({ gmail: req.body.gmail });
+    const user = await UserModel.findOne({ email: req.body.email });
     if (!user) {
       return res.status(401).json({
         message: "Invalid Email Address",
@@ -63,7 +79,7 @@ export const login = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { gmail: user.gmail, userId: user._id },
+      { email: user.email, userId: user._id },
       "raghav_garg_first_mean_project_this_can_be_anything",
       { expiresIn: "1h" }
     );

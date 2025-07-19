@@ -20,3 +20,4 @@ yarn.lock
 
 *.pyc
 .gitignore
+.pkl
