@@ -1,6 +1,8 @@
-grpcio
-grpcio-tools
-fastapi
-uvicorn[standard]
-sklearn
-pydantic
+llama-index          # Thư viện chính cho indexing và query vector
+pyyaml               # Đọc file config YAML
+grpcio               # Hỗ trợ giao tiếp gRPC (cần cho A2A nâng cao)
+grpcio-tools         # Công cụ hỗ trợ gRPC (tạo protobuf, etc.)
+fastapi              # Xây dựng API nhanh cho hệ thống (nếu cần expose endpoints)
+uvicorn[standard]    # Server cho FastAPI (chạy ứng dụng web)
+scikit-learn         # Machine learning cơ bản (cho decision-making nếu dùng ML)
+pydantic             # Validation và modeling dữ liệu (tích hợp tốt với FastAPI và models)
