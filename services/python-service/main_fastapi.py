@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.fastapi_routes.endpoints import router
+from app.routes.endpoints import router
 
 app = FastAPI()
 app.include_router(router, prefix="/api/v1")
