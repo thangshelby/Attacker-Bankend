@@ -2,7 +2,7 @@ import json
 import os
 from dotenv import load_dotenv
 from llama_index.llms.openai import OpenAI
-from base_agent import BaseAgent
+from .base_agent import BaseAgent
 
 class AcademicAgent(BaseAgent):
     def __init__(self, name="AcademicAgent", coordinator=None):
@@ -11,7 +11,7 @@ class AcademicAgent(BaseAgent):
         api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
             raise ValueError("OPENAI_API_KEY không được tìm thấy trong môi trường.")
-        self.llm = OpenAI(api_key=api_key, model='gpt-4.1')
+        self.llm = OpenAI(api_key=api_key, model='gpt-4.1-mini')
 
     def handle_message(self, message: dict):
         """
