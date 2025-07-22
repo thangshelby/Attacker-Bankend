@@ -1,13 +1,12 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import UserModel from "../models/userModel.js";
-import { sendVerificationEmail } from "../services/mailService.js";
+import { sendVerificationEmail } from "../services/authService/sendEmail.service.js";
 // [POST] /signup
 export const signUp = async (req, res) => {
-  console.log(req.body)
+  console.log(req.body);
   try {
     const hash = await bcrypt.hash(req.body.password, 10);
-
 
     await sendVerificationEmail(req.body.email, hash);
     console.log("Verification email sent to:", req.body.email);
@@ -19,11 +18,11 @@ export const signUp = async (req, res) => {
         username: req.body.username || "Anonymous",
         email: req.body.email,
         password: hash,
-      },  
-    })
+      },
+    });
     const user = new UserModel({
-      name: req.body.name|| "Anonymous",
-      username: req.body.username|| "Anonymous",
+      name: req.body.name || "Anonymous",
+      username: req.body.username || "Anonymous",
       email: req.body.email,
       password: hash,
       userFirstSignUp: req.body.userFirstSignUp,

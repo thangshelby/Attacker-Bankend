@@ -9,6 +9,7 @@ __pycache__/
 *.pyd
 *.env
 
+
 # Python
 __pycache__/
 *.py[cod]
