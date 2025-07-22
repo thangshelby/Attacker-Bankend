@@ -24,21 +24,25 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\nbase.proto\x12\x04\x62\x61se\"\x1c\n\x0cHelloRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"\x1d\n\nHelloReply\x12\x0f\n\x07message\x18\x01 \x01(\t\"\x1e\n\x0eGoodByeRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"\x1b\n\x08\x42yeReply\x12\x0f\n\x07message\x18\x01 \x01(\t2s\n\x0b\x42\x61seService\x12\x30\n\x08SayHello\x12\x12.base.HelloRequest\x1a\x10.base.HelloReply\x12\x32\n\nSayGoodBye\x12\x14.base.GoodByeRequest\x1a\x0e.base.ByeReplyb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\nbase.proto\x12\x04\x62\x61se\"\x1e\n\nPredictReq\x12\x10\n\x08\x66\x65\x61tures\x18\x01 \x03(\x02\" \n\nPredictRes\x12\x12\n\nprediction\x18\x01 \x03(\x02\"\x1c\n\x0cHelloRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"\x1d\n\nHelloReply\x12\x0f\n\x07message\x18\x01 \x01(\t\"\x1e\n\x0eGoodByeRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"\x1b\n\x08\x42yeReply\x12\x0f\n\x07message\x18\x01 \x01(\t2\xa2\x01\n\x0b\x42\x61seService\x12\x30\n\x08SayHello\x12\x12.base.HelloRequest\x1a\x10.base.HelloReply\x12\x32\n\nSayGoodBye\x12\x14.base.GoodByeRequest\x1a\x0e.base.ByeReply\x12-\n\x07Predict\x12\x10.base.PredictReq\x1a\x10.base.PredictResb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'base_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_HELLOREQUEST']._serialized_start=20
-  _globals['_HELLOREQUEST']._serialized_end=48
-  _globals['_HELLOREPLY']._serialized_start=50
-  _globals['_HELLOREPLY']._serialized_end=79
-  _globals['_GOODBYEREQUEST']._serialized_start=81
-  _globals['_GOODBYEREQUEST']._serialized_end=111
-  _globals['_BYEREPLY']._serialized_start=113
-  _globals['_BYEREPLY']._serialized_end=140
-  _globals['_BASESERVICE']._serialized_start=142
-  _globals['_BASESERVICE']._serialized_end=257
+  _globals['_PREDICTREQ']._serialized_start=20
+  _globals['_PREDICTREQ']._serialized_end=50
+  _globals['_PREDICTRES']._serialized_start=52
+  _globals['_PREDICTRES']._serialized_end=84
+  _globals['_HELLOREQUEST']._serialized_start=86
+  _globals['_HELLOREQUEST']._serialized_end=114
+  _globals['_HELLOREPLY']._serialized_start=116
+  _globals['_HELLOREPLY']._serialized_end=145
+  _globals['_GOODBYEREQUEST']._serialized_start=147
+  _globals['_GOODBYEREQUEST']._serialized_end=177
+  _globals['_BYEREPLY']._serialized_start=179
+  _globals['_BYEREPLY']._serialized_end=206
+  _globals['_BASESERVICE']._serialized_start=209
+  _globals['_BASESERVICE']._serialized_end=371
 # @@protoc_insertion_point(module_scope)

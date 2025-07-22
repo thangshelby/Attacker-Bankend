@@ -17,7 +17,7 @@ server.use(bodyParser.urlencoded({ extended: true }));
 server.use(express.json());
 server.use(
   cors({
-    origin: "http://localhost:3000", // Frontend origin
+    origin: "http://localhost:5173", // Frontend origin
     credentials: true, // Allow cookies and credentials
   })
 );
