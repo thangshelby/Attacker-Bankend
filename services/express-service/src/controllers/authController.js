@@ -1,52 +1,62 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import UserModel from "../models/userModel.js";
-import { sendVerificationEmail } from "../services/authService/sendEmail.service.js";
-// [POST] /signup
-export const signUp = async (req, res) => {
-  console.log(req.body);
-  try {
-    const hash = await bcrypt.hash(req.body.password, 10);
+import { sendOtpEmail } from "../services/auth.service.js";
+import {
+  generateAccessToken,
+  generateRefreshToken,
+} from "../services/jwt.service.js";
 
-    await sendVerificationEmail(req.body.email, hash);
-    console.log("Verification email sent to:", req.body.email);
-    return res.status(200).json({
-      message: "This is a test response",
-      status: true,
-      data: {
-        name: req.body.name || "Anonymous",
-        username: req.body.username || "Anonymous",
-        email: req.body.email,
-        password: hash,
-      },
-    });
+// [POST] /register
+export const register = async (req, res) => {
+  try {
+    const isEmailExist = await UserModel.findOne({ email: req.body.email });
+
+    if (isEmailExist) {
+      return res.status(400).json({
+        message: "Email already exists",
+        status: false,
+      });
+    }
+
+    const isPasswordValid = req.body.password && req.body.password.length >= 6;
+    if (!isPasswordValid) {
+      return res.status(400).json({
+        message: "Password must be at least 6 characters long",
+        status: false,
+      });
+    }
+
+    const hashPassword = await bcrypt.hash(req.body.password, 10);
+    const otpToken = await sendOtpEmail(req.body.email);
+
     const user = new UserModel({
-      name: req.body.name || "Anonymous",
-      username: req.body.username || "Anonymous",
+      citizen_id: new Date().toISOString(),
+      date_of_birth: req.body.date_of_birth,
+      user_name: req.body.user_name,
       email: req.body.email,
-      password: hash,
-      userFirstSignUp: req.body.userFirstSignUp,
-      category: [],
+      password: hashPassword,
+      otp_token: otpToken,
     });
 
     const result = await user.save();
 
-    const token = jwt.sign(
-      { email: req.body.email, userId: result._id },
-      "jwt_key",
-      { expiresIn: "1h" }
-    );
+    const accessToken = generateAccessToken(result);
+    const refreshToken = generateRefreshToken(result);
 
-    res.status(200).json({
-      message: "Account Created",
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    return res.status(200).json({
+      message: "User created successfully",
       status: true,
       data: {
-        UserSince: result.userFirstSignUp,
-        username: result.username,
-        name: result.name,
-        token: token,
-        expiredToken: 3600,
-        userId: result._id,
+        user: result,
+        accessToken,
       },
     });
   } catch (err) {
@@ -61,37 +71,51 @@ export const signUp = async (req, res) => {
 // [POST] /login
 export const login = async (req, res) => {
   try {
-    const user = await UserModel.findOne({ email: req.body.email });
-    if (!user) {
+    const isUserExist = await UserModel.findOne({ email: req.body.email });
+    if (!isUserExist) {
       return res.status(401).json({
-        message: "Invalid Email Address",
+        message: {
+          email: "Your email is not registered",
+          password:null
+        },
         status: false,
       });
     }
 
-    const isValid = await bcrypt.compare(req.body.password, user.password);
-    if (!isValid) {
-      return res.status(401).json({
-        message: "Invalid Email Address or Password",
-        status: false,
-      });
-    }
-
-    const token = jwt.sign(
-      { email: user.email, userId: user._id },
-      "raghav_garg_first_mean_project_this_can_be_anything",
-      { expiresIn: "1h" }
+    const isPasswordValid = await bcrypt.compare(
+      req.body.password,
+      isUserExist.password
     );
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        message: {
+          email: null,
+          password: "Your password is incorrect",
+        },
+        status: false,
+      });
+    }
+
+    const user = await UserModel.findById(isUserExist._id, "-password");
+
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
+
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
 
     res.status(200).json({
       message: "Login Successfully!",
-      data: {
-        token: token,
-        latestLoginDate: new Date(),
-        userId: user._id,
-        expiredToken: 3600,
-      },
       status: true,
+      data: {
+        user,
+        accessToken,
+      },
     });
   } catch (err) {
     res.status(500).json({
@@ -101,6 +125,41 @@ export const login = async (req, res) => {
     });
   }
 };
+
+export const verifyEmail= async(req,res)=>{
+  const {email, otp_token} = req.body;
+  try {
+    const user = await UserModel.findOne({ email, otp_token });
+    const isOtpTokenValid= user && user.otp_token === otp_token;
+    if (!isOtpTokenValid) {
+      return res.status(400).json({
+        message: {
+          emal:null,
+          password:null,
+          otp_token: "Invalid OTP token",
+        },
+        status: false,
+      });
+    }
+    user.kyc_status= 'Verified'
+    user.otp_token = ''
+    await user.save();
+    res.status(200).json({
+      message: "Email verified successfully",
+      status: true,
+      data: {
+        user,
+      },
+    });
+    
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to verify email",
+      status: false,
+      error: error.message,
+    });
+  }
+}
 
 // [DELETE] /delete_account/:id
 export const deleteAccount = async (req, res) => {
@@ -120,48 +179,6 @@ export const deleteAccount = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "Internal Server Error",
-      status: false,
-    });
-  }
-};
-
-export const getAllUsers = async (req, res) => {
-  try {
-    const users = await UserModel.find({}, "-password"); // ẩn password
-    res.status(200).json({
-      message: "Fetched all users",
-      data: users,
-      status: true,
-    });
-  } catch (err) {
-    res.status(500).json({
-      message: "Failed to fetch users",
-      error: err.message,
-      status: false,
-    });
-  }
-};
-
-// [GET] /users/:id
-export const getUserById = async (req, res) => {
-  try {
-    const user = await UserModel.findById(req.params.id, "-password");
-    if (!user) {
-      return res.status(404).json({
-        message: "User not found",
-        status: false,
-      });
-    }
-
-    res.status(200).json({
-      message: "User fetched successfully",
-      data: user,
-      status: true,
-    });
-  } catch (err) {
-    res.status(500).json({
-      message: "Failed to fetch user",
-      error: err.message,
       status: false,
     });
   }
@@ -202,11 +219,71 @@ export const updateUser = async (req, res) => {
   }
 };
 
-// [DELETE] /users/:id
-export const deleteUser = async (req, res) => {
+export const getAllUsers = async (req, res) => {
   try {
-    const result = await UserModel.findByIdAndDelete(req.params.id);
-    if (!result) {
+    const users = await UserModel.find({}, "-password"); // ẩn password
+    res.status(200).json({
+      message: "Fetched all users",
+      data: users,
+      status: true,
+    });
+  } catch (err) {
+    res.status(500).json({
+      message: "Failed to fetch users",
+      error: err.message,
+      status: false,
+    });
+  }
+};
+
+export const getMe = async (req, res) => {
+  try {
+    const userId = req.userId; // Lấy ID người dùng từ token đã giải mã
+    const user = await UserModel.findById(userId, "-password"); // ẩn password
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+        status: false,
+      });
+    }
+    res.status(200).json({
+      message: "User fetched successfully",
+      data: {
+        user,
+      },
+      status: true,
+    });
+  } catch (err) {
+    res.status(500).json({
+      message: "Failed to fetch user",
+      error: err.message,
+      status: false,
+    });
+  }
+};
+export const logout = async (req, res) => {
+  try {
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+    });
+    return res.status(200).json({
+      message: "Logout successfully",
+      status: true,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Internal Server Error",
+      status: false,
+    });
+  }
+};
+// [GET] /users/:id
+export const getUserById = async (req, res) => {
+  try {
+    const user = await UserModel.findById(req.params.id, "-password");
+    if (!user) {
       return res.status(404).json({
         message: "User not found",
         status: false,
@@ -214,12 +291,13 @@ export const deleteUser = async (req, res) => {
     }
 
     res.status(200).json({
-      message: "User deleted successfully",
+      message: "User fetched successfully",
+      data: user,
       status: true,
     });
   } catch (err) {
     res.status(500).json({
-      message: "Failed to delete user",
+      message: "Failed to fetch user",
       error: err.message,
       status: false,
     });

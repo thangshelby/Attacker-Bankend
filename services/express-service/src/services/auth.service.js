@@ -1,26 +1,30 @@
 import nodemailer from "nodemailer";
 import twilio from "twilio";
+import otpGenerator from "otp-generator";
+import dotenv from "dotenv";
+dotenv.config();
 
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
   secure: true,
   port: "465",
   auth: {
-    user: "n.nducthangg@gmail.com",
-    pass: "rjty sbol gdhc twpj",
+    user: `${process.env.SMTP_USER}`,
+    pass: `${process.env.SMTP_PASSWORD}`,
   },
 });
 
-export const sendOtpEmail = async (to, otp) => {
+export const sendOtpEmail = async (toEmailAddress) => {
+  const otpToken = await otpGenerator.generate(6, { upperCaseAlphabets: false, specialChars: false });
   const mailOptions = {
     from: "n.nducthangg@gmail.com",
-    to,
+    to: toEmailAddress,
     subject: "Mã OTP xác thực tài khoản",
     html: `
       <div style="font-family: sans-serif;">
         <p>Xin chào,</p>
         <p>Mã OTP của bạn là:</p>
-        <h2 style="color: #702272;">${otp}</h2>
+        <h2 style="color: #702272;">${otpToken}</h2>
         <p>Vui lòng nhập mã này để tiếp tục quá trình xác thực. Mã có hiệu lực trong vòng 5 phút.</p>
         <p>Trân trọng,<br />Đội ngũ hỗ trợ</p>
       </div>
@@ -29,14 +33,12 @@ export const sendOtpEmail = async (to, otp) => {
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`OTP email sent to ${to}`);
+    return otpToken; // Trả về mã OTP để lưu trữ hoặc sử dụng sau này
   } catch (error) {
     console.error("Failed to send OTP email:", error);
     throw error;
   }
 };
-
-sendOtpEmail("n.nducthangg@gmail.com", "123");
 
 const client = twilio(
   process.env.TWILIO_ACCOUNT_SID,
