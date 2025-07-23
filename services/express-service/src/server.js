@@ -4,8 +4,9 @@ import cors from "cors";
 import routes from "./routes/index.js";
 import setupSwagger from "./swagger.js";
 import bodyParser from "body-parser";
-
+import mongoose from "mongoose";
 import cookieParser from "cookie-parser";
+
 dotenv.config();
 
 const server = express();
@@ -21,6 +22,15 @@ server.use(
     credentials: true, // Allow cookies and credentials
   })
 );
+
+mongoose
+  .connect(process.env.CONNECTION_STRING)
+  .then(() => {
+    console.log("Connected to database successfully");
+  })
+  .catch(() => {
+    console.log("Not able to connect to database");
+  });
 server.use(cookieParser());
 
 setupSwagger(server);

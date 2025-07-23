@@ -1,15 +1,29 @@
-const jwt = require("jsonwebtoken");
+import { verifyAccessToken } from "../services/jwt.service.js";
 
-module.exports = (req, res, next) => {
+const jwtMiddleware = (req, res, next) => {
   try {
-    console.log(req.body);
-    const token = req.headers.authentication.split(" ")[1];
-    jwt.verify(token, process.env.JWT_KEY);
-    // req.userData={id:localStorage.getItem('Id').split(' ')[1]};
-    next();
+    const authHeader = req.headers.authorization; // ✅ đúng là "authorization", không phải "authentication"
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res
+        .status(401)
+        .json({ message: "No or invalid authorization header" });
+    }   
+
+    const token = authHeader.split(" ")[1]; // Lấy token từ header
+
+    const decoded = verifyAccessToken(token); // Verify token
+
+    if (!decoded) {
+      return res.status(401).json({ message: "Expired Token " });
+    }
+    
+    req.userId = decoded.userId ; 
+    next()
   } catch (error) {
-    res.status(401).json({
-      message: "Auth Failed",
-    });
+    console.error(error)
+    return res.status(401).json({ message: "Unauthorized" });
   }
 };
+
+export default jwtMiddleware;

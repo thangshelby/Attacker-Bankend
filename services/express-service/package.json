@@ -24,8 +24,11 @@
     "http": "0.0.1-security",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.16.4",
+    "mongoose-unique-validator": "^4.0.1",
     "nodemon": "^3.1.10",
+    "otp-generator": "^4.0.1",
     "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.1"
+    "swagger-ui-express": "^5.0.1",
+    "twilio": "^5.7.3"
   }
 }

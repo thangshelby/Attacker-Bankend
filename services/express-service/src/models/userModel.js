@@ -1,42 +1,28 @@
-import mongoose from "mongoose";
-// import mongooseUniqueValidator from "mongoose-unique-validator";
+import mongoose from 'mongoose';
+import mongooseUniqueValidator from 'mongoose-unique-validator';
 
-const SaveData = mongoose.Schema({
-  username: { type: String },
-  name: { type: String },
-  firstLoginDate: { type: String },
-  lastLoginDate: { type: String },
-  expenseLogged: { type: String },
-  userId: { type: String },
-});
-
-const createExpense = mongoose.Schema({
-  name: { type: String, required: true },
-  amount: { type: Number, required: true },
-  expense_date: { type: String, required: true },
-  expense_category: { type: String, required: true },
-  payment: { type: String, required: true },
-  comment: { type: String, required: false },
-  creater: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "UserSchema",
-    required: true,
-  },
-});
-
-const userSchmema = mongoose.Schema({
-  name: { type: String, required: true },
-  username: { type: String, required: true },
-  gmail: { type: String, required: true, unique: true }, //not works as a validator so we import mongoose-unique-validator
+const UserSchema = mongoose.Schema({
+  citizen_id: { type: String,  unique: true },
+  user_name: { type: String, required: true },
+  date_of_birth: { type: Date,},
+  gender: { type: String, enum: ['male', 'female', 'others'],},
+  temporary_address: { type: String,},
+  email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  userFirstSignUp: { type: String, required: true },
-  userData: [SaveData],
-  expenses: [createExpense],
-  category: [],
+  phone_number: { type: String,},
+  citizen_image_front: { type: String },
+  citizen_image_back: { type: String },
+  role: { type: String, enum: ['Admin', 'User'], default: 'User' },
+  kyc_status: { type: String, enum: ['Pending', 'Verified', 'Rejected'], default: 'Pending' },
+  otp_token: { type: String },
+  created_at: { type: Date, default: Date.now },
+  updated_at: { type: Date, default: Date.now },
 });
 
-// userSchmema.plugin(uniqueValidator);
-
-const UserModel = mongoose.model("UserSchema", userSchmema);
+UserSchema.plugin(mongooseUniqueValidator, {  
+  message: 'email already exists.',
+});
+const UserModel = mongoose.model('User', UserSchema);
 
 export default UserModel;
+  
