@@ -1,5 +1,4 @@
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
 import UserModel from "../models/userModel.js";
 import { sendOtpEmail } from "../services/auth.service.js";
 import {
@@ -134,7 +133,7 @@ export const verifyEmail= async(req,res)=>{
     if (!isOtpTokenValid) {
       return res.status(400).json({
         message: {
-          emal:null,
+          emal:null,  
           password:null,
           otp_token: "Invalid OTP token",
         },
