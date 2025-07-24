@@ -11,7 +11,7 @@ class CriticalAgent(BaseAgent):
         api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
             raise ValueError("OPENAI_API_KEY không được tìm thấy trong môi trường.")
-        self.llm = OpenAI(api_key=api_key, model='gpt-4.1-mini')
+        self.llm = OpenAI(api_key=api_key, model='gpt-4.1-nano')
 
     def handle_message(self, message: dict):
         """
@@ -31,7 +31,7 @@ class CriticalAgent(BaseAgent):
                 "Nếu đồng ý thì giải thích vì sao, nếu không thì hãy nêu ra các điểm cần xem xét lại."
             )
             try:
-                response_text = self.llm.complete(prompt)
+                response_text = self.llm.complete(prompt, max_tokens=512)
                 self.send_message(sender, f"{message_type}_critical_response", {"critical_response": str(response_text)})
             except Exception as e:
                 error_payload = {"error": f"Đã xảy ra lỗi trong quá trình phản biện: {str(e)}"}
