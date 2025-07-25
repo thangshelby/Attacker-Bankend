@@ -56,7 +56,7 @@ class DecisionAgent(BaseAgent):
         if not api_key:
             print("[DecisionAgent] OPENAI_API_KEY không được tìm thấy trong môi trường.")
             return {"decision": "reject", "reason": "Không có API key cho LLM."}
-        llm = OpenAI(api_key=api_key, model='gpt-4.1-nano')
+        llm = OpenAI(api_key=api_key, model='gpt-4.1-mini')
         try:
             response_text = llm.complete(prompt, max_tokens=256)
             response_data = json.loads(str(response_text))
