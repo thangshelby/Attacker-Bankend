@@ -1,4 +1,35 @@
-import api from "../api";
+// // import api from "../api";
+// import axios from "axios";
+// const api = axios.create({
+//   baseURL: process.env.TRUVERA_API || "https://api-testnet.truvera.io",
+//   headers: {
+//     Authorization: `Bearer ${process.env.TRUVERA_JWT}`,
+//     "Content-Type": "application/json",
+//     Accept: "*/*",
+//   },
+// });
+
+// // Request interceptor
+// api.interceptors.request.use(  
+//   (config) => {
+//     return config;
+//   },
+//   (error) => Promise.reject(error)
+// );
+
+// // Response interceptor
+// api.interceptors.response.use(
+//   (response) => response,
+//   async (error) => {
+//     if (error.response?.status === 401) {
+//       localStorage.removeItem("token");
+//       // window.location.href = "/login";
+//     }
+//     return Promise.reject(error);
+//   }
+// );
+
+// export default api;
 
 export const issueVc = async ({
   studentDid,
@@ -44,6 +75,29 @@ export const issueVc = async ({
   }
 };
 
+export const createProofTemplate = async (
+  templateName,
+  templateDescription
+) => {
+  try {
+    const body= JSON.stringify({
+      name:"Student Loan Verification",
+      purpose:"Verify a student's eligibility for a loan program based on issued academic credentials.",
+      input_descriptors:null,
+      "expirationTime": {
+        "amount": 1,
+        "unit": "months"
+      },
+      "did":process.env.VERIFIER_DID,
+    })
+    const response = await api.post(`/proof-templates`, body)
+    return await response.json()
+  } catch (error) {
+    console.error("Error creating proof template:", error)
+    return null
+  }
+};
+
 export const createProofRequest = async (studentId, school) => {
   try {
     const none = school + studentId + new Date().toDateString();
@@ -75,3 +129,14 @@ export const getProofRequestById = async (proofRequestId) => {
     return null;
   }
 };
+
+const response = await fetch('https://api-testnet.truvera.io/proof-templates/'+"8d9d6b80-8871-4cc2-905f-0b2d3d3b58a0", {
+    method: 'GET',
+    headers: {
+      "Authorization": "Bearer " + "eyJzY29wZXMiOlsidGVzdCIsImFsbCJdLCJzdWIiOiIxOTQ1MyIsInNlbGVjdGVkVGVhbUlkIjowLCJjcmVhdG9ySWQiOiIxOTQ1MyIsImZtdCI6MSwiaWF0IjoxNzUzMTUyMzg2LCJleHAiOjQ4MzI0NDgzODZ9.Bta9N3ReZywgDH90SRnySvXqDGLat40ecf4yCaYIXpHRUatz0AIuooIPf4wAXJh4z1aDtZxgvTMh4hgJyMWD9g",
+      "Accept": "*/*"
+    },
+});
+
+const data = await response.json();
+console.log(data.request.input_descriptors[0].constraints.fields[0].path[0]);

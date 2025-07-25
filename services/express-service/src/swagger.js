@@ -22,3 +22,4 @@ const setupSwagger = (app) => {
 };
 
 export default setupSwagger;
+  
