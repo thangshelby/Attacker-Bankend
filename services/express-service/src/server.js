@@ -6,6 +6,7 @@ import setupSwagger from "./swagger.js";
 import bodyParser from "body-parser";
 import mongoose from "mongoose";
 import cookieParser from "cookie-parser";
+import { connectDatabase } from "./models/connectDB.js";
 
 dotenv.config();
 
@@ -23,21 +24,15 @@ server.use(
   })
 );
 
-mongoose
-  .connect(process.env.CONNECTION_STRING)
-  .then(() => {
-    console.log("Connected to database successfully");
-  })
-  .catch(() => {
-    console.log("Not able to connect to database");
-  });
+export const db = connectDatabase();
+
 server.use(cookieParser());
 
 setupSwagger(server);
 routes(server);
 
 const PORT = process.env.PORT || 5000;
-console.log("port", process.env.PORT);
+
 server.listen(PORT, () => {
   console.log(`App listening at http://localhost:${PORT}`);
 

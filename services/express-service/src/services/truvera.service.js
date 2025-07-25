@@ -1,35 +1,17 @@
 // // import api from "../api";
-// import axios from "axios";
-// const api = axios.create({
-//   baseURL: process.env.TRUVERA_API || "https://api-testnet.truvera.io",
-//   headers: {
-//     Authorization: `Bearer ${process.env.TRUVERA_JWT}`,
-//     "Content-Type": "application/json",
-//     Accept: "*/*",
-//   },
-// });
+const jwt =
+  "eyJzY29wZXMiOlsidGVzdCIsImFsbCJdLCJzdWIiOiIxOTQ1MyIsInNlbGVjdGVkVGVhbUlkIjowLCJjcmVhdG9ySWQiOiIxOTQ1MyIsImZtdCI6MSwiaWF0IjoxNzUzMTUyMzg2LCJleHAiOjQ4MzI0NDgzODZ9.Bta9N3ReZywgDH90SRnySvXqDGLat40ecf4yCaYIXpHRUatz0AIuooIPf4wAXJh4z1aDtZxgvTMh4hgJyMWD9g";
+import axios from "axios";
+const api = axios.create({
+  baseURL: "https://api-testnet.truvera.io",
+  headers: {
+    Authorization: `Bearer ${jwt}`,
+    "Content-Type": "application/json",
+    Accept: "*/*",
+  },
+});
 
-// // Request interceptor
-// api.interceptors.request.use(  
-//   (config) => {
-//     return config;
-//   },
-//   (error) => Promise.reject(error)
-// );
-
-// // Response interceptor
-// api.interceptors.response.use(
-//   (response) => response,
-//   async (error) => {
-//     if (error.response?.status === 401) {
-//       localStorage.removeItem("token");
-//       // window.location.href = "/login";
-//     }
-//     return Promise.reject(error);
-//   }
-// );
-
-// export default api;
+export default api;
 
 export const issueVc = async ({
   studentDid,
@@ -47,28 +29,47 @@ export const issueVc = async ({
       password,
       recipientEmail,
       algorithm: "ed25519", // hoặc "dockbbs" nếu cần ZKP
-      distribute: true, // hoặc false nếu muốn gửi thủ công
+      distribute: false, // hoặc false nếu muốn gửi thủ công
       format: "jsonld",
       credential: {
         name: "Student Loan Eligibility Credential",
         description:
           "Credential to assess student's eligibility for financial support and loans.",
-        schema: process.env.CREDENTIAL_SCHEMA,
-        context: process.env.CREDENTIAL_CONTEXT,
+        schema:
+          "https://schema.truvera.io/StudentLoanEligibilitySchema_2-V2-1753427555625.json",
+        context:
+          "https://schema.truvera.io/StudentLoanEligibilitySchema_2-V1753427555625.json-ld",
         type: ["VerifiableCredential", "StudentLoanEligibilitySchema"],
         subject: {
           id: studentDid,
-          ...subject,
+          name: "ngo nguyen duc thang",
+          current_gpa: 3.7,
+          has_scholarship: true,
+          scholarship_count: 4,
+          failed_courses_count: 0,
+          has_leadership_role: false,
+          academic_award_count: 10,
+          total_credits_earned: 10,
+          extracurricular_activities_count: 10,
         },
-        issuer: process.env.ISSUER_DID,
+        issuer: "did:cheqd:testnet:3d8707e1-2425-4be9-ba41-0ad0c8a06f93",
         issuanceDate: createdDate.toISOString(),
         expirationDate: expiredDate.toISOString(),
       },
       revocable: true,
     });
 
-    const response = await api.post(`/credentials`, body);
-    return await response.json();
+    const response = await fetch("https://api-testnet.truvera.io/credentials", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${jwt}`,
+        "Content-Type": "application/json",
+      },
+      body,
+    }).then((data) => {
+      return data.json();
+    });
+    console.log(response);
   } catch (error) {
     console.error("Error issuing VC:", error);
     return null;
@@ -80,21 +81,22 @@ export const createProofTemplate = async (
   templateDescription
 ) => {
   try {
-    const body= JSON.stringify({
-      name:"Student Loan Verification",
-      purpose:"Verify a student's eligibility for a loan program based on issued academic credentials.",
-      input_descriptors:null,
-      "expirationTime": {
-        "amount": 1,
-        "unit": "months"
+    const body = JSON.stringify({
+      name: "Student Loan Verification",
+      purpose:
+        "Verify a student's eligibility for a loan program based on issued academic credentials.",
+      input_descriptors: null,
+      expirationTime: {
+        amount: 1,
+        unit: "months",
       },
-      "did":process.env.VERIFIER_DID,
-    })
-    const response = await api.post(`/proof-templates`, body)
-    return await response.json()
+      did: process.env.VERIFIER_DID,
+    });
+    const response = await api.post(`/proof-templates`, body);
+    return await response.json();
   } catch (error) {
-    console.error("Error creating proof template:", error)
-    return null
+    console.error("Error creating proof template:", error);
+    return null;
   }
 };
 
@@ -130,13 +132,21 @@ export const getProofRequestById = async (proofRequestId) => {
   }
 };
 
-const response = await fetch('https://api-testnet.truvera.io/proof-templates/'+"8d9d6b80-8871-4cc2-905f-0b2d3d3b58a0", {
-    method: 'GET',
-    headers: {
-      "Authorization": "Bearer " + "eyJzY29wZXMiOlsidGVzdCIsImFsbCJdLCJzdWIiOiIxOTQ1MyIsInNlbGVjdGVkVGVhbUlkIjowLCJjcmVhdG9ySWQiOiIxOTQ1MyIsImZtdCI6MSwiaWF0IjoxNzUzMTUyMzg2LCJleHAiOjQ4MzI0NDgzODZ9.Bta9N3ReZywgDH90SRnySvXqDGLat40ecf4yCaYIXpHRUatz0AIuooIPf4wAXJh4z1aDtZxgvTMh4hgJyMWD9g",
-      "Accept": "*/*"
-    },
+issueVc(
+  "did:key:z6MkmUMxvPs4CGg8HG141MnqepgZwK8Z9uPu2XQGWDDG2s4M",
+  "thangnnd22414@st.uel.edu.vn",
+  {
+    current_gpa: 3.7,
+    has_scholarship: true,
+    scholarship_count: 4,
+    ailed_courses_count: 0,
+    has_leadership_role: false,
+    academic_award_count: 10,
+    total_credits_earned: 10,
+    extracurricular_activities_count: 10,
+  },
+  "securepasss"
+).then((data) => {
+  // console.log(data);
 });
-
-const data = await response.json();
-console.log(data.request.input_descriptors[0].constraints.fields[0].path[0]);
+// console.log(response);

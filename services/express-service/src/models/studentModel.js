@@ -1,14 +1,14 @@
-import mongoose from 'mongoose';
-import mongooseUniqueValidator from 'mongoose-unique-validator';
+import mongoose from "mongoose";
+import mongooseUniqueValidator from "mongoose-unique-validator";
 
 const StudentSchema = mongoose.Schema({
-  citizen_id: { type: String, ref: 'User', required: true },
-  student_id: { type: String, required: true, unique: true },
-  university: { type: String, required: true },
-  faculty_name: { type: String, required: true },
-  major_name: { type: String, required: true },
-  year_of_study: { type: Number, required: true },
-  class_id: { type: String, required: true },
+  citizen_id: { type: String, ref: "User", required: true },
+  student_id: { type: String, unique: true },
+  university: { type: String },
+  faculty_name: { type: String },
+  major_name: { type: String },
+  year_of_study: { type: Number },
+  class_id: { type: String },
   web3_address: { type: String },
   did: { type: String },
   field1: { type: String }, // đổi tên nếu biết rõ
@@ -18,8 +18,8 @@ const StudentSchema = mongoose.Schema({
 });
 
 StudentSchema.plugin(mongooseUniqueValidator, {
-  message: 'already exists.',
+  message: "already exists.",
 });
-const StudentModel = mongoose.model('Student', StudentSchema);
+const StudentModel = mongoose.model("Student", StudentSchema);
 
 export default StudentModel;

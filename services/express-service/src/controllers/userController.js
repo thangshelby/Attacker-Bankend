@@ -1,10 +1,51 @@
 import UserModel from "../models/userModel.js";
-import StudentModel from "../models/studentModel.js";
-// import SupporterModel from "../models/supporterModel.js";
 
 export const updateUser = async (req, res) => {
+  const {
+    _id,
+    citizen_id,
+    user_name,
+    date_of_birth,
+    gender,
+    temporary_address,
+    email,
+    phone_number,
+    citizen_image_front,
+    citizen_image_back,
+    role,
+    kyc_status,
+    otp_token,
+  } = req.body;
+
   try {
-  } catch (error) {}
+    const user = await UserModel.findOne({ _id });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    // Cập nhật từng trường nếu có truyền vào
+    user.user_name = user_name ?? user.user_name;
+    user.citizen_id = citizen_id ?? user.citizen_id;
+    user.date_of_birth = date_of_birth ?? user.date_of_birth;
+    user.gender = gender ?? user.gender;
+    user.temporary_address = temporary_address ?? user.temporary_address;
+    user.email = email ?? user.email;
+    user.phone_number = phone_number ?? user.phone_number;
+    user.citizen_image_front = citizen_image_front ?? user.citizen_image_front;
+    user.citizen_image_back = citizen_image_back ?? user.citizen_image_back;
+    user.role = role ?? user.role;
+    user.kyc_status = kyc_status ?? user.kyc_status;
+    user.otp_token = otp_token ?? user.otp_token;
+    user.updated_at = new Date();
+
+    await user.save();
+
+    res.status(200).json({ message: "User updated successfully", user });
+  } catch (error) {
+    console.error("Update error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 };
 
 export const getUserById = async (req, res) => {
@@ -47,8 +88,49 @@ export const getAllUsers = async (req, res) => {
     });
   }
 };
+
+import { db } from "../server.js";
 export const getUsersBySchoolName = async (req, res) => {
+  const schoolName = req.params.schoolName;
+  console.log(schoolName);
   try {
+    const results = await db.then(async (db) => {
+      const results = await db
+        .collection("users")
+        .aggregate([
+          {
+            $lookup: {
+              from: "students",
+              localField: "citizen_id",
+              foreignField: "citizen_id",
+              as: "student_info",
+            },
+          },
+          { $unwind: "$student_info" },
+          {
+            $lookup: {
+              from: "supportermodels",
+              localField: "student_info.student_id", // hoặc "student_info._id" nếu dùng ObjectId
+              foreignField: "student_id",
+              as: "supporter_info",
+            },
+          },
+          {
+            $match: {
+              "student_info.university": schoolName,
+            },
+          },
+        ])
+        .toArray();
+      return results;
+    });
+    return res.status(200).json({
+      message: "Fetch Users Successfully",
+      status: true,
+      data: {
+        users: results,
+      },
+    });
   } catch (error) {}
 };
 
