@@ -33,7 +33,7 @@ class CriticalAgent(BaseAgent):
                     f"Quyết định: {decision}\n"
                     f"Lý do: {reason}\n\n"
                     f"CÂU HỎI CHẤT VẤN:\n"
-                    f"- GPA 0.05 có thực sự phản ánh hết năng lực?\n"
+                    f"- GPA hiện tại có thực sự phản ánh hết năng lực?\n"
                     f"- Ngành STEM có đảm bảo việc làm tương lai?\n"
                     f"- Tier 1 có bù đắp được GPA thấp?\n"
                     f"- Có quá lạc quan với thành tích yếu?\n"
