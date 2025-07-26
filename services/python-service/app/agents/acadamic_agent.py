@@ -11,7 +11,7 @@ class AcademicAgent(BaseAgent):
         api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
             raise ValueError("OPENAI_API_KEY không được tìm thấy trong môi trường.")
-        self.llm = OpenAI(api_key=api_key, model='gpt-4.1-nano')
+        self.llm = OpenAI(api_key=api_key, model='gpt-4o-mini')
 
     def handle_message(self, message: dict):
         """
@@ -28,10 +28,37 @@ class AcademicAgent(BaseAgent):
                 return
 
             prompt = (
-                "Bạn là một chuyên gia học thuật. Hãy phân tích hồ sơ học tập sau và quyết định có cấp học bổng không, giải thích lý do một cách chi tiết và chuyên nghiệp:\n"
-                f"Hồ sơ học tập:\n{profile}\n\n"
-                "QUAN TRỌNG: Chỉ trả lời dưới dạng một chuỗi JSON hợp lệ theo format sau: "
-                "{\"decision\": \"approve\" hoặc \"reject\", \"reason\": \"<lý do chi tiết>\"}"
+                "Bạn là ACADEMIC EVALUATOR - chuyên gia áp dụng QUY ĐỊNH CHÍNH PHỦ 2025 về học bổng/vay vốn sinh viên.\n"
+                "NHIỆM VỤ: Đánh giá CHÍNH XÁC 3 tiêu chí học thuật theo rule-based system.\n\n"
+                f"HỒ SƠ SINH VIÊN:\n{profile}\n\n"
+                "=== QUY ĐỊNH ĐÁNH GIÁ 2025 (Features 2,3,4) ===\n\n"
+                "FEATURE 2 - HỌC LỰC (SPECIAL FEATURE ⚠️):\n"
+                "- PASSED: GPA chuẩn hóa >= 0.7 (tương đương 7.0/10)\n"
+                "- FAILED: GPA chuẩn hóa < 0.7\n"
+                "- Cơ sở: Thông tư 19/2023/TT-BGDĐT\n"
+                "- LƯU Ý: Đây là special feature, vi phạm sẽ ảnh hưởng nghiêm trọng\n\n"
+                "FEATURE 3 - TRƯỜNG HỌC:\n"
+                "- PASSED: University tier 1-3 (công lập/được công nhận)\n"
+                "- FAILED: University tier 4-5 (tư thục chưa được công nhận đầy đủ)\n"
+                "- Cơ sở: Quyết định 157/2007/QĐ-TTg cập nhật 2024\n\n"
+                "FEATURE 4 - NGÀNH HỌC ƯU TIÊN:\n"
+                "- PASSED: STEM, Y khoa, Điều dưỡng, Sư phạm, IT, Nông nghiệp công nghệ cao\n"
+                "- FAILED: Business, Liberal Arts, các ngành khác\n"
+                "- Cơ sở: Quyết định 1036/QĐ-TTg 2021 và 645/QĐ-TTg 2024\n\n"
+                "HƯỚNG DẪN ĐÁNH GIÁ:\n"
+                "1. Trích xuất thông tin chính xác từ hồ sơ\n"
+                "2. Áp dụng ngưỡng cứng theo quy định\n"
+                "3. Không được 'linh hoạt' hay 'cảm tính'\n"
+                "4. Mỗi feature chỉ có 2 trạng thái: True/False\n\n"
+                "QUAN TRỌNG: Chỉ trả lời JSON hợp lệ:\n"
+                "{\n"
+                "  \"feature_2_hoc_luc\": true/false,\n"
+                "  \"feature_3_truong_hoc\": true/false,\n"
+                "  \"feature_4_nganh_uu_tien\": true/false,\n"
+                "  \"academic_passed_count\": 0-3,\n"
+                "  \"has_special_violation\": true/false,\n"
+                "  \"reason\": \"<phân tích từng feature theo quy định>\"\n"
+                "}"
             )
             try:
                 response_text = self.llm.complete(prompt, max_tokens=512)
@@ -50,12 +77,24 @@ class AcademicAgent(BaseAgent):
             memory = message.get("payload", {}).get("memory", "")
             critical_response = message.get("payload", {}).get("critical_response", "")
             prompt = (
-                "Bạn là chuyên gia học thuật. Dưới đây là lịch sử tranh luận và phản biện về hồ sơ học bổng. "
-                "Hãy dựa vào toàn bộ lịch sử và phản biện để ra quyết định cuối cùng (approve/reject) và giải thích lý do chi tiết:\n"
-                f"Lịch sử hội thoại: {memory}\n"
-                f"Phản biện từ agent phản biện: {critical_response}\n"
-                "QUAN TRỌNG: Chỉ trả lời dưới dạng một chuỗi JSON hợp lệ theo format: "
-                "{\"decision\": \"approve\" hoặc \"reject\", \"reason\": \"<lý do chi tiết>\"}"
+                "Bạn là ACADEMIC EVALUATOR - TÁI ĐÁNH GIÁ sau phản biện.\n"
+                "ÁP DỤNG CHÍNH XÁC QUY ĐỊNH 2025, KHÔNG THAY ĐỔI NGƯỠNG.\n\n"
+                f"Lịch sử đánh giá: {memory}\n"
+                f"Phản biện: {critical_response}\n\n"
+                "NHIỆM VỤ:\n"
+                "1. Xem lại việc áp dụng Features 2,3,4\n"
+                "2. Sửa lại NẾU có sai sót trong việc áp dụng quy định\n"
+                "3. KHÔNG thay đổi nếu đã đúng quy định (dù có phản biện)\n"
+                "4. Giải thích rõ tại sao giữ nguyên hoặc thay đổi\n\n"
+                "QUAN TRỌNG: Chỉ trả lời JSON hợp lệ:\n"
+                "{\n"
+                "  \"feature_2_hoc_luc\": true/false,\n"
+                "  \"feature_3_truong_hoc\": true/false,\n"
+                "  \"feature_4_nganh_uu_tien\": true/false,\n"
+                "  \"academic_passed_count\": 0-3,\n"
+                "  \"has_special_violation\": true/false,\n"
+                "  \"reason\": \"<giải thích tái đánh giá>\"\n"
+                "}"
             )
             try:
                 response_text = self.llm.complete(prompt, max_tokens=512)
@@ -66,18 +105,26 @@ class AcademicAgent(BaseAgent):
                     "error": "Phản hồi từ LLM không phải là JSON hợp lệ.",
                     "raw_response": str(response_text)
                 }
-                # Fallback: luôn gửi một quyết định mặc định để không bị null
+                # Fallback: conservative evaluation
                 self.send_message(sender, "repredict_scholarship", {
-                    "decision": "reject",
-                    "reason": "LLM trả về không hợp lệ."
+                    "feature_2_hoc_luc": False,
+                    "feature_3_truong_hoc": False,
+                    "feature_4_nganh_uu_tien": False,
+                    "academic_passed_count": 0,
+                    "has_special_violation": True,
+                    "reason": "LLM trả về không hợp lệ - áp dụng đánh giá conservative."
                 })
                 self.send_message(sender, "repredict_scholarship_error", error_payload)
             except Exception as e:
                 error_payload = {"error": f"Đã xảy ra lỗi trong quá trình xử lý: {str(e)}"}
-                # Fallback: luôn gửi một quyết định mặc định để không bị null
+                # Fallback: conservative evaluation
                 self.send_message(sender, "repredict_scholarship", {
-                    "decision": "reject",
-                    "reason": f"Lỗi xử lý: {str(e)}"
+                    "feature_2_hoc_luc": False,
+                    "feature_3_truong_hoc": False,
+                    "feature_4_nganh_uu_tien": False,
+                    "academic_passed_count": 0,
+                    "has_special_violation": True,
+                    "reason": f"Lỗi xử lý: {str(e)} - áp dụng đánh giá conservative."
                 })
                 self.send_message(sender, "repredict_scholarship_error", error_payload)
         else:
@@ -93,13 +140,11 @@ class AcademicAgent(BaseAgent):
 if __name__ == "__main__":
     # Tạo agent
     agent = AcademicAgent()
-    # Hồ sơ học tập mẫu để test
-    test_profile = "Sinh viên: Trần Thị B, GPA 3.9/4.0, đạt giải Nhất Olympic Toán, hoạt động ngoại khóa xuất sắc."
-    # Message mẫu
+    # Test với rule-based system
+    test_profile = "Sinh viên: 21 tuổi, Nữ, Đại học tier 1, ngành STEM, năm 4, GPA chuẩn hóa: 0.85/1.0, tham gia Câu lạc bộ Nghiên cứu Khoa học"
     message = {
         "type": "scholarship_application",
         "sender": "tester",
         "payload": {"profile": test_profile}
     }
-    # Gửi message và in kết quả
     agent.handle_message(message)
