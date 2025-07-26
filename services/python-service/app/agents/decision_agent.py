@@ -41,11 +41,30 @@ class DecisionAgent(BaseAgent):
         if not profile_text:
             return self._get_default_features()
             
-        # Extract GPA
-        gpa_match = re.search(r'GPA[:\s]*([0-9]+\.?[0-9]*)', profile_text, re.IGNORECASE)
-        gpa_normalized = float(gpa_match.group(1)) if gpa_match else 0.5
-        if gpa_normalized > 4:  # Convert 4.0 scale to 1.0 scale
-            gpa_normalized = gpa_normalized / 4.0
+        # Extract GPA với nhiều pattern khác nhau
+        gpa_patterns = [
+            r'GPA[:\s]*chuẩn[:\s]*hóa[:\s]*([0-9]+\.?[0-9]*)',  # "GPA chuẩn hóa: 0.72"
+            r'GPA[:\s]*([0-9]+\.?[0-9]*)',                     # "GPA: 7.25" hoặc "GPA 0.717"
+            r'điểm[:\s]*trung[:\s]*bình[:\s]*([0-9]+\.?[0-9]*)', # "điểm trung bình"
+        ]
+        
+        gpa_raw = 5.0  # Default 5.0/10
+        gpa_found_pattern = None
+        
+        for i, pattern in enumerate(gpa_patterns):
+            gpa_match = re.search(pattern, profile_text, re.IGNORECASE)
+            if gpa_match:
+                gpa_raw = float(gpa_match.group(1))
+                gpa_found_pattern = f"pattern_{i+1}"
+                break
+        
+        # Convert thang 10 → thang 1
+        if gpa_raw > 1:  # Thang 10 (like 7.25, 6.42, 8.5)
+            gpa_normalized = gpa_raw / 10.0
+        else:  # Đã là thang 1 (like 0.725, 0.85)
+            gpa_normalized = gpa_raw
+            
+
             
         # Extract University Tier
         tier_match = re.search(r'tier[:\s]*([1-5])', profile_text, re.IGNORECASE)
@@ -72,8 +91,21 @@ class DecisionAgent(BaseAgent):
                 family_income = income_val
                 break
                 
-        # Extract Debt Status
-        has_debt = any(keyword in profile_text.lower() for keyword in ['có nợ', 'debt', 'nợ hiện tại'])
+        # Extract Debt Status - cần phân biệt "Đang có nợ" vs "Không có nợ"
+        debt_positive_keywords = ['đang có nợ', 'hiện có nợ', 'có nợ hiện tại']
+        debt_negative_keywords = ['không có nợ', 'không có nợ nần', 'chưa có nợ']
+        
+        profile_lower = profile_text.lower()
+        has_positive_debt = any(keyword in profile_lower for keyword in debt_positive_keywords)
+        has_negative_debt = any(keyword in profile_lower for keyword in debt_negative_keywords)
+        
+        if has_positive_debt:
+            has_debt = True
+        elif has_negative_debt:
+            has_debt = False
+        else:
+            # Fallback: check for general debt keywords
+            has_debt = any(keyword in profile_lower for keyword in ['debt', 'nợ']) and not any(neg in profile_lower for neg in ['không', 'chưa'])
         
         # Extract Loan Amount
         loan_patterns = [
@@ -98,7 +130,7 @@ class DecisionAgent(BaseAgent):
         feature_4_nganh_uu_tien = major_priority
         feature_5_bao_lanh = family_income > 0  # SPECIAL (assume có bảo lãnh)
         feature_6_khoan_vay = loan_amount <= 60000000 or loan_amount <= 3000000 * 12  # per year
-        feature_7_cam_ket_no = not has_debt  # SPECIAL (assume có cam kết)
+        feature_7_no_existing_debt = not has_debt  # SPECIAL - existing_debt=false (không có nợ) = PASS
         
         return {
             'feature_1_thu_nhap': feature_1_thu_nhap,
@@ -107,7 +139,7 @@ class DecisionAgent(BaseAgent):
             'feature_4_nganh_uu_tien': feature_4_nganh_uu_tien,
             'feature_5_bao_lanh': feature_5_bao_lanh,
             'feature_6_khoan_vay': feature_6_khoan_vay,
-            'feature_7_cam_ket_no': feature_7_cam_ket_no
+            'feature_7_no_existing_debt': feature_7_no_existing_debt
         }
     
     def _get_default_features(self):
@@ -119,7 +151,7 @@ class DecisionAgent(BaseAgent):
             'feature_4_nganh_uu_tien': False,
             'feature_5_bao_lanh': False,
             'feature_6_khoan_vay': False,
-            'feature_7_cam_ket_no': False
+            'feature_7_no_existing_debt': False  # Assume có nợ (conservative)
         }
 
     def aggregate_all(self, merged_payload):
@@ -142,19 +174,19 @@ class DecisionAgent(BaseAgent):
         academic_data = merged_payload.get("scholarship_decision") or {}
         finance_data = merged_payload.get("loan_decision") or {}
         
-        # Use original profile if available, otherwise fallback to agent reasoning
+        # ALWAYS use original profile for rule extraction (ignore agent reasoning)
         if original_profile:
             profile_for_extraction = original_profile
-            print(f"[DecisionAgent] Using ORIGINAL profile for rule extraction")
+            print(f"[DecisionAgent] ✅ Using ORIGINAL profile for rule extraction")
         else:
-            # Fallback: extract from agent responses
-            profile_hints = []
-            if isinstance(academic_data, dict) and academic_data.get("reason"):
-                profile_hints.append(academic_data["reason"])
-            if isinstance(finance_data, dict) and finance_data.get("reason"):
-                profile_hints.append(finance_data["reason"])
-            profile_for_extraction = " ".join(profile_hints)
-            print(f"[DecisionAgent] Using AGENT REASONING for rule extraction")
+            # EMERGENCY: original_profile missing - reject by default
+            print(f"[DecisionAgent] ❌ MISSING original_profile - using conservative defaults")
+            return {
+                "decision": "reject",
+                "reason": "Lỗi hệ thống: Thiếu thông tin profile gốc để áp dụng quy định",
+                "rule_based_system": True,
+                "error": "missing_original_profile"
+            }
         
         # CONVERT SUBJECTIVE TO OBJECTIVE RULES
         features = self.extract_rule_features_from_profile(profile_for_extraction)
@@ -167,14 +199,14 @@ class DecisionAgent(BaseAgent):
             features['feature_4_nganh_uu_tien'], # Feature 4
             features['feature_5_bao_lanh'],    # Feature 5 (SPECIAL)
             features['feature_6_khoan_vay'],   # Feature 6
-            features['feature_7_cam_ket_no']   # Feature 7 (SPECIAL)
+            features['feature_7_no_existing_debt'] # Feature 7 (SPECIAL) - Không có nợ
         ]
         
         # Tính passed_count = số feature passed (True)
         passed_count = sum(all_features)
         
         # Tính special_violations = số failed (False) trong [2,5,7]
-        special_features = [features['feature_2_hoc_luc'], features['feature_5_bao_lanh'], features['feature_7_cam_ket_no']]
+        special_features = [features['feature_2_hoc_luc'], features['feature_5_bao_lanh'], features['feature_7_no_existing_debt']]
         special_violations = sum(1 for f in special_features if not f)
         
         # LOGIC QUYẾT ĐỊNH THEO QUY ĐỊNH 2025
@@ -205,7 +237,7 @@ class DecisionAgent(BaseAgent):
                 "special_features_status": {
                     "feature_2": features['feature_2_hoc_luc'],
                     "feature_5": features['feature_5_bao_lanh'],
-                    "feature_7": features['feature_7_cam_ket_no']
+                    "feature_7": features['feature_7_no_existing_debt']
                 }
             },
             "regulation_compliance": "Nghị định 07/2021/NĐ-CP, Quyết định 05/2022/QĐ-TTg, Thông tư 19/2023/TT-BGDĐT (cập nhật 2025)",

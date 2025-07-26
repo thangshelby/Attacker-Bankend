@@ -1,0 +1,9 @@
+row_index,decision,reason,processing_time,gpa,income,loan_amount,existing_debt,university_tier
+0,reject,"Vi phạm 2 special features (F2,F5,F7) - TỰ ĐỘNG TỪ CHỐI theo quy định.",21.953261137008667,0.725,12082000,18000000,False,3
+1,reject,"Vi phạm 2 special features (F2,F5,F7) - TỰ ĐỘNG TỪ CHỐI theo quy định.",24.239418029785156,0.642,3409000,40500000,False,2
+2,reject,"Vi phạm 2 special features (F2,F5,F7) - TỰ ĐỘNG TỪ CHỐI theo quy định.",25.894670724868774,0.748,9483000,17000000,True,3
+3,reject,"Vi phạm 3 special features (F2,F5,F7) - TỰ ĐỘNG TỪ CHỐI theo quy định.",24.036005973815918,0.717,0,43000000,False,3
+4,reject,"Vi phạm 2 special features (F2,F5,F7) - TỰ ĐỘNG TỪ CHỐI theo quy định.",26.196611642837524,0.576,20490000,48000000,False,2
+5,reject,"Vi phạm 2 special features (F2,F5,F7) - TỰ ĐỘNG TỪ CHỐI theo quy định.",24.616767644882202,0.765,8274000,13500000,True,2
+6,reject,"Vi phạm 2 special features (F2,F5,F7) - TỰ ĐỘNG TỪ CHỐI theo quy định.",23.98546552658081,0.553,3230000,15500000,True,1
+7,reject,"Vi phạm 2 special features (F2,F5,F7) - TỰ ĐỘNG TỪ CHỐI theo quy định.",24.709645748138428,0.769,15232000,42100000,True,3

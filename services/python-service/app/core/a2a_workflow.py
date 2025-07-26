@@ -3,7 +3,7 @@ from app.agents.coordinator_agent import CoordinatorAgent
 from app.agents.finance_agent import FinanceAgent
 from app.agents.acadamic_agent import AcademicAgent  
 from app.agents.critical_agent import CriticalAgent
-from app.agents.decision import DecisionAgent
+from app.agents.decision_agent import DecisionAgent
 from app.core.decision_workflow import get_persona_prompt
 import time  # Để thêm delay nhỏ nếu cần polling
 
