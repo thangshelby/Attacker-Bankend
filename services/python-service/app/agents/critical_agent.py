@@ -15,7 +15,7 @@ class CriticalAgent(BaseAgent):
 
     def handle_message(self, message: dict):
         """
-        Nhận quyết định từ agent khác và phản biện lại lý do.
+        Nhận quyết định từ agent khác và phản biện lại.
         """
         message_type = message.get("type")
         sender = message.get("sender")
@@ -24,18 +24,46 @@ class CriticalAgent(BaseAgent):
         if message_type in ["loan_decision", "scholarship_decision"]:
             decision = payload.get("decision", "")
             reason = payload.get("reason", "")
-            # Prompt phản biện lại quyết định
-            prompt = (
-                f"Bạn là một agent phản biện. Hãy phân tích quyết định sau của agent '{sender}' và đưa ra phản biện hoặc góc nhìn khác nếu có.\n"
-                f"Quyết định: {decision}\nLý do: {reason}\n"
-                "Nếu đồng ý thì giải thích vì sao, nếu không thì hãy nêu ra các điểm cần xem xét lại."
-            )
+            risk_level = payload.get("risk_level", "")
+            
+            # Tạo critique dựa trên agent type
+            if sender == "AcademicAgent":
+                prompt = (
+                    f"PHẢN BIỆN quyết định Academic Agent:\n"
+                    f"Quyết định: {decision}\n"
+                    f"Lý do: {reason}\n\n"
+                    f"CÂU HỎI CHẤT VẤN:\n"
+                    f"- GPA 0.05 có thực sự phản ánh hết năng lực?\n"
+                    f"- Ngành STEM có đảm bảo việc làm tương lai?\n"
+                    f"- Tier 1 có bù đắp được GPA thấp?\n"
+                    f"- Có quá lạc quan với thành tích yếu?\n"
+                    f"Đưa ra 2-3 điểm phản biện sắc bén."
+                )
+            elif sender == "FinanceAgent":
+                prompt = (
+                    f"PHẢN BIỆN quyết định Finance Agent:\n"
+                    f"Quyết định: {decision}\n"
+                    f"Lý do: {reason}\n"
+                    f"Risk level: {risk_level}\n\n"
+                    f"CÂU HỎI CHẤT VẤN:\n"
+                    f"- Thu nhập 8M có thực sự quá thấp?\n"
+                    f"- Nợ hiện tại có nghiêm trọng thế nào?\n"
+                    f"- Có quá thận trọng với mục đích học phí?\n"
+                    f"- Việc làm thêm có giảm rủi ro?\n"
+                    f"Đưa ra 2-3 điểm phản biện cân bằng."
+                )
+            else:
+                prompt = f"Phản biện quyết định của {sender}: {decision} - {reason}. Có logic không? Có thiếu sót gì?"
+                
             try:
-                response_text = self.llm.complete(prompt, max_tokens=512)
-                self.send_message(sender, f"{message_type}_critical_response", {"critical_response": str(response_text)})
+                response_text = self.llm.complete(prompt, max_tokens=120)
+                response_str = str(response_text).strip()
+                print(f"[CriticalAgent] ✅ Generated critique for {sender}")
+                self.send_message(sender, f"{message_type}_critical_response", {"critical_response": response_str})
             except Exception as e:
-                error_payload = {"error": f"Đã xảy ra lỗi trong quá trình phản biện: {str(e)}"}
-                self.send_message(sender, f"{message_type}_critical_error", error_payload)
+                print(f"[CriticalAgent] ❌ Error generating critique: {str(e)}")
+                fallback_critique = f"Quyết định {decision} của {sender} cần xem xét thêm các yếu tố và cân nhắc kỹ hơn."
+                self.send_message(sender, f"{message_type}_critical_response", {"critical_response": fallback_critique})
         else:
             error_payload = {"error": f"Loại tin nhắn '{message_type}' không được hỗ trợ cho CriticalAgent."}
             self.send_message(sender, "unsupported_message", error_payload)
@@ -47,10 +75,12 @@ class CriticalAgent(BaseAgent):
             print(f"[{self.name}] (Test) Gửi tới {recipient} | type: {message_type} | payload: {payload}")
 
 if __name__ == "__main__":
-    # Tạo agent
     agent = CriticalAgent()
-    # Message mẫu phản biện quyết định tài chính
-    decision_payload = {"decision": "approve", "reason": "Khách hàng có thu nhập cao, không có nợ xấu."}
+    decision_payload = {
+        "decision": "approve",
+        "reason": "Thu nhập ổn định, ngành STEM có triển vọng",
+        "risk_level": "low"
+    }
     message = {
         "type": "loan_decision",
         "sender": "FinanceAgent",

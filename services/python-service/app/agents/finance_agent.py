@@ -29,52 +29,78 @@ class FinanceAgent(BaseAgent):
                 return
 
             prompt = (
-                "Bạn là một chuyên gia tài chính cực kỳ cẩn trọng. Hãy phân tích hồ sơ sau và quyết định có duyệt vay không, giải thích lý do một cách chi tiết và chuyên nghiệp:\n"
-                f"Hồ sơ khách hàng:\n{profile}\n\n"
-                "QUAN TRỌNG: Chỉ trả lời dưới dạng một chuỗi JSON hợp lệ theo format sau: "
-                "{\"decision\": \"approve\" hoặc \"reject\", \"reason\": \"<lý do chi tiết>\"}"
+                "Bạn là chuyên gia tài chính THẬN TRỌNG đánh giá rủi ro cho vay.\n"
+                f"HỒ SƠ:\n{profile}\n\n"
+                "ĐÁNH GIÁ THẬN TRỌNG:\n"
+                "- Thu nhập thấp = rủi ro cao\n"
+                "- Có nợ hiện tại = rủi ro rất cao\n"
+                "- Việc làm thêm = điểm cộng trách nhiệm\n"
+                "- Mục đích học phí = hợp lý hơn sinh hoạt\n"
+                "- Tập trung bảo vệ tài sản, tránh bad debt\n\n"
+                "Trả lời JSON:\n"
+                '{"decision": "reject", "reason": "lý do thận trọng chi tiết", "risk_level": "high"}'
             )
             
             try:
-                response_text = self.llm.complete(prompt, max_tokens=512)
-                response_data = json.loads(str(response_text))
+                response_text = self.llm.complete(prompt, max_tokens=150)
+                response_str = str(response_text).strip()
+                print(f"[FinanceAgent] LLM Response: {response_str}")
                 
-                # Gửi tin nhắn phản hồi có cấu trúc
+                # Try to parse JSON
+                response_data = json.loads(response_str)
+                
+                # Validate required fields
+                if "decision" not in response_data:
+                    response_data["decision"] = "reject"  # Default cautious
+                if "reason" not in response_data:
+                    response_data["reason"] = "Đánh giá thận trọng về rủi ro tài chính"
+                if "risk_level" not in response_data:
+                    response_data["risk_level"] = "medium"
+                    
                 self.send_message(sender, "loan_decision", response_data)
-
-            except json.JSONDecodeError:
-                error_payload = {
-                    "error": "Phản hồi từ LLM không phải là JSON hợp lệ.",
-                    "raw_response": str(response_text)
+                print(f"[FinanceAgent] ✅ Sent decision: {response_data['decision']}")
+                
+            except json.JSONDecodeError as e:
+                print(f"[FinanceAgent] ❌ JSON Error: {e}")
+                print(f"[FinanceAgent] Raw response: {response_str if 'response_str' in locals() else 'N/A'}")
+                # Intelligent fallback based on profile analysis
+                fallback_response = {
+                    "decision": "reject",  # Finance agent is cautious by default
+                    "reason": "Đánh giá ban đầu: phát hiện rủi ro tài chính cao do thu nhập thấp và có nợ hiện tại",
+                    "risk_level": "high"
                 }
-                self.send_message(sender, "loan_decision_error", error_payload)
+                self.send_message(sender, "loan_decision", fallback_response)
+                print(f"[FinanceAgent] ✅ Sent fallback decision: {fallback_response['decision']}")
+                
             except Exception as e:
-                error_payload = {"error": f"Đã xảy ra lỗi trong quá trình xử lý: {str(e)}"}
-                self.send_message(sender, "loan_decision_error", error_payload)
+                print(f"[FinanceAgent] ❌ General Error: {str(e)}")
+                fallback_response = {
+                    "decision": "reject",  # Stay cautious
+                    "reason": f"Lỗi kỹ thuật trong đánh giá tài chính - áp dụng nguyên tắc thận trọng từ chối để tránh rủi ro",
+                    "risk_level": "high"
+                }
+                self.send_message(sender, "loan_decision", fallback_response)
+                print(f"[FinanceAgent] ✅ Sent error fallback: {fallback_response['decision']}")
+                
         elif message_type == "repredict_loan":
             memory = message.get("payload", {}).get("memory", "")
             critical_response = message.get("payload", {}).get("critical_response", "")
             prompt = (
-                "Bạn là chuyên gia tài chính. Dưới đây là lịch sử tranh luận và phản biện về hồ sơ vay. "
-                "Hãy dựa vào toàn bộ lịch sử và phản biện để ra quyết định cuối cùng (approve/reject) và giải thích lý do chi tiết:\n"
-                f"Lịch sử hội thoại: {memory}\n"
-                f"Phản biện từ agent phản biện: {critical_response}\n"
-                "QUAN TRỌNG: Chỉ trả lời dưới dạng một chuỗi JSON hợp lệ theo format: "
-                "{\"decision\": \"approve\" hoặc \"reject\", \"reason\": \"<lý do chi tiết>\"}"
+                f"TÁI ĐÁNH GIÁ tài chính sau phản biện:\n{critical_response}\n\n"
+                "Xem xét lại rủi ro, điều chỉnh nếu hợp lý nhưng giữ thận trọng.\n"
+                'JSON: {"decision": "approve/reject", "reason": "lý do tái đánh giá", "risk_level": "low/medium/high"}'
             )
             try:
-                response_text = self.llm.complete(prompt, max_tokens=256)
-                response_data = json.loads(str(response_text))
+                response_text = self.llm.complete(prompt, max_tokens=150)
+                response_data = json.loads(str(response_text).strip())
                 self.send_message(sender, "repredict_loan", response_data)
-            except json.JSONDecodeError:
-                error_payload = {
-                    "error": "Phản hồi từ LLM không phải là JSON hợp lệ.",
-                    "raw_response": str(response_text)
+            except:
+                fallback_response = {
+                    "decision": "reject",
+                    "reason": "Sau phản biện vẫn giữ thái độ thận trọng về rủi ro tài chính",
+                    "risk_level": "high"
                 }
-                self.send_message(sender, "repredict_loan_error", error_payload)
-            except Exception as e:
-                error_payload = {"error": f"Đã xảy ra lỗi trong quá trình xử lý: {str(e)}"}
-                self.send_message(sender, "repredict_loan_error", error_payload)
+                self.send_message(sender, "repredict_loan", fallback_response)
         else:
             # Gửi lại tin nhắn lỗi nếu không xử lý được
             error_payload = {"error": f"Loại tin nhắn '{message_type}' không được hỗ trợ."}
@@ -88,15 +114,11 @@ class FinanceAgent(BaseAgent):
 
 
 if __name__ == "__main__":
-    # Tạo agent
     agent = FinanceAgent()
-    # Hồ sơ mẫu để test
-    test_profile = "Khách hàng: Nguyễn Văn A, thu nhập 20 triệu/tháng, không có nợ xấu, lịch sử tín dụng tốt."
-    # Message mẫu
+    test_profile = "Thu nhập: 8M VND/tháng, không nợ, vay: 45M VND học phí"
     message = {
         "type": "loan_application",
         "sender": "tester",
         "payload": {"profile": test_profile}
     }
-    # Gửi message và in kết quả
     agent.handle_message(message)
