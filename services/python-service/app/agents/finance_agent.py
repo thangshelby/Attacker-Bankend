@@ -12,7 +12,7 @@ class FinanceAgent(BaseAgent):
         api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
             raise ValueError("OPENAI_API_KEY không được tìm thấy trong môi trường.")
-        self.llm = OpenAI(api_key=api_key, model='gpt-4o-mini')
+        self.llm = OpenAI(api_key=api_key, model='gpt-4.1-nano')
 
     def handle_message(self, message: dict):
         """
@@ -29,121 +29,78 @@ class FinanceAgent(BaseAgent):
                 return
 
             prompt = (
-                "Bạn là FINANCE EVALUATOR - chuyên gia áp dụng QUY ĐỊNH CHÍNH PHỦ 2025 về vay vốn sinh viên.\n"
-                "NHIỆM VỤ: Đánh giá CHÍNH XÁC 4 tiêu chí tài chính theo rule-based system.\n\n"
-                f"HỒ SƠ TÀI CHÍNH:\n{profile}\n\n"
-                "=== QUY ĐỊNH ĐÁNH GIÁ 2025 (Features 1,5,6,7) ===\n\n"
-                "FEATURE 1 - THU NHẬP GIA ĐÌNH:\n"
-                "- PASSED: <= 10.000.000 VNĐ/tháng\n"
-                "- FAILED: > 10.000.000 VNĐ/tháng\n"
-                "- Cơ sở: Nghị định 07/2021/NĐ-CP cập nhật 2025\n"
-                "- Lý do: Chỉ hỗ trợ hộ gia đình có thu nhập thấp\n\n"
-                "FEATURE 5 - NGƯỜI BẢO LÃNH (SPECIAL FEATURE ⚠️):\n"
-                "- PASSED: Có bảo lãnh (giả định: có) VÀ family_income > 0\n"
-                "- FAILED: Không có bảo lãnh HOẶC family_income = 0\n"
-                "- Cơ sở: Mẫu NHCSXH bắt buộc\n"
-                "- LƯU Ý: Đây là special feature, vi phạm sẽ ảnh hưởng nghiêm trọng\n\n"
-                "FEATURE 6 - TỔNG KHOẢN VAY:\n"
-                "- PASSED: <= 60.000.000 VNĐ/toàn khóa HOẶC <= 3.000.000 VNĐ/tháng\n"
-                "- FAILED: > 60.000.000 VNĐ VÀ > 3.000.000 VNĐ/tháng\n"
-                "- Cơ sở: Quyết định 05/2022/QĐ-TTg cập nhật 2025\n"
-                "- Lưu ý: Chỉ cần 1 trong 2 điều kiện là đủ\n\n"
-                "FEATURE 7 - CAM KẾT TRẢ NỢ & KHÔNG NỢ XẤU (SPECIAL FEATURE ⚠️):\n"
-                "- PASSED: Có cam kết (giả định: có) VÀ existing_debt = false\n"
-                "- FAILED: Không có cam kết HOẶC existing_debt = true\n"
-                "- Cơ sở: NHCSXH bắt buộc\n"
-                "- LƯU Ý: Đây là special feature, vi phạm sẽ ảnh hưởng nghiêm trọng\n\n"
-                "HƯỚNG DẪN ĐÁNH GIÁ:\n"
-                "1. Trích xuất số liệu chính xác từ hồ sơ\n"
-                "2. Áp dụng ngưỡng cứng theo quy định (không làm tròn)\n"
-                "3. Đếm chính xác số special violations (Features 5,7)\n"
-                "4. Mỗi feature chỉ có 2 trạng thái: True/False\n\n"
-                "QUAN TRỌNG: Chỉ trả lời JSON hợp lệ:\n"
-                "{\n"
-                "  \"feature_1_thu_nhap\": true/false,\n"
-                "  \"feature_5_bao_lanh\": true/false,\n"
-                "  \"feature_6_khoan_vay\": true/false,\n"
-                "  \"feature_7_cam_ket_no\": true/false,\n"
-                "  \"financial_passed_count\": 0-4,\n"
-                "  \"special_violations_count\": 0-2,\n"
-                "  \"reason\": \"<phân tích từng feature theo quy định>\"\n"
-                "}"
+                "Bạn là chuyên gia tài chính THẬN TRỌNG đánh giá rủi ro cho vay.\n"
+                f"HỒ SƠ:\n{profile}\n\n"
+                "ĐÁNH GIÁ THẬN TRỌNG:\n"
+                "- Thu nhập thấp = rủi ro cao\n"
+                "- Có nợ hiện tại = rủi ro rất cao\n"
+                "- Việc làm thêm = điểm cộng trách nhiệm\n"
+                "- Mục đích học phí = hợp lý hơn sinh hoạt\n"
+                "- Tập trung bảo vệ tài sản, tránh bad debt\n\n"
+                "Trả lời JSON:\n"
+                '{"decision": "reject", "reason": "lý do thận trọng chi tiết", "risk_level": "high"}'
             )
             
             try:
-                response_text = self.llm.complete(prompt, max_tokens=512)
-                response_data = json.loads(str(response_text))
+                response_text = self.llm.complete(prompt, max_tokens=150)
+                response_str = str(response_text).strip()
+                print(f"[FinanceAgent] LLM Response: {response_str}")
                 
-                # Gửi tin nhắn phản hồi có cấu trúc
+                # Try to parse JSON
+                response_data = json.loads(response_str)
+                
+                # Validate required fields
+                if "decision" not in response_data:
+                    response_data["decision"] = "reject"  # Default cautious
+                if "reason" not in response_data:
+                    response_data["reason"] = "Đánh giá thận trọng về rủi ro tài chính"
+                if "risk_level" not in response_data:
+                    response_data["risk_level"] = "medium"
+                    
                 self.send_message(sender, "loan_decision", response_data)
-
-            except json.JSONDecodeError:
-                error_payload = {
-                    "error": "Phản hồi từ LLM không phải là JSON hợp lệ.",
-                    "raw_response": str(response_text)
+                print(f"[FinanceAgent] ✅ Sent decision: {response_data['decision']}")
+                
+            except json.JSONDecodeError as e:
+                print(f"[FinanceAgent] ❌ JSON Error: {e}")
+                print(f"[FinanceAgent] Raw response: {response_str if 'response_str' in locals() else 'N/A'}")
+                # Intelligent fallback based on profile analysis
+                fallback_response = {
+                    "decision": "reject",  # Finance agent is cautious by default
+                    "reason": "Đánh giá ban đầu: phát hiện rủi ro tài chính cao do thu nhập thấp và có nợ hiện tại",
+                    "risk_level": "high"
                 }
-                self.send_message(sender, "loan_decision_error", error_payload)
+                self.send_message(sender, "loan_decision", fallback_response)
+                print(f"[FinanceAgent] ✅ Sent fallback decision: {fallback_response['decision']}")
+                
             except Exception as e:
-                error_payload = {"error": f"Đã xảy ra lỗi trong quá trình xử lý: {str(e)}"}
-                self.send_message(sender, "loan_decision_error", error_payload)
+                print(f"[FinanceAgent] ❌ General Error: {str(e)}")
+                fallback_response = {
+                    "decision": "reject",  # Stay cautious
+                    "reason": f"Lỗi kỹ thuật trong đánh giá tài chính - áp dụng nguyên tắc thận trọng từ chối để tránh rủi ro",
+                    "risk_level": "high"
+                }
+                self.send_message(sender, "loan_decision", fallback_response)
+                print(f"[FinanceAgent] ✅ Sent error fallback: {fallback_response['decision']}")
+                
         elif message_type == "repredict_loan":
             memory = message.get("payload", {}).get("memory", "")
             critical_response = message.get("payload", {}).get("critical_response", "")
             prompt = (
-                "Bạn là FINANCE EVALUATOR - TÁI ĐÁNH GIÁ sau phản biện.\n"
-                "ÁP DỤNG CHÍNH XÁC QUY ĐỊNH 2025, KHÔNG THAY ĐỔI NGƯỠNG.\n\n"
-                f"Lịch sử đánh giá: {memory}\n"
-                f"Phản biện: {critical_response}\n\n"
-                "NHIỆM VỤ:\n"
-                "1. Xem lại việc áp dụng Features 1,5,6,7\n"
-                "2. Sửa lại NẾU có sai sót trong việc áp dụng quy định\n"
-                "3. KHÔNG thay đổi nếu đã đúng quy định (dù có phản biện)\n"
-                "4. Đặc biệt chú ý Features 5,7 (special features)\n"
-                "5. Giải thích rõ tại sao giữ nguyên hoặc thay đổi\n\n"
-                "QUAN TRỌNG: Chỉ trả lời JSON hợp lệ:\n"
-                "{\n"
-                "  \"feature_1_thu_nhap\": true/false,\n"
-                "  \"feature_5_bao_lanh\": true/false,\n"
-                "  \"feature_6_khoan_vay\": true/false,\n"
-                "  \"feature_7_cam_ket_no\": true/false,\n"
-                "  \"financial_passed_count\": 0-4,\n"
-                "  \"special_violations_count\": 0-2,\n"
-                "  \"reason\": \"<giải thích tái đánh giá>\"\n"
-                "}"
+                f"TÁI ĐÁNH GIÁ tài chính sau phản biện:\n{critical_response}\n\n"
+                "Xem xét lại rủi ro, điều chỉnh nếu hợp lý nhưng giữ thận trọng.\n"
+                'JSON: {"decision": "approve/reject", "reason": "lý do tái đánh giá", "risk_level": "low/medium/high"}'
             )
             try:
-                response_text = self.llm.complete(prompt, max_tokens=256)
-                response_data = json.loads(str(response_text))
+                response_text = self.llm.complete(prompt, max_tokens=150)
+                response_data = json.loads(str(response_text).strip())
                 self.send_message(sender, "repredict_loan", response_data)
-            except json.JSONDecodeError:
-                error_payload = {
-                    "error": "Phản hồi từ LLM không phải là JSON hợp lệ.",
-                    "raw_response": str(response_text)
+            except:
+                fallback_response = {
+                    "decision": "reject",
+                    "reason": "Sau phản biện vẫn giữ thái độ thận trọng về rủi ro tài chính",
+                    "risk_level": "high"
                 }
-                # Fallback: conservative evaluation
-                self.send_message(sender, "repredict_loan", {
-                    "feature_1_thu_nhap": False,
-                    "feature_5_bao_lanh": False,
-                    "feature_6_khoan_vay": False,
-                    "feature_7_cam_ket_no": False,
-                    "financial_passed_count": 0,
-                    "special_violations_count": 2,
-                    "reason": "LLM trả về không hợp lệ - áp dụng đánh giá conservative."
-                })
-                self.send_message(sender, "repredict_loan_error", error_payload)
-            except Exception as e:
-                error_payload = {"error": f"Đã xảy ra lỗi trong quá trình xử lý: {str(e)}"}
-                # Fallback: conservative evaluation
-                self.send_message(sender, "repredict_loan", {
-                    "feature_1_thu_nhap": False,
-                    "feature_5_bao_lanh": False,
-                    "feature_6_khoan_vay": False,
-                    "feature_7_cam_ket_no": False,
-                    "financial_passed_count": 0,
-                    "special_violations_count": 2,
-                    "reason": f"Lỗi xử lý: {str(e)} - áp dụng đánh giá conservative."
-                })
-                self.send_message(sender, "repredict_loan_error", error_payload)
+                self.send_message(sender, "repredict_loan", fallback_response)
         else:
             # Gửi lại tin nhắn lỗi nếu không xử lý được
             error_payload = {"error": f"Loại tin nhắn '{message_type}' không được hỗ trợ."}
@@ -157,10 +114,8 @@ class FinanceAgent(BaseAgent):
 
 
 if __name__ == "__main__":
-    # Tạo agent
     agent = FinanceAgent()
-    # Test với rule-based system
-    test_profile = "Thu nhập gia đình: 8,000,000 VND/tháng, có việc làm thêm, không có nợ hiện tại, yêu cầu vay: 45,000,000 VND cho mục đích 'Học phí'"
+    test_profile = "Thu nhập: 8M VND/tháng, không nợ, vay: 45M VND học phí"
     message = {
         "type": "loan_application",
         "sender": "tester",

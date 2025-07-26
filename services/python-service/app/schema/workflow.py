@@ -48,4 +48,4 @@ class LoanDecisionResponse(BaseModel):
     request_metadata: dict = Field(..., description="Metadata about the request")
     logs: list = Field(..., description="Detailed conversation logs from agent workflow")
     processing_time_seconds: float = Field(..., description="Time taken to process the request")
-    request_id: str = Field(..., description="Unique identifier for this request")
+    request_id: str = Field(..., description="Unique identifier for this request") 
