@@ -1,0 +1,222 @@
+{
+  "stats": {
+    "total_requests": 8,
+    "successful_requests": 0,
+    "failed_requests": 8,
+    "approve_count": 0,
+    "reject_count": 0,
+    "total_processing_time": 0,
+    "start_time": 1753559160.9430234,
+    "end_time": 1753559164.5120943
+  },
+  "results": [
+    {
+      "row_index": 0,
+      "input_data": {
+        "age_group": "26-27",
+        "age": 26,
+        "gender": "Nam",
+        "province_region": "Bắc",
+        "university_tier": 3,
+        "major_category": "Truyền thông",
+        "gpa_normalized": 7.25,
+        "study_year": 1,
+        "club": "CLB Kỹ năng mềm",
+        "family_income": 12082000,
+        "has_part_time_job": false,
+        "existing_debt": false,
+        "loan_amount_requested": 18000000,
+        "loan_purpose": "Chi phí sinh hoạt"
+      },
+      "success": false,
+      "result": {
+        "error": "HTTP 422",
+        "detail": "{\"detail\":[{\"type\":\"less_than_equal\",\"loc\":[\"body\",\"gpa_normalized\"],\"msg\":\"Input should be less than or equal to 1\",\"input\":7.25,\"ctx\":{\"le\":1.0}}]}"
+      },
+      "processing_time": 0.0028162002563476562,
+      "timestamp": "2025-07-27T02:46:00.961781"
+    },
+    {
+      "row_index": 1,
+      "input_data": {
+        "age_group": "23-25",
+        "age": 23,
+        "gender": "Nữ",
+        "province_region": "Nam",
+        "university_tier": 2,
+        "major_category": "Khoa học dữ liệu",
+        "gpa_normalized": 6.42,
+        "study_year": 1,
+        "club": "CLB Âm nhạc",
+        "family_income": 3409000,
+        "has_part_time_job": true,
+        "existing_debt": false,
+        "loan_amount_requested": 40500000,
+        "loan_purpose": "Học phí"
+      },
+      "success": false,
+      "result": {
+        "error": "HTTP 422",
+        "detail": "{\"detail\":[{\"type\":\"less_than_equal\",\"loc\":[\"body\",\"gpa_normalized\"],\"msg\":\"Input should be less than or equal to 1\",\"input\":6.42,\"ctx\":{\"le\":1.0}}]}"
+      },
+      "processing_time": 0.003943443298339844,
+      "timestamp": "2025-07-27T02:46:01.469463"
+    },
+    {
+      "row_index": 2,
+      "input_data": {
+        "age_group": "18-20",
+        "age": 19,
+        "gender": "Nữ",
+        "province_region": "Trung",
+        "university_tier": 3,
+        "major_category": "Ngôn ngữ",
+        "gpa_normalized": 7.48,
+        "study_year": 4,
+        "club": "CLB Phim ảnh",
+        "family_income": 9483000,
+        "has_part_time_job": false,
+        "existing_debt": true,
+        "loan_amount_requested": 17000000,
+        "loan_purpose": "Thực tập"
+      },
+      "success": false,
+      "result": {
+        "error": "HTTP 422",
+        "detail": "{\"detail\":[{\"type\":\"less_than_equal\",\"loc\":[\"body\",\"gpa_normalized\"],\"msg\":\"Input should be less than or equal to 1\",\"input\":7.48,\"ctx\":{\"le\":1.0}}]}"
+      },
+      "processing_time": 0.005931377410888672,
+      "timestamp": "2025-07-27T02:46:01.980201"
+    },
+    {
+      "row_index": 3,
+      "input_data": {
+        "age_group": "18-20",
+        "age": 18,
+        "gender": "Nữ",
+        "province_region": "Bắc",
+        "university_tier": 3,
+        "major_category": "Du lịch",
+        "gpa_normalized": 7.17,
+        "study_year": 1,
+        "club": "CLB Phim ảnh",
+        "family_income": 0,
+        "has_part_time_job": true,
+        "existing_debt": false,
+        "loan_amount_requested": 43000000,
+        "loan_purpose": "Khóa học"
+      },
+      "success": false,
+      "result": {
+        "error": "HTTP 422",
+        "detail": "{\"detail\":[{\"type\":\"less_than_equal\",\"loc\":[\"body\",\"gpa_normalized\"],\"msg\":\"Input should be less than or equal to 1\",\"input\":7.17,\"ctx\":{\"le\":1.0}}]}"
+      },
+      "processing_time": 0.0020487308502197266,
+      "timestamp": "2025-07-27T02:46:02.486032"
+    },
+    {
+      "row_index": 4,
+      "input_data": {
+        "age_group": "18-20",
+        "age": 19,
+        "gender": "Nam",
+        "province_region": "Nam",
+        "university_tier": 2,
+        "major_category": "Luật",
+        "gpa_normalized": 5.76,
+        "study_year": 5,
+        "club": "CLB Công nghệ",
+        "family_income": 20490000,
+        "has_part_time_job": false,
+        "existing_debt": false,
+        "loan_amount_requested": 48000000,
+        "loan_purpose": "Khởi nghiệp"
+      },
+      "success": false,
+      "result": {
+        "error": "HTTP 422",
+        "detail": "{\"detail\":[{\"type\":\"less_than_equal\",\"loc\":[\"body\",\"gpa_normalized\"],\"msg\":\"Input should be less than or equal to 1\",\"input\":5.76,\"ctx\":{\"le\":1.0}}]}"
+      },
+      "processing_time": 0.0031807422637939453,
+      "timestamp": "2025-07-27T02:46:02.993242"
+    },
+    {
+      "row_index": 5,
+      "input_data": {
+        "age_group": "21-22",
+        "age": 22,
+        "gender": "Khác",
+        "province_region": "Trung",
+        "university_tier": 2,
+        "major_category": "Tâm lý học",
+        "gpa_normalized": 7.65,
+        "study_year": 5,
+        "club": "CLB Ngoại ngữ",
+        "family_income": 8274000,
+        "has_part_time_job": false,
+        "existing_debt": true,
+        "loan_amount_requested": 13500000,
+        "loan_purpose": "Mua laptop"
+      },
+      "success": false,
+      "result": {
+        "error": "HTTP 422",
+        "detail": "{\"detail\":[{\"type\":\"less_than_equal\",\"loc\":[\"body\",\"gpa_normalized\"],\"msg\":\"Input should be less than or equal to 1\",\"input\":7.65,\"ctx\":{\"le\":1.0}}]}"
+      },
+      "processing_time": 0.0018465518951416016,
+      "timestamp": "2025-07-27T02:46:03.498738"
+    },
+    {
+      "row_index": 6,
+      "input_data": {
+        "age_group": "18-20",
+        "age": 19,
+        "gender": "Khác",
+        "province_region": "Trung",
+        "university_tier": 1,
+        "major_category": "Luật",
+        "gpa_normalized": 5.53,
+        "study_year": 3,
+        "club": "CLB Môi trường",
+        "family_income": 3230000,
+        "has_part_time_job": false,
+        "existing_debt": true,
+        "loan_amount_requested": 15500000,
+        "loan_purpose": "Khởi nghiệp"
+      },
+      "success": false,
+      "result": {
+        "error": "HTTP 422",
+        "detail": "{\"detail\":[{\"type\":\"less_than_equal\",\"loc\":[\"body\",\"gpa_normalized\"],\"msg\":\"Input should be less than or equal to 1\",\"input\":5.53,\"ctx\":{\"le\":1.0}}]}"
+      },
+      "processing_time": 0.004326820373535156,
+      "timestamp": "2025-07-27T02:46:04.007535"
+    },
+    {
+      "row_index": 7,
+      "input_data": {
+        "age_group": "18-20",
+        "age": 18,
+        "gender": "Nam",
+        "province_region": "Bắc",
+        "university_tier": 3,
+        "major_category": "Công nghệ thực phẩm",
+        "gpa_normalized": 7.69,
+        "study_year": 1,
+        "club": "CLB Phim ảnh",
+        "family_income": 15232000,
+        "has_part_time_job": false,
+        "existing_debt": true,
+        "loan_amount_requested": 42100000,
+        "loan_purpose": "Mua laptop"
+      },
+      "success": false,
+      "result": {
+        "error": "HTTP 422",
+        "detail": "{\"detail\":[{\"type\":\"less_than_equal\",\"loc\":[\"body\",\"gpa_normalized\"],\"msg\":\"Input should be less than or equal to 1\",\"input\":7.69,\"ctx\":{\"le\":1.0}}]}"
+      },
+      "processing_time": 0.003531217575073242,
+      "timestamp": "2025-07-27T02:46:04.512011"
+    }
+  ]
+}
