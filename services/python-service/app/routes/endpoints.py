@@ -45,12 +45,14 @@ async def debate_loan(request: LoanApplicationRequest):
         profile = (
             f"Hồ sơ sinh viên vay vốn (ID: {request_id}):\n"
             f"- Thông tin cá nhân: {request.age} tuổi, {request.gender}, nhóm tuổi {request.age_group}, khu vực {request.province_region}\n"
-            f"- Thông tin học tập: Đại học tier {request.university_tier}, ngành {request.major_category}, "
+            f"- Thông tin học tập: Đại học tier {request.university_tier}, "
+            f"{'trường công lập' if request.public_university else 'trường tư thục'}, ngành {request.major_category}, "
             f"năm {request.study_year}, GPA chuẩn hóa: {request.gpa_normalized:.2f}/1.0\n"
             f"- Hoạt động ngoại khóa: {request.club if request.club else 'Không tham gia CLB nào'}\n"
             f"- Tài chính gia đình: Thu nhập {request.family_income:,} VND/tháng\n"
             f"- Tình hình cá nhân: {'Có việc làm thêm' if request.has_part_time_job else 'Không có việc làm thêm'}, "
             f"{'Đang có nợ' if request.existing_debt else 'Không có nợ'}\n"
+            f"- Bảo lãnh: {request.guarantor if request.guarantor else 'Không có'}\n"
             f"- Yêu cầu vay: {request.loan_amount_requested:,} VND cho mục đích '{request.loan_purpose}'"
         )
         
@@ -70,6 +72,8 @@ async def debate_loan(request: LoanApplicationRequest):
             "loan_purpose": request.loan_purpose,
             "gpa_normalized": request.gpa_normalized,
             "university_tier": request.university_tier,
+            "public_university": request.public_university,
+            "guarantor": request.guarantor,
             "family_income": request.family_income,
             "has_existing_debt": request.existing_debt,
             "age": request.age,

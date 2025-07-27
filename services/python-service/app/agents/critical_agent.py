@@ -56,7 +56,7 @@ class CriticalAgent(BaseAgent):
                 prompt = f"Phản biện quyết định của {sender}: {decision} - {reason}. Có logic không? Có thiếu sót gì?"
                 
             try:
-                response_text = self.llm.complete(prompt, max_tokens=120)
+                response_text = self.llm.complete(prompt, max_tokens=256)
                 response_str = str(response_text).strip()
                 print(f"[CriticalAgent] ✅ Generated critique for {sender}")
                 self.send_message(sender, f"{message_type}_critical_response", {"critical_response": response_str})

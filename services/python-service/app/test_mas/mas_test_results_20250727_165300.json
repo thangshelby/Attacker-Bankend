@@ -1,0 +1,912 @@
+{
+  "stats": {
+    "total_requests": 2,
+    "successful_requests": 2,
+    "failed_requests": 0,
+    "approve_count": 2,
+    "reject_count": 0,
+    "total_processing_time": 60.865211725234985,
+    "start_time": 1753609919.2139626,
+    "end_time": 1753609980.591916
+  },
+  "results": [
+    {
+      "row_index": 0,
+      "input_data": {
+        "age_group": "18-22",
+        "age": 20,
+        "gender": "Nam",
+        "province_region": "Bắc",
+        "university_tier": 1,
+        "public_university": true,
+        "major_category": "STEM",
+        "gpa_normalized": 0.85,
+        "study_year": 3,
+        "club": "CLB IT",
+        "family_income": 6000000,
+        "has_part_time_job": true,
+        "existing_debt": false,
+        "guarantor": "Cha mẹ",
+        "loan_amount_requested": 30000000,
+        "loan_purpose": "Học phí"
+      },
+      "success": true,
+      "result": {
+        "decision": "approve",
+        "reason": "Không vi phạm special features và passed_count = 7 >= 6 - CHẤP NHẬN.",
+        "request_metadata": {
+          "request_id": "a1b10cfc-d6e3-4348-8890-782f4fd651d4",
+          "loan_amount": 30000000,
+          "loan_purpose": "Học phí",
+          "gpa_normalized": 0.85,
+          "university_tier": 1,
+          "public_university": true,
+          "guarantor": "Cha mẹ",
+          "family_income": 6000000,
+          "has_existing_debt": false,
+          "age": 20,
+          "gender": "Nam",
+          "major_category": "STEM",
+          "processing_time_seconds": 30.3,
+          "timestamp": 1753609949.524976
+        },
+        "logs": [
+          {
+            "from": "coordinator",
+            "to": "AcademicAgent",
+            "message": {
+              "type": "scholarship_application",
+              "payload": {
+                "profile": "Bạn là Người Lạc quan. Hãy phân tích hồ sơ này, nhấn mạnh tiềm năng phát triển, thành tích học tập nổi bật, uy tín ngành học, và các yếu tố tích cực có thể bù đắp rủi ro tài chính.\nHồ sơ: Hồ sơ sinh viên vay vốn (ID: a1b10cfc-d6e3-4348-8890-782f4fd651d4):\n- Thông tin cá nhân: 20 tuổi, Nam, nhóm tuổi 18-22, khu vực Bắc\n- Thông tin học tập: Đại học tier 1, trường công lập, ngành STEM, năm 3, GPA chuẩn hóa: 0.85/1.0\n- Hoạt động ngoại khóa: CLB IT\n- Tài chính gia đình: Thu nhập 6,000,000 VND/tháng\n- Tình hình cá nhân: Có việc làm thêm, Không có nợ\n- Bảo lãnh: Cha mẹ\n- Yêu cầu vay: 30,000,000 VND cho mục đích 'Học phí'\n"
+              }
+            }
+          },
+          {
+            "from": "AcademicAgent",
+            "to": "coordinator",
+            "message": {
+              "type": "scholarship_decision",
+              "payload": {
+                "decision": "approve",
+                "reason": "Hồ sơ thể hiện tiềm năng phát triển rõ ràng với GPA còn thấp nhưng có khả năng cải thiện nhờ động lực và môi trường học tập tại trường tier 1. Ngành STEM có triển vọng nghề nghiệp vững chắc, phù hợp với xu hướng thị trường lao động. Hoạt động ngoại khóa trong CLB IT cho thấy sinh viên năng động, tích cực và có khả năng thích nghi, phát triển kỹ năng mềm. Tài chính gia đình ổn định, không có nợ và có việc làm thêm thể hiện ý thức tự lập và khả năng quản lý tài chính tốt. Các yếu tố này, cùng với sự bảo lãnh từ cha mẹ, giúp bù đắp rủi ro tài chính, tạo điều kiện thuận lợi để sinh viên hoàn thành mục tiêu học tập. Do đó, tôi đánh giá cao tiềm năng của hồ sơ này và đề xuất phê duyệt khoản vay."
+              }
+            }
+          },
+          {
+            "from": "coordinator",
+            "to": "FinanceAgent",
+            "message": {
+              "type": "loan_application",
+              "payload": {
+                "profile": "Bạn là Người Thực tế. Hãy phân tích hồ sơ này, tập trung vào các con số, rủi ro tài chính, gánh nặng nợ, khả năng vỡ nợ dựa trên dữ liệu tài chính.\nHồ sơ: Hồ sơ sinh viên vay vốn (ID: a1b10cfc-d6e3-4348-8890-782f4fd651d4):\n- Thông tin cá nhân: 20 tuổi, Nam, nhóm tuổi 18-22, khu vực Bắc\n- Thông tin học tập: Đại học tier 1, trường công lập, ngành STEM, năm 3, GPA chuẩn hóa: 0.85/1.0\n- Hoạt động ngoại khóa: CLB IT\n- Tài chính gia đình: Thu nhập 6,000,000 VND/tháng\n- Tình hình cá nhân: Có việc làm thêm, Không có nợ\n- Bảo lãnh: Cha mẹ\n- Yêu cầu vay: 30,000,000 VND cho mục đích 'Học phí'\n"
+              }
+            }
+          },
+          {
+            "from": "FinanceAgent",
+            "to": "coordinator",
+            "message": {
+              "type": "loan_decision",
+              "payload": {
+                "decision": "reject",
+                "reason": "Thu nhập hàng tháng 6 triệu VND là khá thấp so với khoản vay 30 triệu VND, gây áp lực tài chính lớn cho người vay. Không có thông tin về khả năng trả nợ trong tương lai hoặc các nguồn thu nhập bổ sung, đồng thời không rõ khả năng tài chính của cha mẹ bảo lãnh. Việc vay để học phí là hợp lý, nhưng với mức thu nhập hiện tại và không có nợ trước, rủi ro vỡ nợ vẫn cao do khả năng chi trả hạn chế và khả năng mất khả năng thanh toán khi có biến cố tài chính xảy ra.",
+                "risk_level": "high"
+              }
+            }
+          },
+          {
+            "from": "coordinator",
+            "to": "CriticalAgent",
+            "message": {
+              "type": "scholarship_decision",
+              "payload": {
+                "argument": "Bạn là Agent Phản biện. Hãy tìm ra điểm yếu, mâu thuẫn, hoặc giả định thiếu cơ sở trong các lập luận của hai agent kia. Đặt câu hỏi chất vấn sắc bén.\nLập luận: {'decision': 'approve', 'reason': 'Hồ sơ thể hiện tiềm năng phát triển rõ ràng với GPA còn thấp nhưng có khả năng cải thiện nhờ động lực và môi trường học tập tại trường tier 1. Ngành STEM có triển vọng nghề nghiệp vững chắc, phù hợp với xu hướng thị trường lao động. Hoạt động ngoại khóa trong CLB IT cho thấy sinh viên năng động, tích cực và có khả năng thích nghi, phát triển kỹ năng mềm. Tài chính gia đình ổn định, không có nợ và có việc làm thêm thể hiện ý thức tự lập và khả năng quản lý tài chính tốt. Các yếu tố này, cùng với sự bảo lãnh từ cha mẹ, giúp bù đắp rủi ro tài chính, tạo điều kiện thuận lợi để sinh viên hoàn thành mục tiêu học tập. Do đó, tôi đánh giá cao tiềm năng của hồ sơ này và đề xuất phê duyệt khoản vay.'}\n",
+                "decision": {
+                  "decision": "approve",
+                  "reason": "Hồ sơ thể hiện tiềm năng phát triển rõ ràng với GPA còn thấp nhưng có khả năng cải thiện nhờ động lực và môi trường học tập tại trường tier 1. Ngành STEM có triển vọng nghề nghiệp vững chắc, phù hợp với xu hướng thị trường lao động. Hoạt động ngoại khóa trong CLB IT cho thấy sinh viên năng động, tích cực và có khả năng thích nghi, phát triển kỹ năng mềm. Tài chính gia đình ổn định, không có nợ và có việc làm thêm thể hiện ý thức tự lập và khả năng quản lý tài chính tốt. Các yếu tố này, cùng với sự bảo lãnh từ cha mẹ, giúp bù đắp rủi ro tài chính, tạo điều kiện thuận lợi để sinh viên hoàn thành mục tiêu học tập. Do đó, tôi đánh giá cao tiềm năng của hồ sơ này và đề xuất phê duyệt khoản vay."
+                }
+              }
+            }
+          },
+          {
+            "from": "CriticalAgent",
+            "to": "coordinator",
+            "message": {
+              "type": "scholarship_decision_critical_response",
+              "payload": {
+                "critical_response": "Phản biện quyết định của coordinator:\n\nQuyết định của coordinator dựa trên các yếu tố hợp lý và có căn cứ, tuy nhiên, cần xem xét một số điểm để đảm bảo tính toàn diện và khách quan hơn:\n\n1. Đánh giá về GPA thấp: Mặc dù coordinator cho rằng sinh viên có khả năng cải thiện GPA nhờ động lực và môi trường học tập tại trường tier 1, nhưng cần xem xét rõ hơn về mức độ thấp của GPA hiện tại, các yếu tố ảnh hưởng, và khả năng sinh viên có thể vượt qua các khó khăn này hay không. Nếu GPA quá thấp hoặc có dấu hiệu không ổn định, rủi ro vẫn còn đáng kể.\n\n2. Đánh giá về tiềm năng phát triển: Việc sinh viên thể hiện năng động qua hoạt động ngoại khóa trong CLB IT là điểm cộng, nhưng cần thêm thông tin về thành tích cụ thể, kỹ năng đạt được, và khả năng ứng dụng vào học tập và nghề nghiệp sau này.\n\n3. Tài chính và rủi ro: Mặc dù gia đình ổn định, không nợ và có việc làm thêm, nhưng vẫn cần xem xét khả năng tài chính của gia đình trong dài hạn, đặc biệt trong"
+              }
+            }
+          },
+          {
+            "from": "coordinator",
+            "to": "CriticalAgent",
+            "message": {
+              "type": "loan_decision",
+              "payload": {
+                "argument": "Bạn là Agent Phản biện. Hãy tìm ra điểm yếu, mâu thuẫn, hoặc giả định thiếu cơ sở trong các lập luận của hai agent kia. Đặt câu hỏi chất vấn sắc bén.\nLập luận: {'decision': 'reject', 'reason': 'Thu nhập hàng tháng 6 triệu VND là khá thấp so với khoản vay 30 triệu VND, gây áp lực tài chính lớn cho người vay. Không có thông tin về khả năng trả nợ trong tương lai hoặc các nguồn thu nhập bổ sung, đồng thời không rõ khả năng tài chính của cha mẹ bảo lãnh. Việc vay để học phí là hợp lý, nhưng với mức thu nhập hiện tại và không có nợ trước, rủi ro vỡ nợ vẫn cao do khả năng chi trả hạn chế và khả năng mất khả năng thanh toán khi có biến cố tài chính xảy ra.', 'risk_level': 'high'}\n",
+                "decision": {
+                  "decision": "reject",
+                  "reason": "Thu nhập hàng tháng 6 triệu VND là khá thấp so với khoản vay 30 triệu VND, gây áp lực tài chính lớn cho người vay. Không có thông tin về khả năng trả nợ trong tương lai hoặc các nguồn thu nhập bổ sung, đồng thời không rõ khả năng tài chính của cha mẹ bảo lãnh. Việc vay để học phí là hợp lý, nhưng với mức thu nhập hiện tại và không có nợ trước, rủi ro vỡ nợ vẫn cao do khả năng chi trả hạn chế và khả năng mất khả năng thanh toán khi có biến cố tài chính xảy ra.",
+                  "risk_level": "high"
+                }
+              }
+            }
+          },
+          {
+            "from": "CriticalAgent",
+            "to": "coordinator",
+            "message": {
+              "type": "loan_decision_critical_response",
+              "payload": {
+                "critical_response": "Phản biện của coordinator về quyết định từ chối vay dựa trên các lý do sau:\n\n1. **Logic của phản biện:**\n   - Đúng: Thu nhập hàng tháng 6 triệu VND so với khoản vay 30 triệu VND là khá thấp, gây áp lực tài chính lớn cho người vay.\n   - Đúng: Không có thông tin về khả năng trả nợ trong tương lai hoặc các nguồn thu nhập bổ sung, nên khó đánh giá khả năng thanh toán lâu dài.\n   - Đúng: Không rõ khả năng tài chính của cha mẹ bảo lãnh, điều này ảnh hưởng đến khả năng đảm bảo khoản vay.\n   - Đúng: Vay để học phí là hợp lý, nhưng với mức thu nhập hiện tại và không có nợ trước, rủi ro vỡ nợ vẫn cao do khả năng chi trả hạn chế và khả năng mất khả năng thanh toán khi có biến cố tài chính xảy ra.\n\n2. **Tuy nhiên, có thể còn thiếu sót hoặc cần làm rõ:**\n   - **Thông tin về các khoản chi tiêu khác:** Ngoài thu nhập, có thể có các khoản chi tiêu cố định hoặc các khoản tiết kiệm, đầu tư khác ảnh hưởng đến khả"
+              }
+            }
+          },
+          {
+            "from": "coordinator",
+            "to": "AcademicAgent",
+            "message": {
+              "type": "repredict_scholarship",
+              "payload": {
+                "memory": [
+                  {
+                    "from": "coordinator",
+                    "to": "AcademicAgent",
+                    "message": {
+                      "type": "scholarship_application",
+                      "payload": {
+                        "profile": "Bạn là Người Lạc quan. Hãy phân tích hồ sơ này, nhấn mạnh tiềm năng phát triển, thành tích học tập nổi bật, uy tín ngành học, và các yếu tố tích cực có thể bù đắp rủi ro tài chính.\nHồ sơ: Hồ sơ sinh viên vay vốn (ID: a1b10cfc-d6e3-4348-8890-782f4fd651d4):\n- Thông tin cá nhân: 20 tuổi, Nam, nhóm tuổi 18-22, khu vực Bắc\n- Thông tin học tập: Đại học tier 1, trường công lập, ngành STEM, năm 3, GPA chuẩn hóa: 0.85/1.0\n- Hoạt động ngoại khóa: CLB IT\n- Tài chính gia đình: Thu nhập 6,000,000 VND/tháng\n- Tình hình cá nhân: Có việc làm thêm, Không có nợ\n- Bảo lãnh: Cha mẹ\n- Yêu cầu vay: 30,000,000 VND cho mục đích 'Học phí'\n"
+                      }
+                    }
+                  },
+                  {
+                    "from": "AcademicAgent",
+                    "to": "coordinator",
+                    "message": {
+                      "type": "scholarship_decision",
+                      "payload": {
+                        "decision": "approve",
+                        "reason": "Hồ sơ thể hiện tiềm năng phát triển rõ ràng với GPA còn thấp nhưng có khả năng cải thiện nhờ động lực và môi trường học tập tại trường tier 1. Ngành STEM có triển vọng nghề nghiệp vững chắc, phù hợp với xu hướng thị trường lao động. Hoạt động ngoại khóa trong CLB IT cho thấy sinh viên năng động, tích cực và có khả năng thích nghi, phát triển kỹ năng mềm. Tài chính gia đình ổn định, không có nợ và có việc làm thêm thể hiện ý thức tự lập và khả năng quản lý tài chính tốt. Các yếu tố này, cùng với sự bảo lãnh từ cha mẹ, giúp bù đắp rủi ro tài chính, tạo điều kiện thuận lợi để sinh viên hoàn thành mục tiêu học tập. Do đó, tôi đánh giá cao tiềm năng của hồ sơ này và đề xuất phê duyệt khoản vay."
+                      }
+                    }
+                  },
+                  {
+                    "from": "coordinator",
+                    "to": "FinanceAgent",
+                    "message": {
+                      "type": "loan_application",
+                      "payload": {
+                        "profile": "Bạn là Người Thực tế. Hãy phân tích hồ sơ này, tập trung vào các con số, rủi ro tài chính, gánh nặng nợ, khả năng vỡ nợ dựa trên dữ liệu tài chính.\nHồ sơ: Hồ sơ sinh viên vay vốn (ID: a1b10cfc-d6e3-4348-8890-782f4fd651d4):\n- Thông tin cá nhân: 20 tuổi, Nam, nhóm tuổi 18-22, khu vực Bắc\n- Thông tin học tập: Đại học tier 1, trường công lập, ngành STEM, năm 3, GPA chuẩn hóa: 0.85/1.0\n- Hoạt động ngoại khóa: CLB IT\n- Tài chính gia đình: Thu nhập 6,000,000 VND/tháng\n- Tình hình cá nhân: Có việc làm thêm, Không có nợ\n- Bảo lãnh: Cha mẹ\n- Yêu cầu vay: 30,000,000 VND cho mục đích 'Học phí'\n"
+                      }
+                    }
+                  },
+                  {
+                    "from": "FinanceAgent",
+                    "to": "coordinator",
+                    "message": {
+                      "type": "loan_decision",
+                      "payload": {
+                        "decision": "reject",
+                        "reason": "Thu nhập hàng tháng 6 triệu VND là khá thấp so với khoản vay 30 triệu VND, gây áp lực tài chính lớn cho người vay. Không có thông tin về khả năng trả nợ trong tương lai hoặc các nguồn thu nhập bổ sung, đồng thời không rõ khả năng tài chính của cha mẹ bảo lãnh. Việc vay để học phí là hợp lý, nhưng với mức thu nhập hiện tại và không có nợ trước, rủi ro vỡ nợ vẫn cao do khả năng chi trả hạn chế và khả năng mất khả năng thanh toán khi có biến cố tài chính xảy ra.",
+                        "risk_level": "high"
+                      }
+                    }
+                  },
+                  {
+                    "from": "coordinator",
+                    "to": "CriticalAgent",
+                    "message": {
+                      "type": "scholarship_decision",
+                      "payload": {
+                        "argument": "Bạn là Agent Phản biện. Hãy tìm ra điểm yếu, mâu thuẫn, hoặc giả định thiếu cơ sở trong các lập luận của hai agent kia. Đặt câu hỏi chất vấn sắc bén.\nLập luận: {'decision': 'approve', 'reason': 'Hồ sơ thể hiện tiềm năng phát triển rõ ràng với GPA còn thấp nhưng có khả năng cải thiện nhờ động lực và môi trường học tập tại trường tier 1. Ngành STEM có triển vọng nghề nghiệp vững chắc, phù hợp với xu hướng thị trường lao động. Hoạt động ngoại khóa trong CLB IT cho thấy sinh viên năng động, tích cực và có khả năng thích nghi, phát triển kỹ năng mềm. Tài chính gia đình ổn định, không có nợ và có việc làm thêm thể hiện ý thức tự lập và khả năng quản lý tài chính tốt. Các yếu tố này, cùng với sự bảo lãnh từ cha mẹ, giúp bù đắp rủi ro tài chính, tạo điều kiện thuận lợi để sinh viên hoàn thành mục tiêu học tập. Do đó, tôi đánh giá cao tiềm năng của hồ sơ này và đề xuất phê duyệt khoản vay.'}\n",
+                        "decision": {
+                          "decision": "approve",
+                          "reason": "Hồ sơ thể hiện tiềm năng phát triển rõ ràng với GPA còn thấp nhưng có khả năng cải thiện nhờ động lực và môi trường học tập tại trường tier 1. Ngành STEM có triển vọng nghề nghiệp vững chắc, phù hợp với xu hướng thị trường lao động. Hoạt động ngoại khóa trong CLB IT cho thấy sinh viên năng động, tích cực và có khả năng thích nghi, phát triển kỹ năng mềm. Tài chính gia đình ổn định, không có nợ và có việc làm thêm thể hiện ý thức tự lập và khả năng quản lý tài chính tốt. Các yếu tố này, cùng với sự bảo lãnh từ cha mẹ, giúp bù đắp rủi ro tài chính, tạo điều kiện thuận lợi để sinh viên hoàn thành mục tiêu học tập. Do đó, tôi đánh giá cao tiềm năng của hồ sơ này và đề xuất phê duyệt khoản vay."
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "from": "CriticalAgent",
+                    "to": "coordinator",
+                    "message": {
+                      "type": "scholarship_decision_critical_response",
+                      "payload": {
+                        "critical_response": "Phản biện quyết định của coordinator:\n\nQuyết định của coordinator dựa trên các yếu tố hợp lý và có căn cứ, tuy nhiên, cần xem xét một số điểm để đảm bảo tính toàn diện và khách quan hơn:\n\n1. Đánh giá về GPA thấp: Mặc dù coordinator cho rằng sinh viên có khả năng cải thiện GPA nhờ động lực và môi trường học tập tại trường tier 1, nhưng cần xem xét rõ hơn về mức độ thấp của GPA hiện tại, các yếu tố ảnh hưởng, và khả năng sinh viên có thể vượt qua các khó khăn này hay không. Nếu GPA quá thấp hoặc có dấu hiệu không ổn định, rủi ro vẫn còn đáng kể.\n\n2. Đánh giá về tiềm năng phát triển: Việc sinh viên thể hiện năng động qua hoạt động ngoại khóa trong CLB IT là điểm cộng, nhưng cần thêm thông tin về thành tích cụ thể, kỹ năng đạt được, và khả năng ứng dụng vào học tập và nghề nghiệp sau này.\n\n3. Tài chính và rủi ro: Mặc dù gia đình ổn định, không nợ và có việc làm thêm, nhưng vẫn cần xem xét khả năng tài chính của gia đình trong dài hạn, đặc biệt trong"
+                      }
+                    }
+                  },
+                  {
+                    "from": "coordinator",
+                    "to": "CriticalAgent",
+                    "message": {
+                      "type": "loan_decision",
+                      "payload": {
+                        "argument": "Bạn là Agent Phản biện. Hãy tìm ra điểm yếu, mâu thuẫn, hoặc giả định thiếu cơ sở trong các lập luận của hai agent kia. Đặt câu hỏi chất vấn sắc bén.\nLập luận: {'decision': 'reject', 'reason': 'Thu nhập hàng tháng 6 triệu VND là khá thấp so với khoản vay 30 triệu VND, gây áp lực tài chính lớn cho người vay. Không có thông tin về khả năng trả nợ trong tương lai hoặc các nguồn thu nhập bổ sung, đồng thời không rõ khả năng tài chính của cha mẹ bảo lãnh. Việc vay để học phí là hợp lý, nhưng với mức thu nhập hiện tại và không có nợ trước, rủi ro vỡ nợ vẫn cao do khả năng chi trả hạn chế và khả năng mất khả năng thanh toán khi có biến cố tài chính xảy ra.', 'risk_level': 'high'}\n",
+                        "decision": {
+                          "decision": "reject",
+                          "reason": "Thu nhập hàng tháng 6 triệu VND là khá thấp so với khoản vay 30 triệu VND, gây áp lực tài chính lớn cho người vay. Không có thông tin về khả năng trả nợ trong tương lai hoặc các nguồn thu nhập bổ sung, đồng thời không rõ khả năng tài chính của cha mẹ bảo lãnh. Việc vay để học phí là hợp lý, nhưng với mức thu nhập hiện tại và không có nợ trước, rủi ro vỡ nợ vẫn cao do khả năng chi trả hạn chế và khả năng mất khả năng thanh toán khi có biến cố tài chính xảy ra.",
+                          "risk_level": "high"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "from": "CriticalAgent",
+                    "to": "coordinator",
+                    "message": {
+                      "type": "loan_decision_critical_response",
+                      "payload": {
+                        "critical_response": "Phản biện của coordinator về quyết định từ chối vay dựa trên các lý do sau:\n\n1. **Logic của phản biện:**\n   - Đúng: Thu nhập hàng tháng 6 triệu VND so với khoản vay 30 triệu VND là khá thấp, gây áp lực tài chính lớn cho người vay.\n   - Đúng: Không có thông tin về khả năng trả nợ trong tương lai hoặc các nguồn thu nhập bổ sung, nên khó đánh giá khả năng thanh toán lâu dài.\n   - Đúng: Không rõ khả năng tài chính của cha mẹ bảo lãnh, điều này ảnh hưởng đến khả năng đảm bảo khoản vay.\n   - Đúng: Vay để học phí là hợp lý, nhưng với mức thu nhập hiện tại và không có nợ trước, rủi ro vỡ nợ vẫn cao do khả năng chi trả hạn chế và khả năng mất khả năng thanh toán khi có biến cố tài chính xảy ra.\n\n2. **Tuy nhiên, có thể còn thiếu sót hoặc cần làm rõ:**\n   - **Thông tin về các khoản chi tiêu khác:** Ngoài thu nhập, có thể có các khoản chi tiêu cố định hoặc các khoản tiết kiệm, đầu tư khác ảnh hưởng đến khả"
+                      }
+                    }
+                  }
+                ],
+                "critical_response": {
+                  "critical_response": "Phản biện quyết định của coordinator:\n\nQuyết định của coordinator dựa trên các yếu tố hợp lý và có căn cứ, tuy nhiên, cần xem xét một số điểm để đảm bảo tính toàn diện và khách quan hơn:\n\n1. Đánh giá về GPA thấp: Mặc dù coordinator cho rằng sinh viên có khả năng cải thiện GPA nhờ động lực và môi trường học tập tại trường tier 1, nhưng cần xem xét rõ hơn về mức độ thấp của GPA hiện tại, các yếu tố ảnh hưởng, và khả năng sinh viên có thể vượt qua các khó khăn này hay không. Nếu GPA quá thấp hoặc có dấu hiệu không ổn định, rủi ro vẫn còn đáng kể.\n\n2. Đánh giá về tiềm năng phát triển: Việc sinh viên thể hiện năng động qua hoạt động ngoại khóa trong CLB IT là điểm cộng, nhưng cần thêm thông tin về thành tích cụ thể, kỹ năng đạt được, và khả năng ứng dụng vào học tập và nghề nghiệp sau này.\n\n3. Tài chính và rủi ro: Mặc dù gia đình ổn định, không nợ và có việc làm thêm, nhưng vẫn cần xem xét khả năng tài chính của gia đình trong dài hạn, đặc biệt trong"
+                }
+              }
+            }
+          },
+          {
+            "from": "AcademicAgent",
+            "to": "coordinator",
+            "message": {
+              "type": "repredict_scholarship",
+              "payload": {
+                "decision": "approve",
+                "reason": "Dựa trên phản biện, quyết định được đưa ra dựa trên các yếu tố hợp lý như khả năng cải thiện GPA, năng lực ngoại khóa và tình hình tài chính ổn định của gia đình. Tuy nhiên, cần lưu ý theo dõi sát sao tiến trình học tập của sinh viên để đảm bảo khả năng vượt qua các khó khăn ban đầu, từ đó tạo điều kiện tốt nhất cho sự phát triển của sinh viên trong môi trường mới."
+              }
+            }
+          },
+          {
+            "from": "coordinator",
+            "to": "FinanceAgent",
+            "message": {
+              "type": "repredict_loan",
+              "payload": {
+                "memory": [
+                  {
+                    "from": "coordinator",
+                    "to": "AcademicAgent",
+                    "message": {
+                      "type": "scholarship_application",
+                      "payload": {
+                        "profile": "Bạn là Người Lạc quan. Hãy phân tích hồ sơ này, nhấn mạnh tiềm năng phát triển, thành tích học tập nổi bật, uy tín ngành học, và các yếu tố tích cực có thể bù đắp rủi ro tài chính.\nHồ sơ: Hồ sơ sinh viên vay vốn (ID: a1b10cfc-d6e3-4348-8890-782f4fd651d4):\n- Thông tin cá nhân: 20 tuổi, Nam, nhóm tuổi 18-22, khu vực Bắc\n- Thông tin học tập: Đại học tier 1, trường công lập, ngành STEM, năm 3, GPA chuẩn hóa: 0.85/1.0\n- Hoạt động ngoại khóa: CLB IT\n- Tài chính gia đình: Thu nhập 6,000,000 VND/tháng\n- Tình hình cá nhân: Có việc làm thêm, Không có nợ\n- Bảo lãnh: Cha mẹ\n- Yêu cầu vay: 30,000,000 VND cho mục đích 'Học phí'\n"
+                      }
+                    }
+                  },
+                  {
+                    "from": "AcademicAgent",
+                    "to": "coordinator",
+                    "message": {
+                      "type": "scholarship_decision",
+                      "payload": {
+                        "decision": "approve",
+                        "reason": "Hồ sơ thể hiện tiềm năng phát triển rõ ràng với GPA còn thấp nhưng có khả năng cải thiện nhờ động lực và môi trường học tập tại trường tier 1. Ngành STEM có triển vọng nghề nghiệp vững chắc, phù hợp với xu hướng thị trường lao động. Hoạt động ngoại khóa trong CLB IT cho thấy sinh viên năng động, tích cực và có khả năng thích nghi, phát triển kỹ năng mềm. Tài chính gia đình ổn định, không có nợ và có việc làm thêm thể hiện ý thức tự lập và khả năng quản lý tài chính tốt. Các yếu tố này, cùng với sự bảo lãnh từ cha mẹ, giúp bù đắp rủi ro tài chính, tạo điều kiện thuận lợi để sinh viên hoàn thành mục tiêu học tập. Do đó, tôi đánh giá cao tiềm năng của hồ sơ này và đề xuất phê duyệt khoản vay."
+                      }
+                    }
+                  },
+                  {
+                    "from": "coordinator",
+                    "to": "FinanceAgent",
+                    "message": {
+                      "type": "loan_application",
+                      "payload": {
+                        "profile": "Bạn là Người Thực tế. Hãy phân tích hồ sơ này, tập trung vào các con số, rủi ro tài chính, gánh nặng nợ, khả năng vỡ nợ dựa trên dữ liệu tài chính.\nHồ sơ: Hồ sơ sinh viên vay vốn (ID: a1b10cfc-d6e3-4348-8890-782f4fd651d4):\n- Thông tin cá nhân: 20 tuổi, Nam, nhóm tuổi 18-22, khu vực Bắc\n- Thông tin học tập: Đại học tier 1, trường công lập, ngành STEM, năm 3, GPA chuẩn hóa: 0.85/1.0\n- Hoạt động ngoại khóa: CLB IT\n- Tài chính gia đình: Thu nhập 6,000,000 VND/tháng\n- Tình hình cá nhân: Có việc làm thêm, Không có nợ\n- Bảo lãnh: Cha mẹ\n- Yêu cầu vay: 30,000,000 VND cho mục đích 'Học phí'\n"
+                      }
+                    }
+                  },
+                  {
+                    "from": "FinanceAgent",
+                    "to": "coordinator",
+                    "message": {
+                      "type": "loan_decision",
+                      "payload": {
+                        "decision": "reject",
+                        "reason": "Thu nhập hàng tháng 6 triệu VND là khá thấp so với khoản vay 30 triệu VND, gây áp lực tài chính lớn cho người vay. Không có thông tin về khả năng trả nợ trong tương lai hoặc các nguồn thu nhập bổ sung, đồng thời không rõ khả năng tài chính của cha mẹ bảo lãnh. Việc vay để học phí là hợp lý, nhưng với mức thu nhập hiện tại và không có nợ trước, rủi ro vỡ nợ vẫn cao do khả năng chi trả hạn chế và khả năng mất khả năng thanh toán khi có biến cố tài chính xảy ra.",
+                        "risk_level": "high"
+                      }
+                    }
+                  },
+                  {
+                    "from": "coordinator",
+                    "to": "CriticalAgent",
+                    "message": {
+                      "type": "scholarship_decision",
+                      "payload": {
+                        "argument": "Bạn là Agent Phản biện. Hãy tìm ra điểm yếu, mâu thuẫn, hoặc giả định thiếu cơ sở trong các lập luận của hai agent kia. Đặt câu hỏi chất vấn sắc bén.\nLập luận: {'decision': 'approve', 'reason': 'Hồ sơ thể hiện tiềm năng phát triển rõ ràng với GPA còn thấp nhưng có khả năng cải thiện nhờ động lực và môi trường học tập tại trường tier 1. Ngành STEM có triển vọng nghề nghiệp vững chắc, phù hợp với xu hướng thị trường lao động. Hoạt động ngoại khóa trong CLB IT cho thấy sinh viên năng động, tích cực và có khả năng thích nghi, phát triển kỹ năng mềm. Tài chính gia đình ổn định, không có nợ và có việc làm thêm thể hiện ý thức tự lập và khả năng quản lý tài chính tốt. Các yếu tố này, cùng với sự bảo lãnh từ cha mẹ, giúp bù đắp rủi ro tài chính, tạo điều kiện thuận lợi để sinh viên hoàn thành mục tiêu học tập. Do đó, tôi đánh giá cao tiềm năng của hồ sơ này và đề xuất phê duyệt khoản vay.'}\n",
+                        "decision": {
+                          "decision": "approve",
+                          "reason": "Hồ sơ thể hiện tiềm năng phát triển rõ ràng với GPA còn thấp nhưng có khả năng cải thiện nhờ động lực và môi trường học tập tại trường tier 1. Ngành STEM có triển vọng nghề nghiệp vững chắc, phù hợp với xu hướng thị trường lao động. Hoạt động ngoại khóa trong CLB IT cho thấy sinh viên năng động, tích cực và có khả năng thích nghi, phát triển kỹ năng mềm. Tài chính gia đình ổn định, không có nợ và có việc làm thêm thể hiện ý thức tự lập và khả năng quản lý tài chính tốt. Các yếu tố này, cùng với sự bảo lãnh từ cha mẹ, giúp bù đắp rủi ro tài chính, tạo điều kiện thuận lợi để sinh viên hoàn thành mục tiêu học tập. Do đó, tôi đánh giá cao tiềm năng của hồ sơ này và đề xuất phê duyệt khoản vay."
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "from": "CriticalAgent",
+                    "to": "coordinator",
+                    "message": {
+                      "type": "scholarship_decision_critical_response",
+                      "payload": {
+                        "critical_response": "Phản biện quyết định của coordinator:\n\nQuyết định của coordinator dựa trên các yếu tố hợp lý và có căn cứ, tuy nhiên, cần xem xét một số điểm để đảm bảo tính toàn diện và khách quan hơn:\n\n1. Đánh giá về GPA thấp: Mặc dù coordinator cho rằng sinh viên có khả năng cải thiện GPA nhờ động lực và môi trường học tập tại trường tier 1, nhưng cần xem xét rõ hơn về mức độ thấp của GPA hiện tại, các yếu tố ảnh hưởng, và khả năng sinh viên có thể vượt qua các khó khăn này hay không. Nếu GPA quá thấp hoặc có dấu hiệu không ổn định, rủi ro vẫn còn đáng kể.\n\n2. Đánh giá về tiềm năng phát triển: Việc sinh viên thể hiện năng động qua hoạt động ngoại khóa trong CLB IT là điểm cộng, nhưng cần thêm thông tin về thành tích cụ thể, kỹ năng đạt được, và khả năng ứng dụng vào học tập và nghề nghiệp sau này.\n\n3. Tài chính và rủi ro: Mặc dù gia đình ổn định, không nợ và có việc làm thêm, nhưng vẫn cần xem xét khả năng tài chính của gia đình trong dài hạn, đặc biệt trong"
+                      }
+                    }
+                  },
+                  {
+                    "from": "coordinator",
+                    "to": "CriticalAgent",
+                    "message": {
+                      "type": "loan_decision",
+                      "payload": {
+                        "argument": "Bạn là Agent Phản biện. Hãy tìm ra điểm yếu, mâu thuẫn, hoặc giả định thiếu cơ sở trong các lập luận của hai agent kia. Đặt câu hỏi chất vấn sắc bén.\nLập luận: {'decision': 'reject', 'reason': 'Thu nhập hàng tháng 6 triệu VND là khá thấp so với khoản vay 30 triệu VND, gây áp lực tài chính lớn cho người vay. Không có thông tin về khả năng trả nợ trong tương lai hoặc các nguồn thu nhập bổ sung, đồng thời không rõ khả năng tài chính của cha mẹ bảo lãnh. Việc vay để học phí là hợp lý, nhưng với mức thu nhập hiện tại và không có nợ trước, rủi ro vỡ nợ vẫn cao do khả năng chi trả hạn chế và khả năng mất khả năng thanh toán khi có biến cố tài chính xảy ra.', 'risk_level': 'high'}\n",
+                        "decision": {
+                          "decision": "reject",
+                          "reason": "Thu nhập hàng tháng 6 triệu VND là khá thấp so với khoản vay 30 triệu VND, gây áp lực tài chính lớn cho người vay. Không có thông tin về khả năng trả nợ trong tương lai hoặc các nguồn thu nhập bổ sung, đồng thời không rõ khả năng tài chính của cha mẹ bảo lãnh. Việc vay để học phí là hợp lý, nhưng với mức thu nhập hiện tại và không có nợ trước, rủi ro vỡ nợ vẫn cao do khả năng chi trả hạn chế và khả năng mất khả năng thanh toán khi có biến cố tài chính xảy ra.",
+                          "risk_level": "high"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "from": "CriticalAgent",
+                    "to": "coordinator",
+                    "message": {
+                      "type": "loan_decision_critical_response",
+                      "payload": {
+                        "critical_response": "Phản biện của coordinator về quyết định từ chối vay dựa trên các lý do sau:\n\n1. **Logic của phản biện:**\n   - Đúng: Thu nhập hàng tháng 6 triệu VND so với khoản vay 30 triệu VND là khá thấp, gây áp lực tài chính lớn cho người vay.\n   - Đúng: Không có thông tin về khả năng trả nợ trong tương lai hoặc các nguồn thu nhập bổ sung, nên khó đánh giá khả năng thanh toán lâu dài.\n   - Đúng: Không rõ khả năng tài chính của cha mẹ bảo lãnh, điều này ảnh hưởng đến khả năng đảm bảo khoản vay.\n   - Đúng: Vay để học phí là hợp lý, nhưng với mức thu nhập hiện tại và không có nợ trước, rủi ro vỡ nợ vẫn cao do khả năng chi trả hạn chế và khả năng mất khả năng thanh toán khi có biến cố tài chính xảy ra.\n\n2. **Tuy nhiên, có thể còn thiếu sót hoặc cần làm rõ:**\n   - **Thông tin về các khoản chi tiêu khác:** Ngoài thu nhập, có thể có các khoản chi tiêu cố định hoặc các khoản tiết kiệm, đầu tư khác ảnh hưởng đến khả"
+                      }
+                    }
+                  }
+                ],
+                "critical_response": {
+                  "critical_response": "Phản biện của coordinator về quyết định từ chối vay dựa trên các lý do sau:\n\n1. **Logic của phản biện:**\n   - Đúng: Thu nhập hàng tháng 6 triệu VND so với khoản vay 30 triệu VND là khá thấp, gây áp lực tài chính lớn cho người vay.\n   - Đúng: Không có thông tin về khả năng trả nợ trong tương lai hoặc các nguồn thu nhập bổ sung, nên khó đánh giá khả năng thanh toán lâu dài.\n   - Đúng: Không rõ khả năng tài chính của cha mẹ bảo lãnh, điều này ảnh hưởng đến khả năng đảm bảo khoản vay.\n   - Đúng: Vay để học phí là hợp lý, nhưng với mức thu nhập hiện tại và không có nợ trước, rủi ro vỡ nợ vẫn cao do khả năng chi trả hạn chế và khả năng mất khả năng thanh toán khi có biến cố tài chính xảy ra.\n\n2. **Tuy nhiên, có thể còn thiếu sót hoặc cần làm rõ:**\n   - **Thông tin về các khoản chi tiêu khác:** Ngoài thu nhập, có thể có các khoản chi tiêu cố định hoặc các khoản tiết kiệm, đầu tư khác ảnh hưởng đến khả"
+                }
+              }
+            }
+          },
+          {
+            "from": "FinanceAgent",
+            "to": "coordinator",
+            "message": {
+              "type": "repredict_loan",
+              "payload": {
+                "decision": "reject",
+                "reason": "Dựa trên phân tích phản biện, khả năng tài chính của người vay còn hạn chế do thu nhập thấp, không rõ khả năng trả nợ trong tương lai, và thiếu thông tin về khả năng tài chính của người bảo lãnh. Các yếu tố này tạo rủi ro cao về khả năng thanh toán và tiềm ẩn nguy cơ vỡ nợ trong tương lai.",
+                "risk_level": "high"
+              }
+            }
+          },
+          {
+            "from": "coordinator",
+            "to": "DecisionAgent",
+            "message": {
+              "type": "aggregate_all",
+              "payload": {
+                "scholarship_decision": {
+                  "decision": "approve",
+                  "reason": "Hồ sơ thể hiện tiềm năng phát triển rõ ràng với GPA còn thấp nhưng có khả năng cải thiện nhờ động lực và môi trường học tập tại trường tier 1. Ngành STEM có triển vọng nghề nghiệp vững chắc, phù hợp với xu hướng thị trường lao động. Hoạt động ngoại khóa trong CLB IT cho thấy sinh viên năng động, tích cực và có khả năng thích nghi, phát triển kỹ năng mềm. Tài chính gia đình ổn định, không có nợ và có việc làm thêm thể hiện ý thức tự lập và khả năng quản lý tài chính tốt. Các yếu tố này, cùng với sự bảo lãnh từ cha mẹ, giúp bù đắp rủi ro tài chính, tạo điều kiện thuận lợi để sinh viên hoàn thành mục tiêu học tập. Do đó, tôi đánh giá cao tiềm năng của hồ sơ này và đề xuất phê duyệt khoản vay."
+                },
+                "loan_decision": {
+                  "decision": "reject",
+                  "reason": "Thu nhập hàng tháng 6 triệu VND là khá thấp so với khoản vay 30 triệu VND, gây áp lực tài chính lớn cho người vay. Không có thông tin về khả năng trả nợ trong tương lai hoặc các nguồn thu nhập bổ sung, đồng thời không rõ khả năng tài chính của cha mẹ bảo lãnh. Việc vay để học phí là hợp lý, nhưng với mức thu nhập hiện tại và không có nợ trước, rủi ro vỡ nợ vẫn cao do khả năng chi trả hạn chế và khả năng mất khả năng thanh toán khi có biến cố tài chính xảy ra.",
+                  "risk_level": "high"
+                },
+                "scholarship_decision_critical_response": {
+                  "critical_response": "Phản biện quyết định của coordinator:\n\nQuyết định của coordinator dựa trên các yếu tố hợp lý và có căn cứ, tuy nhiên, cần xem xét một số điểm để đảm bảo tính toàn diện và khách quan hơn:\n\n1. Đánh giá về GPA thấp: Mặc dù coordinator cho rằng sinh viên có khả năng cải thiện GPA nhờ động lực và môi trường học tập tại trường tier 1, nhưng cần xem xét rõ hơn về mức độ thấp của GPA hiện tại, các yếu tố ảnh hưởng, và khả năng sinh viên có thể vượt qua các khó khăn này hay không. Nếu GPA quá thấp hoặc có dấu hiệu không ổn định, rủi ro vẫn còn đáng kể.\n\n2. Đánh giá về tiềm năng phát triển: Việc sinh viên thể hiện năng động qua hoạt động ngoại khóa trong CLB IT là điểm cộng, nhưng cần thêm thông tin về thành tích cụ thể, kỹ năng đạt được, và khả năng ứng dụng vào học tập và nghề nghiệp sau này.\n\n3. Tài chính và rủi ro: Mặc dù gia đình ổn định, không nợ và có việc làm thêm, nhưng vẫn cần xem xét khả năng tài chính của gia đình trong dài hạn, đặc biệt trong"
+                },
+                "loan_decision_critical_response": {
+                  "critical_response": "Phản biện của coordinator về quyết định từ chối vay dựa trên các lý do sau:\n\n1. **Logic của phản biện:**\n   - Đúng: Thu nhập hàng tháng 6 triệu VND so với khoản vay 30 triệu VND là khá thấp, gây áp lực tài chính lớn cho người vay.\n   - Đúng: Không có thông tin về khả năng trả nợ trong tương lai hoặc các nguồn thu nhập bổ sung, nên khó đánh giá khả năng thanh toán lâu dài.\n   - Đúng: Không rõ khả năng tài chính của cha mẹ bảo lãnh, điều này ảnh hưởng đến khả năng đảm bảo khoản vay.\n   - Đúng: Vay để học phí là hợp lý, nhưng với mức thu nhập hiện tại và không có nợ trước, rủi ro vỡ nợ vẫn cao do khả năng chi trả hạn chế và khả năng mất khả năng thanh toán khi có biến cố tài chính xảy ra.\n\n2. **Tuy nhiên, có thể còn thiếu sót hoặc cần làm rõ:**\n   - **Thông tin về các khoản chi tiêu khác:** Ngoài thu nhập, có thể có các khoản chi tiêu cố định hoặc các khoản tiết kiệm, đầu tư khác ảnh hưởng đến khả"
+                },
+                "repredict_scholarship": {
+                  "decision": "approve",
+                  "reason": "Dựa trên phản biện, quyết định được đưa ra dựa trên các yếu tố hợp lý như khả năng cải thiện GPA, năng lực ngoại khóa và tình hình tài chính ổn định của gia đình. Tuy nhiên, cần lưu ý theo dõi sát sao tiến trình học tập của sinh viên để đảm bảo khả năng vượt qua các khó khăn ban đầu, từ đó tạo điều kiện tốt nhất cho sự phát triển của sinh viên trong môi trường mới."
+                },
+                "repredict_loan": {
+                  "decision": "reject",
+                  "reason": "Dựa trên phân tích phản biện, khả năng tài chính của người vay còn hạn chế do thu nhập thấp, không rõ khả năng trả nợ trong tương lai, và thiếu thông tin về khả năng tài chính của người bảo lãnh. Các yếu tố này tạo rủi ro cao về khả năng thanh toán và tiềm ẩn nguy cơ vỡ nợ trong tương lai.",
+                  "risk_level": "high"
+                },
+                "original_profile": "Hồ sơ sinh viên vay vốn (ID: a1b10cfc-d6e3-4348-8890-782f4fd651d4):\n- Thông tin cá nhân: 20 tuổi, Nam, nhóm tuổi 18-22, khu vực Bắc\n- Thông tin học tập: Đại học tier 1, trường công lập, ngành STEM, năm 3, GPA chuẩn hóa: 0.85/1.0\n- Hoạt động ngoại khóa: CLB IT\n- Tài chính gia đình: Thu nhập 6,000,000 VND/tháng\n- Tình hình cá nhân: Có việc làm thêm, Không có nợ\n- Bảo lãnh: Cha mẹ\n- Yêu cầu vay: 30,000,000 VND cho mục đích 'Học phí'"
+              }
+            }
+          },
+          {
+            "from": "DecisionAgent",
+            "to": "coordinator",
+            "message": {
+              "type": "final_decision",
+              "payload": {
+                "decision": "approve",
+                "reason": "Không vi phạm special features và passed_count = 7 >= 6 - CHẤP NHẬN.",
+                "detailed_analysis": {
+                  "features_analysis": {
+                    "feature_1_thu_nhap": true,
+                    "feature_2_hoc_luc": true,
+                    "feature_3_truong_hoc": true,
+                    "feature_4_nganh_uu_tien": true,
+                    "feature_5_bao_lanh": true,
+                    "feature_6_khoan_vay": true,
+                    "feature_7_no_existing_debt": true
+                  },
+                  "rule_calculation": {
+                    "total_passed_count": 7,
+                    "special_violations_count": 0,
+                    "special_features_status": {
+                      "feature_2": true,
+                      "feature_5": true,
+                      "feature_7": true
+                    }
+                  },
+                  "regulation_compliance": "Nghị định 07/2021/NĐ-CP, Quyết định 05/2022/QĐ-TTg, Thông tư 19/2023/TT-BGDĐT (cập nhật 2025)",
+                  "subjective_inputs": {
+                    "academic_decision": "approve",
+                    "finance_decision": "reject",
+                    "academic_reason": "Hồ sơ thể hiện tiềm năng phát triển rõ ràng với GPA còn thấp nhưng có khả năng cải thiện nhờ động lực và môi trường học tập tại trường tier 1. Ngành STEM có triển vọng nghề nghiệp vững chắc, phù hợp với xu hướng thị trường lao động. Hoạt động ngoại khóa trong CLB IT cho thấy sinh viên năng động, tích cực và có khả năng thích nghi, phát triển kỹ năng mềm. Tài chính gia đình ổn định, không có nợ và có việc làm thêm thể hiện ý thức tự lập và khả năng quản lý tài chính tốt. Các yếu tố này, cùng với sự bảo lãnh từ cha mẹ, giúp bù đắp rủi ro tài chính, tạo điều kiện thuận lợi để sinh viên hoàn thành mục tiêu học tập. Do đó, tôi đánh giá cao tiềm năng của hồ sơ này và đề xuất phê duyệt khoản vay.",
+                    "finance_reason": "Thu nhập hàng tháng 6 triệu VND là khá thấp so với khoản vay 30 triệu VND, gây áp lực tài chính lớn cho người vay. Không có thông tin về khả năng trả nợ trong tương lai hoặc các nguồn thu nhập bổ sung, đồng thời không rõ khả năng tài chính của cha mẹ bảo lãnh. Việc vay để học phí là hợp lý, nhưng với mức thu nhập hiện tại và không có nợ trước, rủi ro vỡ nợ vẫn cao do khả năng chi trả hạn chế và khả năng mất khả năng thanh toán khi có biến cố tài chính xảy ra."
+                  }
+                },
+                "rule_based_system": true,
+                "hybrid_approach": "subjective_debate_to_objective_rules"
+              }
+            }
+          }
+        ],
+        "processing_time_seconds": 30.3,
+        "request_id": "a1b10cfc-d6e3-4348-8890-782f4fd651d4"
+      },
+      "processing_time": 30.31423282623291,
+      "timestamp": "2025-07-27T16:52:29.528701"
+    },
+    {
+      "row_index": 1,
+      "input_data": {
+        "age_group": "18-22",
+        "age": 21,
+        "gender": "Nữ",
+        "province_region": "Nam",
+        "university_tier": 2,
+        "public_university": true,
+        "major_category": "Y khoa",
+        "gpa_normalized": 0.78,
+        "study_year": 2,
+        "club": "CLB Y tế",
+        "family_income": 7500000,
+        "has_part_time_job": false,
+        "existing_debt": false,
+        "guarantor": "Anh chị",
+        "loan_amount_requested": 25000000,
+        "loan_purpose": "Thiết bị học tập"
+      },
+      "success": true,
+      "result": {
+        "decision": "approve",
+        "reason": "Vi phạm 1 special feature nhưng passed_count = 6 >= 6 - CHẤP NHẬN có điều kiện.",
+        "request_metadata": {
+          "request_id": "f88e4228-2347-469e-9463-5c4c62ac2f18",
+          "loan_amount": 25000000,
+          "loan_purpose": "Thiết bị học tập",
+          "gpa_normalized": 0.78,
+          "university_tier": 2,
+          "public_university": true,
+          "guarantor": "Anh chị",
+          "family_income": 7500000,
+          "has_existing_debt": false,
+          "age": 21,
+          "gender": "Nữ",
+          "major_category": "Y khoa",
+          "processing_time_seconds": 30.54,
+          "timestamp": 1753609980.5849051
+        },
+        "logs": [
+          {
+            "from": "coordinator",
+            "to": "AcademicAgent",
+            "message": {
+              "type": "scholarship_application",
+              "payload": {
+                "profile": "Bạn là Người Lạc quan. Hãy phân tích hồ sơ này, nhấn mạnh tiềm năng phát triển, thành tích học tập nổi bật, uy tín ngành học, và các yếu tố tích cực có thể bù đắp rủi ro tài chính.\nHồ sơ: Hồ sơ sinh viên vay vốn (ID: f88e4228-2347-469e-9463-5c4c62ac2f18):\n- Thông tin cá nhân: 21 tuổi, Nữ, nhóm tuổi 18-22, khu vực Nam\n- Thông tin học tập: Đại học tier 2, trường công lập, ngành Y khoa, năm 2, GPA chuẩn hóa: 0.78/1.0\n- Hoạt động ngoại khóa: CLB Y tế\n- Tài chính gia đình: Thu nhập 7,500,000 VND/tháng\n- Tình hình cá nhân: Không có việc làm thêm, Không có nợ\n- Bảo lãnh: Anh chị\n- Yêu cầu vay: 25,000,000 VND cho mục đích 'Thiết bị học tập'\n"
+              }
+            }
+          },
+          {
+            "from": "AcademicAgent",
+            "to": "coordinator",
+            "message": {
+              "type": "scholarship_decision",
+              "payload": {
+                "decision": "approve",
+                "reason": "Hồ sơ thể hiện tiềm năng phát triển rõ ràng với GPA còn thấp nhưng có khả năng cải thiện nhờ động lực và môi trường học tập tốt tại trường đại học tier 2 uy tín trong ngành Y khoa. Sinh viên đã tích cực tham gia hoạt động ngoại khóa trong CLB Y tế, cho thấy đam mê và năng động, điều này sẽ hỗ trợ phát triển kỹ năng mềm và kiến thức chuyên môn. Ngành Y khoa có triển vọng nghề nghiệp ổn định và lâu dài, mang lại cơ hội thành công cao trong tương lai. Mặc dù tài chính gia đình có thu nhập trung bình, nhưng việc có người bảo lãnh và mục đích vay là thiết bị học tập thể hiện ý thức học tập và mong muốn nâng cao trình độ. Các yếu tố tích cực này hoàn toàn có thể bù đắp rủi ro tài chính, tạo điều kiện thuận lợi để sinh viên phát triển và thành công trong học tập cũng như sự nghiệp sau này."
+              }
+            }
+          },
+          {
+            "from": "coordinator",
+            "to": "FinanceAgent",
+            "message": {
+              "type": "loan_application",
+              "payload": {
+                "profile": "Bạn là Người Thực tế. Hãy phân tích hồ sơ này, tập trung vào các con số, rủi ro tài chính, gánh nặng nợ, khả năng vỡ nợ dựa trên dữ liệu tài chính.\nHồ sơ: Hồ sơ sinh viên vay vốn (ID: f88e4228-2347-469e-9463-5c4c62ac2f18):\n- Thông tin cá nhân: 21 tuổi, Nữ, nhóm tuổi 18-22, khu vực Nam\n- Thông tin học tập: Đại học tier 2, trường công lập, ngành Y khoa, năm 2, GPA chuẩn hóa: 0.78/1.0\n- Hoạt động ngoại khóa: CLB Y tế\n- Tài chính gia đình: Thu nhập 7,500,000 VND/tháng\n- Tình hình cá nhân: Không có việc làm thêm, Không có nợ\n- Bảo lãnh: Anh chị\n- Yêu cầu vay: 25,000,000 VND cho mục đích 'Thiết bị học tập'\n"
+              }
+            }
+          },
+          {
+            "from": "FinanceAgent",
+            "to": "coordinator",
+            "message": {
+              "type": "loan_decision",
+              "payload": {
+                "decision": "reject",
+                "reason": "Thu nhập hàng tháng của người vay là 7,5 triệu VND, thấp so với khoản vay 25 triệu VND, gây áp lực tài chính lớn và rủi ro vỡ nợ cao. Người vay chưa có việc làm thêm, không có nợ hiện tại, nhưng điểm GPA thấp (0.78/1.0) cho thấy khả năng học tập và trách nhiệm tài chính chưa ổn định. Mục đích vay là để mua thiết bị học tập, phù hợp với mục tiêu học tập, nhưng không đủ để giảm thiểu rủi ro. Bảo lãnh bởi anh chị là điểm cộng, nhưng không đủ để cân bằng rủi ro tổng thể. Tập trung vào bảo vệ tài sản và tránh bad debt, đánh giá rủi ro tổng thể là cao.",
+                "risk_level": "high"
+              }
+            }
+          },
+          {
+            "from": "coordinator",
+            "to": "CriticalAgent",
+            "message": {
+              "type": "scholarship_decision",
+              "payload": {
+                "argument": "Bạn là Agent Phản biện. Hãy tìm ra điểm yếu, mâu thuẫn, hoặc giả định thiếu cơ sở trong các lập luận của hai agent kia. Đặt câu hỏi chất vấn sắc bén.\nLập luận: {'decision': 'approve', 'reason': 'Hồ sơ thể hiện tiềm năng phát triển rõ ràng với GPA còn thấp nhưng có khả năng cải thiện nhờ động lực và môi trường học tập tốt tại trường đại học tier 2 uy tín trong ngành Y khoa. Sinh viên đã tích cực tham gia hoạt động ngoại khóa trong CLB Y tế, cho thấy đam mê và năng động, điều này sẽ hỗ trợ phát triển kỹ năng mềm và kiến thức chuyên môn. Ngành Y khoa có triển vọng nghề nghiệp ổn định và lâu dài, mang lại cơ hội thành công cao trong tương lai. Mặc dù tài chính gia đình có thu nhập trung bình, nhưng việc có người bảo lãnh và mục đích vay là thiết bị học tập thể hiện ý thức học tập và mong muốn nâng cao trình độ. Các yếu tố tích cực này hoàn toàn có thể bù đắp rủi ro tài chính, tạo điều kiện thuận lợi để sinh viên phát triển và thành công trong học tập cũng như sự nghiệp sau này.'}\n",
+                "decision": {
+                  "decision": "approve",
+                  "reason": "Hồ sơ thể hiện tiềm năng phát triển rõ ràng với GPA còn thấp nhưng có khả năng cải thiện nhờ động lực và môi trường học tập tốt tại trường đại học tier 2 uy tín trong ngành Y khoa. Sinh viên đã tích cực tham gia hoạt động ngoại khóa trong CLB Y tế, cho thấy đam mê và năng động, điều này sẽ hỗ trợ phát triển kỹ năng mềm và kiến thức chuyên môn. Ngành Y khoa có triển vọng nghề nghiệp ổn định và lâu dài, mang lại cơ hội thành công cao trong tương lai. Mặc dù tài chính gia đình có thu nhập trung bình, nhưng việc có người bảo lãnh và mục đích vay là thiết bị học tập thể hiện ý thức học tập và mong muốn nâng cao trình độ. Các yếu tố tích cực này hoàn toàn có thể bù đắp rủi ro tài chính, tạo điều kiện thuận lợi để sinh viên phát triển và thành công trong học tập cũng như sự nghiệp sau này."
+                }
+              }
+            }
+          },
+          {
+            "from": "CriticalAgent",
+            "to": "coordinator",
+            "message": {
+              "type": "scholarship_decision_critical_response",
+              "payload": {
+                "critical_response": "Phản biện quyết định của coordinator: {'decision': 'approve', 'reason': 'Hồ sơ thể hiện tiềm năng phát triển rõ ràng với GPA còn thấp nhưng có khả năng cải thiện nhờ động lực và môi trường học tập tốt tại trường đại học tier 2 uy tín trong ngành Y khoa. Sinh viên đã tích cực tham gia hoạt động ngoại khóa trong CLB Y tế, cho thấy đam mê và năng động, điều này sẽ hỗ trợ phát triển kỹ năng mềm và kiến thức chuyên môn. Ngành Y khoa có triển vọng nghề nghiệp ổn định và lâu dài, mang lại cơ hội thành công cao trong tương lai. Mặc dù tài chính gia đình có thu nhập trung bình, nhưng việc có người bảo lãnh và mục đích vay là thiết bị học tập thể hiện ý thức học tập và mong muốn nâng cao trình độ. Các yếu tố tích cực này hoàn toàn có thể bù đắp rủi ro tài chính, tạo điều kiện thuận lợi để sinh viên phát triển và thành công trong học tập cũng như sự nghiệp sau này.'} - . Có logic không? Có thiếu sót gì?\n\nPhản biện:\n\n1. Logic và tính hợp lý:  \n- Phân tích của quyết"
+              }
+            }
+          },
+          {
+            "from": "coordinator",
+            "to": "CriticalAgent",
+            "message": {
+              "type": "loan_decision",
+              "payload": {
+                "argument": "Bạn là Agent Phản biện. Hãy tìm ra điểm yếu, mâu thuẫn, hoặc giả định thiếu cơ sở trong các lập luận của hai agent kia. Đặt câu hỏi chất vấn sắc bén.\nLập luận: {'decision': 'reject', 'reason': 'Thu nhập hàng tháng của người vay là 7,5 triệu VND, thấp so với khoản vay 25 triệu VND, gây áp lực tài chính lớn và rủi ro vỡ nợ cao. Người vay chưa có việc làm thêm, không có nợ hiện tại, nhưng điểm GPA thấp (0.78/1.0) cho thấy khả năng học tập và trách nhiệm tài chính chưa ổn định. Mục đích vay là để mua thiết bị học tập, phù hợp với mục tiêu học tập, nhưng không đủ để giảm thiểu rủi ro. Bảo lãnh bởi anh chị là điểm cộng, nhưng không đủ để cân bằng rủi ro tổng thể. Tập trung vào bảo vệ tài sản và tránh bad debt, đánh giá rủi ro tổng thể là cao.', 'risk_level': 'high'}\n",
+                "decision": {
+                  "decision": "reject",
+                  "reason": "Thu nhập hàng tháng của người vay là 7,5 triệu VND, thấp so với khoản vay 25 triệu VND, gây áp lực tài chính lớn và rủi ro vỡ nợ cao. Người vay chưa có việc làm thêm, không có nợ hiện tại, nhưng điểm GPA thấp (0.78/1.0) cho thấy khả năng học tập và trách nhiệm tài chính chưa ổn định. Mục đích vay là để mua thiết bị học tập, phù hợp với mục tiêu học tập, nhưng không đủ để giảm thiểu rủi ro. Bảo lãnh bởi anh chị là điểm cộng, nhưng không đủ để cân bằng rủi ro tổng thể. Tập trung vào bảo vệ tài sản và tránh bad debt, đánh giá rủi ro tổng thể là cao.",
+                  "risk_level": "high"
+                }
+              }
+            }
+          },
+          {
+            "from": "CriticalAgent",
+            "to": "coordinator",
+            "message": {
+              "type": "loan_decision_critical_response",
+              "payload": {
+                "critical_response": "Phản biện quyết định của coordinator dựa trên các lý do đã nêu có phần hợp lý, nhưng cũng cần xem xét một số điểm để đảm bảo tính toàn diện và chính xác hơn:\n\n1. **Thu nhập thấp so với khoản vay**: Đúng là thu nhập 7,5 triệu VND/tháng so với khoản vay 25 triệu VND tạo áp lực tài chính lớn và rủi ro vỡ nợ cao. Tuy nhiên, cần xem xét khả năng trả nợ dựa trên tỷ lệ phần trăm thu nhập, cũng như các nguồn thu nhập khác (nếu có) để đánh giá chính xác hơn.\n\n2. **Thiếu việc làm thêm và điểm GPA thấp**: Việc người vay chưa có việc làm thêm và điểm GPA thấp (0.78/1.0) cho thấy khả năng học tập và trách nhiệm tài chính chưa ổn định. Tuy nhiên, điểm GPA thấp không hoàn toàn phản ánh khả năng quản lý tài chính hay ý chí trả nợ. Có thể xem xét các yếu tố khác như thái độ, kế hoạch học tập, hoặc các yếu tố hỗ trợ khác.\n\n3. **Mục đích vay phù hợp nhưng không đủ để giảm thiểu rủi ro"
+              }
+            }
+          },
+          {
+            "from": "coordinator",
+            "to": "AcademicAgent",
+            "message": {
+              "type": "repredict_scholarship",
+              "payload": {
+                "memory": [
+                  {
+                    "from": "coordinator",
+                    "to": "AcademicAgent",
+                    "message": {
+                      "type": "scholarship_application",
+                      "payload": {
+                        "profile": "Bạn là Người Lạc quan. Hãy phân tích hồ sơ này, nhấn mạnh tiềm năng phát triển, thành tích học tập nổi bật, uy tín ngành học, và các yếu tố tích cực có thể bù đắp rủi ro tài chính.\nHồ sơ: Hồ sơ sinh viên vay vốn (ID: f88e4228-2347-469e-9463-5c4c62ac2f18):\n- Thông tin cá nhân: 21 tuổi, Nữ, nhóm tuổi 18-22, khu vực Nam\n- Thông tin học tập: Đại học tier 2, trường công lập, ngành Y khoa, năm 2, GPA chuẩn hóa: 0.78/1.0\n- Hoạt động ngoại khóa: CLB Y tế\n- Tài chính gia đình: Thu nhập 7,500,000 VND/tháng\n- Tình hình cá nhân: Không có việc làm thêm, Không có nợ\n- Bảo lãnh: Anh chị\n- Yêu cầu vay: 25,000,000 VND cho mục đích 'Thiết bị học tập'\n"
+                      }
+                    }
+                  },
+                  {
+                    "from": "AcademicAgent",
+                    "to": "coordinator",
+                    "message": {
+                      "type": "scholarship_decision",
+                      "payload": {
+                        "decision": "approve",
+                        "reason": "Hồ sơ thể hiện tiềm năng phát triển rõ ràng với GPA còn thấp nhưng có khả năng cải thiện nhờ động lực và môi trường học tập tốt tại trường đại học tier 2 uy tín trong ngành Y khoa. Sinh viên đã tích cực tham gia hoạt động ngoại khóa trong CLB Y tế, cho thấy đam mê và năng động, điều này sẽ hỗ trợ phát triển kỹ năng mềm và kiến thức chuyên môn. Ngành Y khoa có triển vọng nghề nghiệp ổn định và lâu dài, mang lại cơ hội thành công cao trong tương lai. Mặc dù tài chính gia đình có thu nhập trung bình, nhưng việc có người bảo lãnh và mục đích vay là thiết bị học tập thể hiện ý thức học tập và mong muốn nâng cao trình độ. Các yếu tố tích cực này hoàn toàn có thể bù đắp rủi ro tài chính, tạo điều kiện thuận lợi để sinh viên phát triển và thành công trong học tập cũng như sự nghiệp sau này."
+                      }
+                    }
+                  },
+                  {
+                    "from": "coordinator",
+                    "to": "FinanceAgent",
+                    "message": {
+                      "type": "loan_application",
+                      "payload": {
+                        "profile": "Bạn là Người Thực tế. Hãy phân tích hồ sơ này, tập trung vào các con số, rủi ro tài chính, gánh nặng nợ, khả năng vỡ nợ dựa trên dữ liệu tài chính.\nHồ sơ: Hồ sơ sinh viên vay vốn (ID: f88e4228-2347-469e-9463-5c4c62ac2f18):\n- Thông tin cá nhân: 21 tuổi, Nữ, nhóm tuổi 18-22, khu vực Nam\n- Thông tin học tập: Đại học tier 2, trường công lập, ngành Y khoa, năm 2, GPA chuẩn hóa: 0.78/1.0\n- Hoạt động ngoại khóa: CLB Y tế\n- Tài chính gia đình: Thu nhập 7,500,000 VND/tháng\n- Tình hình cá nhân: Không có việc làm thêm, Không có nợ\n- Bảo lãnh: Anh chị\n- Yêu cầu vay: 25,000,000 VND cho mục đích 'Thiết bị học tập'\n"
+                      }
+                    }
+                  },
+                  {
+                    "from": "FinanceAgent",
+                    "to": "coordinator",
+                    "message": {
+                      "type": "loan_decision",
+                      "payload": {
+                        "decision": "reject",
+                        "reason": "Thu nhập hàng tháng của người vay là 7,5 triệu VND, thấp so với khoản vay 25 triệu VND, gây áp lực tài chính lớn và rủi ro vỡ nợ cao. Người vay chưa có việc làm thêm, không có nợ hiện tại, nhưng điểm GPA thấp (0.78/1.0) cho thấy khả năng học tập và trách nhiệm tài chính chưa ổn định. Mục đích vay là để mua thiết bị học tập, phù hợp với mục tiêu học tập, nhưng không đủ để giảm thiểu rủi ro. Bảo lãnh bởi anh chị là điểm cộng, nhưng không đủ để cân bằng rủi ro tổng thể. Tập trung vào bảo vệ tài sản và tránh bad debt, đánh giá rủi ro tổng thể là cao.",
+                        "risk_level": "high"
+                      }
+                    }
+                  },
+                  {
+                    "from": "coordinator",
+                    "to": "CriticalAgent",
+                    "message": {
+                      "type": "scholarship_decision",
+                      "payload": {
+                        "argument": "Bạn là Agent Phản biện. Hãy tìm ra điểm yếu, mâu thuẫn, hoặc giả định thiếu cơ sở trong các lập luận của hai agent kia. Đặt câu hỏi chất vấn sắc bén.\nLập luận: {'decision': 'approve', 'reason': 'Hồ sơ thể hiện tiềm năng phát triển rõ ràng với GPA còn thấp nhưng có khả năng cải thiện nhờ động lực và môi trường học tập tốt tại trường đại học tier 2 uy tín trong ngành Y khoa. Sinh viên đã tích cực tham gia hoạt động ngoại khóa trong CLB Y tế, cho thấy đam mê và năng động, điều này sẽ hỗ trợ phát triển kỹ năng mềm và kiến thức chuyên môn. Ngành Y khoa có triển vọng nghề nghiệp ổn định và lâu dài, mang lại cơ hội thành công cao trong tương lai. Mặc dù tài chính gia đình có thu nhập trung bình, nhưng việc có người bảo lãnh và mục đích vay là thiết bị học tập thể hiện ý thức học tập và mong muốn nâng cao trình độ. Các yếu tố tích cực này hoàn toàn có thể bù đắp rủi ro tài chính, tạo điều kiện thuận lợi để sinh viên phát triển và thành công trong học tập cũng như sự nghiệp sau này.'}\n",
+                        "decision": {
+                          "decision": "approve",
+                          "reason": "Hồ sơ thể hiện tiềm năng phát triển rõ ràng với GPA còn thấp nhưng có khả năng cải thiện nhờ động lực và môi trường học tập tốt tại trường đại học tier 2 uy tín trong ngành Y khoa. Sinh viên đã tích cực tham gia hoạt động ngoại khóa trong CLB Y tế, cho thấy đam mê và năng động, điều này sẽ hỗ trợ phát triển kỹ năng mềm và kiến thức chuyên môn. Ngành Y khoa có triển vọng nghề nghiệp ổn định và lâu dài, mang lại cơ hội thành công cao trong tương lai. Mặc dù tài chính gia đình có thu nhập trung bình, nhưng việc có người bảo lãnh và mục đích vay là thiết bị học tập thể hiện ý thức học tập và mong muốn nâng cao trình độ. Các yếu tố tích cực này hoàn toàn có thể bù đắp rủi ro tài chính, tạo điều kiện thuận lợi để sinh viên phát triển và thành công trong học tập cũng như sự nghiệp sau này."
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "from": "CriticalAgent",
+                    "to": "coordinator",
+                    "message": {
+                      "type": "scholarship_decision_critical_response",
+                      "payload": {
+                        "critical_response": "Phản biện quyết định của coordinator: {'decision': 'approve', 'reason': 'Hồ sơ thể hiện tiềm năng phát triển rõ ràng với GPA còn thấp nhưng có khả năng cải thiện nhờ động lực và môi trường học tập tốt tại trường đại học tier 2 uy tín trong ngành Y khoa. Sinh viên đã tích cực tham gia hoạt động ngoại khóa trong CLB Y tế, cho thấy đam mê và năng động, điều này sẽ hỗ trợ phát triển kỹ năng mềm và kiến thức chuyên môn. Ngành Y khoa có triển vọng nghề nghiệp ổn định và lâu dài, mang lại cơ hội thành công cao trong tương lai. Mặc dù tài chính gia đình có thu nhập trung bình, nhưng việc có người bảo lãnh và mục đích vay là thiết bị học tập thể hiện ý thức học tập và mong muốn nâng cao trình độ. Các yếu tố tích cực này hoàn toàn có thể bù đắp rủi ro tài chính, tạo điều kiện thuận lợi để sinh viên phát triển và thành công trong học tập cũng như sự nghiệp sau này.'} - . Có logic không? Có thiếu sót gì?\n\nPhản biện:\n\n1. Logic và tính hợp lý:  \n- Phân tích của quyết"
+                      }
+                    }
+                  },
+                  {
+                    "from": "coordinator",
+                    "to": "CriticalAgent",
+                    "message": {
+                      "type": "loan_decision",
+                      "payload": {
+                        "argument": "Bạn là Agent Phản biện. Hãy tìm ra điểm yếu, mâu thuẫn, hoặc giả định thiếu cơ sở trong các lập luận của hai agent kia. Đặt câu hỏi chất vấn sắc bén.\nLập luận: {'decision': 'reject', 'reason': 'Thu nhập hàng tháng của người vay là 7,5 triệu VND, thấp so với khoản vay 25 triệu VND, gây áp lực tài chính lớn và rủi ro vỡ nợ cao. Người vay chưa có việc làm thêm, không có nợ hiện tại, nhưng điểm GPA thấp (0.78/1.0) cho thấy khả năng học tập và trách nhiệm tài chính chưa ổn định. Mục đích vay là để mua thiết bị học tập, phù hợp với mục tiêu học tập, nhưng không đủ để giảm thiểu rủi ro. Bảo lãnh bởi anh chị là điểm cộng, nhưng không đủ để cân bằng rủi ro tổng thể. Tập trung vào bảo vệ tài sản và tránh bad debt, đánh giá rủi ro tổng thể là cao.', 'risk_level': 'high'}\n",
+                        "decision": {
+                          "decision": "reject",
+                          "reason": "Thu nhập hàng tháng của người vay là 7,5 triệu VND, thấp so với khoản vay 25 triệu VND, gây áp lực tài chính lớn và rủi ro vỡ nợ cao. Người vay chưa có việc làm thêm, không có nợ hiện tại, nhưng điểm GPA thấp (0.78/1.0) cho thấy khả năng học tập và trách nhiệm tài chính chưa ổn định. Mục đích vay là để mua thiết bị học tập, phù hợp với mục tiêu học tập, nhưng không đủ để giảm thiểu rủi ro. Bảo lãnh bởi anh chị là điểm cộng, nhưng không đủ để cân bằng rủi ro tổng thể. Tập trung vào bảo vệ tài sản và tránh bad debt, đánh giá rủi ro tổng thể là cao.",
+                          "risk_level": "high"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "from": "CriticalAgent",
+                    "to": "coordinator",
+                    "message": {
+                      "type": "loan_decision_critical_response",
+                      "payload": {
+                        "critical_response": "Phản biện quyết định của coordinator dựa trên các lý do đã nêu có phần hợp lý, nhưng cũng cần xem xét một số điểm để đảm bảo tính toàn diện và chính xác hơn:\n\n1. **Thu nhập thấp so với khoản vay**: Đúng là thu nhập 7,5 triệu VND/tháng so với khoản vay 25 triệu VND tạo áp lực tài chính lớn và rủi ro vỡ nợ cao. Tuy nhiên, cần xem xét khả năng trả nợ dựa trên tỷ lệ phần trăm thu nhập, cũng như các nguồn thu nhập khác (nếu có) để đánh giá chính xác hơn.\n\n2. **Thiếu việc làm thêm và điểm GPA thấp**: Việc người vay chưa có việc làm thêm và điểm GPA thấp (0.78/1.0) cho thấy khả năng học tập và trách nhiệm tài chính chưa ổn định. Tuy nhiên, điểm GPA thấp không hoàn toàn phản ánh khả năng quản lý tài chính hay ý chí trả nợ. Có thể xem xét các yếu tố khác như thái độ, kế hoạch học tập, hoặc các yếu tố hỗ trợ khác.\n\n3. **Mục đích vay phù hợp nhưng không đủ để giảm thiểu rủi ro"
+                      }
+                    }
+                  }
+                ],
+                "critical_response": {
+                  "critical_response": "Phản biện quyết định của coordinator: {'decision': 'approve', 'reason': 'Hồ sơ thể hiện tiềm năng phát triển rõ ràng với GPA còn thấp nhưng có khả năng cải thiện nhờ động lực và môi trường học tập tốt tại trường đại học tier 2 uy tín trong ngành Y khoa. Sinh viên đã tích cực tham gia hoạt động ngoại khóa trong CLB Y tế, cho thấy đam mê và năng động, điều này sẽ hỗ trợ phát triển kỹ năng mềm và kiến thức chuyên môn. Ngành Y khoa có triển vọng nghề nghiệp ổn định và lâu dài, mang lại cơ hội thành công cao trong tương lai. Mặc dù tài chính gia đình có thu nhập trung bình, nhưng việc có người bảo lãnh và mục đích vay là thiết bị học tập thể hiện ý thức học tập và mong muốn nâng cao trình độ. Các yếu tố tích cực này hoàn toàn có thể bù đắp rủi ro tài chính, tạo điều kiện thuận lợi để sinh viên phát triển và thành công trong học tập cũng như sự nghiệp sau này.'} - . Có logic không? Có thiếu sót gì?\n\nPhản biện:\n\n1. Logic và tính hợp lý:  \n- Phân tích của quyết"
+                }
+              }
+            }
+          },
+          {
+            "from": "AcademicAgent",
+            "to": "coordinator",
+            "message": {
+              "type": "repredict_scholarship",
+              "payload": {
+                "decision": "approve",
+                "reason": "Phản biện đã trình bày rõ ràng các yếu tố tích cực như tiềm năng phát triển, hoạt động ngoại khóa, ý thức học tập và khả năng tài chính ổn định nhờ người bảo lãnh. Các luận điểm này đều hợp lý và có tính logic cao, phù hợp với quyết định duyệt hồ sơ. Tuy nhiên, cần lưu ý rằng GPA còn thấp là điểm cần theo dõi để đảm bảo sinh viên có thể duy trì tiến độ học tập. Tổng thể, các yếu tố tích cực vượt trội và phù hợp để tin tưởng vào khả năng thành công của sinh viên trong môi trường đại học uy tín."
+              }
+            }
+          },
+          {
+            "from": "coordinator",
+            "to": "FinanceAgent",
+            "message": {
+              "type": "repredict_loan",
+              "payload": {
+                "memory": [
+                  {
+                    "from": "coordinator",
+                    "to": "AcademicAgent",
+                    "message": {
+                      "type": "scholarship_application",
+                      "payload": {
+                        "profile": "Bạn là Người Lạc quan. Hãy phân tích hồ sơ này, nhấn mạnh tiềm năng phát triển, thành tích học tập nổi bật, uy tín ngành học, và các yếu tố tích cực có thể bù đắp rủi ro tài chính.\nHồ sơ: Hồ sơ sinh viên vay vốn (ID: f88e4228-2347-469e-9463-5c4c62ac2f18):\n- Thông tin cá nhân: 21 tuổi, Nữ, nhóm tuổi 18-22, khu vực Nam\n- Thông tin học tập: Đại học tier 2, trường công lập, ngành Y khoa, năm 2, GPA chuẩn hóa: 0.78/1.0\n- Hoạt động ngoại khóa: CLB Y tế\n- Tài chính gia đình: Thu nhập 7,500,000 VND/tháng\n- Tình hình cá nhân: Không có việc làm thêm, Không có nợ\n- Bảo lãnh: Anh chị\n- Yêu cầu vay: 25,000,000 VND cho mục đích 'Thiết bị học tập'\n"
+                      }
+                    }
+                  },
+                  {
+                    "from": "AcademicAgent",
+                    "to": "coordinator",
+                    "message": {
+                      "type": "scholarship_decision",
+                      "payload": {
+                        "decision": "approve",
+                        "reason": "Hồ sơ thể hiện tiềm năng phát triển rõ ràng với GPA còn thấp nhưng có khả năng cải thiện nhờ động lực và môi trường học tập tốt tại trường đại học tier 2 uy tín trong ngành Y khoa. Sinh viên đã tích cực tham gia hoạt động ngoại khóa trong CLB Y tế, cho thấy đam mê và năng động, điều này sẽ hỗ trợ phát triển kỹ năng mềm và kiến thức chuyên môn. Ngành Y khoa có triển vọng nghề nghiệp ổn định và lâu dài, mang lại cơ hội thành công cao trong tương lai. Mặc dù tài chính gia đình có thu nhập trung bình, nhưng việc có người bảo lãnh và mục đích vay là thiết bị học tập thể hiện ý thức học tập và mong muốn nâng cao trình độ. Các yếu tố tích cực này hoàn toàn có thể bù đắp rủi ro tài chính, tạo điều kiện thuận lợi để sinh viên phát triển và thành công trong học tập cũng như sự nghiệp sau này."
+                      }
+                    }
+                  },
+                  {
+                    "from": "coordinator",
+                    "to": "FinanceAgent",
+                    "message": {
+                      "type": "loan_application",
+                      "payload": {
+                        "profile": "Bạn là Người Thực tế. Hãy phân tích hồ sơ này, tập trung vào các con số, rủi ro tài chính, gánh nặng nợ, khả năng vỡ nợ dựa trên dữ liệu tài chính.\nHồ sơ: Hồ sơ sinh viên vay vốn (ID: f88e4228-2347-469e-9463-5c4c62ac2f18):\n- Thông tin cá nhân: 21 tuổi, Nữ, nhóm tuổi 18-22, khu vực Nam\n- Thông tin học tập: Đại học tier 2, trường công lập, ngành Y khoa, năm 2, GPA chuẩn hóa: 0.78/1.0\n- Hoạt động ngoại khóa: CLB Y tế\n- Tài chính gia đình: Thu nhập 7,500,000 VND/tháng\n- Tình hình cá nhân: Không có việc làm thêm, Không có nợ\n- Bảo lãnh: Anh chị\n- Yêu cầu vay: 25,000,000 VND cho mục đích 'Thiết bị học tập'\n"
+                      }
+                    }
+                  },
+                  {
+                    "from": "FinanceAgent",
+                    "to": "coordinator",
+                    "message": {
+                      "type": "loan_decision",
+                      "payload": {
+                        "decision": "reject",
+                        "reason": "Thu nhập hàng tháng của người vay là 7,5 triệu VND, thấp so với khoản vay 25 triệu VND, gây áp lực tài chính lớn và rủi ro vỡ nợ cao. Người vay chưa có việc làm thêm, không có nợ hiện tại, nhưng điểm GPA thấp (0.78/1.0) cho thấy khả năng học tập và trách nhiệm tài chính chưa ổn định. Mục đích vay là để mua thiết bị học tập, phù hợp với mục tiêu học tập, nhưng không đủ để giảm thiểu rủi ro. Bảo lãnh bởi anh chị là điểm cộng, nhưng không đủ để cân bằng rủi ro tổng thể. Tập trung vào bảo vệ tài sản và tránh bad debt, đánh giá rủi ro tổng thể là cao.",
+                        "risk_level": "high"
+                      }
+                    }
+                  },
+                  {
+                    "from": "coordinator",
+                    "to": "CriticalAgent",
+                    "message": {
+                      "type": "scholarship_decision",
+                      "payload": {
+                        "argument": "Bạn là Agent Phản biện. Hãy tìm ra điểm yếu, mâu thuẫn, hoặc giả định thiếu cơ sở trong các lập luận của hai agent kia. Đặt câu hỏi chất vấn sắc bén.\nLập luận: {'decision': 'approve', 'reason': 'Hồ sơ thể hiện tiềm năng phát triển rõ ràng với GPA còn thấp nhưng có khả năng cải thiện nhờ động lực và môi trường học tập tốt tại trường đại học tier 2 uy tín trong ngành Y khoa. Sinh viên đã tích cực tham gia hoạt động ngoại khóa trong CLB Y tế, cho thấy đam mê và năng động, điều này sẽ hỗ trợ phát triển kỹ năng mềm và kiến thức chuyên môn. Ngành Y khoa có triển vọng nghề nghiệp ổn định và lâu dài, mang lại cơ hội thành công cao trong tương lai. Mặc dù tài chính gia đình có thu nhập trung bình, nhưng việc có người bảo lãnh và mục đích vay là thiết bị học tập thể hiện ý thức học tập và mong muốn nâng cao trình độ. Các yếu tố tích cực này hoàn toàn có thể bù đắp rủi ro tài chính, tạo điều kiện thuận lợi để sinh viên phát triển và thành công trong học tập cũng như sự nghiệp sau này.'}\n",
+                        "decision": {
+                          "decision": "approve",
+                          "reason": "Hồ sơ thể hiện tiềm năng phát triển rõ ràng với GPA còn thấp nhưng có khả năng cải thiện nhờ động lực và môi trường học tập tốt tại trường đại học tier 2 uy tín trong ngành Y khoa. Sinh viên đã tích cực tham gia hoạt động ngoại khóa trong CLB Y tế, cho thấy đam mê và năng động, điều này sẽ hỗ trợ phát triển kỹ năng mềm và kiến thức chuyên môn. Ngành Y khoa có triển vọng nghề nghiệp ổn định và lâu dài, mang lại cơ hội thành công cao trong tương lai. Mặc dù tài chính gia đình có thu nhập trung bình, nhưng việc có người bảo lãnh và mục đích vay là thiết bị học tập thể hiện ý thức học tập và mong muốn nâng cao trình độ. Các yếu tố tích cực này hoàn toàn có thể bù đắp rủi ro tài chính, tạo điều kiện thuận lợi để sinh viên phát triển và thành công trong học tập cũng như sự nghiệp sau này."
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "from": "CriticalAgent",
+                    "to": "coordinator",
+                    "message": {
+                      "type": "scholarship_decision_critical_response",
+                      "payload": {
+                        "critical_response": "Phản biện quyết định của coordinator: {'decision': 'approve', 'reason': 'Hồ sơ thể hiện tiềm năng phát triển rõ ràng với GPA còn thấp nhưng có khả năng cải thiện nhờ động lực và môi trường học tập tốt tại trường đại học tier 2 uy tín trong ngành Y khoa. Sinh viên đã tích cực tham gia hoạt động ngoại khóa trong CLB Y tế, cho thấy đam mê và năng động, điều này sẽ hỗ trợ phát triển kỹ năng mềm và kiến thức chuyên môn. Ngành Y khoa có triển vọng nghề nghiệp ổn định và lâu dài, mang lại cơ hội thành công cao trong tương lai. Mặc dù tài chính gia đình có thu nhập trung bình, nhưng việc có người bảo lãnh và mục đích vay là thiết bị học tập thể hiện ý thức học tập và mong muốn nâng cao trình độ. Các yếu tố tích cực này hoàn toàn có thể bù đắp rủi ro tài chính, tạo điều kiện thuận lợi để sinh viên phát triển và thành công trong học tập cũng như sự nghiệp sau này.'} - . Có logic không? Có thiếu sót gì?\n\nPhản biện:\n\n1. Logic và tính hợp lý:  \n- Phân tích của quyết"
+                      }
+                    }
+                  },
+                  {
+                    "from": "coordinator",
+                    "to": "CriticalAgent",
+                    "message": {
+                      "type": "loan_decision",
+                      "payload": {
+                        "argument": "Bạn là Agent Phản biện. Hãy tìm ra điểm yếu, mâu thuẫn, hoặc giả định thiếu cơ sở trong các lập luận của hai agent kia. Đặt câu hỏi chất vấn sắc bén.\nLập luận: {'decision': 'reject', 'reason': 'Thu nhập hàng tháng của người vay là 7,5 triệu VND, thấp so với khoản vay 25 triệu VND, gây áp lực tài chính lớn và rủi ro vỡ nợ cao. Người vay chưa có việc làm thêm, không có nợ hiện tại, nhưng điểm GPA thấp (0.78/1.0) cho thấy khả năng học tập và trách nhiệm tài chính chưa ổn định. Mục đích vay là để mua thiết bị học tập, phù hợp với mục tiêu học tập, nhưng không đủ để giảm thiểu rủi ro. Bảo lãnh bởi anh chị là điểm cộng, nhưng không đủ để cân bằng rủi ro tổng thể. Tập trung vào bảo vệ tài sản và tránh bad debt, đánh giá rủi ro tổng thể là cao.', 'risk_level': 'high'}\n",
+                        "decision": {
+                          "decision": "reject",
+                          "reason": "Thu nhập hàng tháng của người vay là 7,5 triệu VND, thấp so với khoản vay 25 triệu VND, gây áp lực tài chính lớn và rủi ro vỡ nợ cao. Người vay chưa có việc làm thêm, không có nợ hiện tại, nhưng điểm GPA thấp (0.78/1.0) cho thấy khả năng học tập và trách nhiệm tài chính chưa ổn định. Mục đích vay là để mua thiết bị học tập, phù hợp với mục tiêu học tập, nhưng không đủ để giảm thiểu rủi ro. Bảo lãnh bởi anh chị là điểm cộng, nhưng không đủ để cân bằng rủi ro tổng thể. Tập trung vào bảo vệ tài sản và tránh bad debt, đánh giá rủi ro tổng thể là cao.",
+                          "risk_level": "high"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "from": "CriticalAgent",
+                    "to": "coordinator",
+                    "message": {
+                      "type": "loan_decision_critical_response",
+                      "payload": {
+                        "critical_response": "Phản biện quyết định của coordinator dựa trên các lý do đã nêu có phần hợp lý, nhưng cũng cần xem xét một số điểm để đảm bảo tính toàn diện và chính xác hơn:\n\n1. **Thu nhập thấp so với khoản vay**: Đúng là thu nhập 7,5 triệu VND/tháng so với khoản vay 25 triệu VND tạo áp lực tài chính lớn và rủi ro vỡ nợ cao. Tuy nhiên, cần xem xét khả năng trả nợ dựa trên tỷ lệ phần trăm thu nhập, cũng như các nguồn thu nhập khác (nếu có) để đánh giá chính xác hơn.\n\n2. **Thiếu việc làm thêm và điểm GPA thấp**: Việc người vay chưa có việc làm thêm và điểm GPA thấp (0.78/1.0) cho thấy khả năng học tập và trách nhiệm tài chính chưa ổn định. Tuy nhiên, điểm GPA thấp không hoàn toàn phản ánh khả năng quản lý tài chính hay ý chí trả nợ. Có thể xem xét các yếu tố khác như thái độ, kế hoạch học tập, hoặc các yếu tố hỗ trợ khác.\n\n3. **Mục đích vay phù hợp nhưng không đủ để giảm thiểu rủi ro"
+                      }
+                    }
+                  }
+                ],
+                "critical_response": {
+                  "critical_response": "Phản biện quyết định của coordinator dựa trên các lý do đã nêu có phần hợp lý, nhưng cũng cần xem xét một số điểm để đảm bảo tính toàn diện và chính xác hơn:\n\n1. **Thu nhập thấp so với khoản vay**: Đúng là thu nhập 7,5 triệu VND/tháng so với khoản vay 25 triệu VND tạo áp lực tài chính lớn và rủi ro vỡ nợ cao. Tuy nhiên, cần xem xét khả năng trả nợ dựa trên tỷ lệ phần trăm thu nhập, cũng như các nguồn thu nhập khác (nếu có) để đánh giá chính xác hơn.\n\n2. **Thiếu việc làm thêm và điểm GPA thấp**: Việc người vay chưa có việc làm thêm và điểm GPA thấp (0.78/1.0) cho thấy khả năng học tập và trách nhiệm tài chính chưa ổn định. Tuy nhiên, điểm GPA thấp không hoàn toàn phản ánh khả năng quản lý tài chính hay ý chí trả nợ. Có thể xem xét các yếu tố khác như thái độ, kế hoạch học tập, hoặc các yếu tố hỗ trợ khác.\n\n3. **Mục đích vay phù hợp nhưng không đủ để giảm thiểu rủi ro"
+                }
+              }
+            }
+          },
+          {
+            "from": "FinanceAgent",
+            "to": "coordinator",
+            "message": {
+              "type": "repredict_loan",
+              "payload": {
+                "decision": "Reject",
+                "reason": "Dựa trên phản biện, mặc dù có những điểm hợp lý, nhưng các yếu tố như thu nhập thấp so với khoản vay, điểm GPA thấp, và thiếu việc làm thêm vẫn tạo ra rủi ro cao về khả năng trả nợ. Các yếu tố này cho thấy khả năng quản lý tài chính và trách nhiệm tài chính của người vay chưa đủ ổn định để đảm bảo an toàn cho khoản vay.",
+                "risk_level": "high"
+              }
+            }
+          },
+          {
+            "from": "coordinator",
+            "to": "DecisionAgent",
+            "message": {
+              "type": "aggregate_all",
+              "payload": {
+                "scholarship_decision": {
+                  "decision": "approve",
+                  "reason": "Hồ sơ thể hiện tiềm năng phát triển rõ ràng với GPA còn thấp nhưng có khả năng cải thiện nhờ động lực và môi trường học tập tốt tại trường đại học tier 2 uy tín trong ngành Y khoa. Sinh viên đã tích cực tham gia hoạt động ngoại khóa trong CLB Y tế, cho thấy đam mê và năng động, điều này sẽ hỗ trợ phát triển kỹ năng mềm và kiến thức chuyên môn. Ngành Y khoa có triển vọng nghề nghiệp ổn định và lâu dài, mang lại cơ hội thành công cao trong tương lai. Mặc dù tài chính gia đình có thu nhập trung bình, nhưng việc có người bảo lãnh và mục đích vay là thiết bị học tập thể hiện ý thức học tập và mong muốn nâng cao trình độ. Các yếu tố tích cực này hoàn toàn có thể bù đắp rủi ro tài chính, tạo điều kiện thuận lợi để sinh viên phát triển và thành công trong học tập cũng như sự nghiệp sau này."
+                },
+                "loan_decision": {
+                  "decision": "reject",
+                  "reason": "Thu nhập hàng tháng của người vay là 7,5 triệu VND, thấp so với khoản vay 25 triệu VND, gây áp lực tài chính lớn và rủi ro vỡ nợ cao. Người vay chưa có việc làm thêm, không có nợ hiện tại, nhưng điểm GPA thấp (0.78/1.0) cho thấy khả năng học tập và trách nhiệm tài chính chưa ổn định. Mục đích vay là để mua thiết bị học tập, phù hợp với mục tiêu học tập, nhưng không đủ để giảm thiểu rủi ro. Bảo lãnh bởi anh chị là điểm cộng, nhưng không đủ để cân bằng rủi ro tổng thể. Tập trung vào bảo vệ tài sản và tránh bad debt, đánh giá rủi ro tổng thể là cao.",
+                  "risk_level": "high"
+                },
+                "scholarship_decision_critical_response": {
+                  "critical_response": "Phản biện quyết định của coordinator: {'decision': 'approve', 'reason': 'Hồ sơ thể hiện tiềm năng phát triển rõ ràng với GPA còn thấp nhưng có khả năng cải thiện nhờ động lực và môi trường học tập tốt tại trường đại học tier 2 uy tín trong ngành Y khoa. Sinh viên đã tích cực tham gia hoạt động ngoại khóa trong CLB Y tế, cho thấy đam mê và năng động, điều này sẽ hỗ trợ phát triển kỹ năng mềm và kiến thức chuyên môn. Ngành Y khoa có triển vọng nghề nghiệp ổn định và lâu dài, mang lại cơ hội thành công cao trong tương lai. Mặc dù tài chính gia đình có thu nhập trung bình, nhưng việc có người bảo lãnh và mục đích vay là thiết bị học tập thể hiện ý thức học tập và mong muốn nâng cao trình độ. Các yếu tố tích cực này hoàn toàn có thể bù đắp rủi ro tài chính, tạo điều kiện thuận lợi để sinh viên phát triển và thành công trong học tập cũng như sự nghiệp sau này.'} - . Có logic không? Có thiếu sót gì?\n\nPhản biện:\n\n1. Logic và tính hợp lý:  \n- Phân tích của quyết"
+                },
+                "loan_decision_critical_response": {
+                  "critical_response": "Phản biện quyết định của coordinator dựa trên các lý do đã nêu có phần hợp lý, nhưng cũng cần xem xét một số điểm để đảm bảo tính toàn diện và chính xác hơn:\n\n1. **Thu nhập thấp so với khoản vay**: Đúng là thu nhập 7,5 triệu VND/tháng so với khoản vay 25 triệu VND tạo áp lực tài chính lớn và rủi ro vỡ nợ cao. Tuy nhiên, cần xem xét khả năng trả nợ dựa trên tỷ lệ phần trăm thu nhập, cũng như các nguồn thu nhập khác (nếu có) để đánh giá chính xác hơn.\n\n2. **Thiếu việc làm thêm và điểm GPA thấp**: Việc người vay chưa có việc làm thêm và điểm GPA thấp (0.78/1.0) cho thấy khả năng học tập và trách nhiệm tài chính chưa ổn định. Tuy nhiên, điểm GPA thấp không hoàn toàn phản ánh khả năng quản lý tài chính hay ý chí trả nợ. Có thể xem xét các yếu tố khác như thái độ, kế hoạch học tập, hoặc các yếu tố hỗ trợ khác.\n\n3. **Mục đích vay phù hợp nhưng không đủ để giảm thiểu rủi ro"
+                },
+                "repredict_scholarship": {
+                  "decision": "approve",
+                  "reason": "Phản biện đã trình bày rõ ràng các yếu tố tích cực như tiềm năng phát triển, hoạt động ngoại khóa, ý thức học tập và khả năng tài chính ổn định nhờ người bảo lãnh. Các luận điểm này đều hợp lý và có tính logic cao, phù hợp với quyết định duyệt hồ sơ. Tuy nhiên, cần lưu ý rằng GPA còn thấp là điểm cần theo dõi để đảm bảo sinh viên có thể duy trì tiến độ học tập. Tổng thể, các yếu tố tích cực vượt trội và phù hợp để tin tưởng vào khả năng thành công của sinh viên trong môi trường đại học uy tín."
+                },
+                "repredict_loan": {
+                  "decision": "Reject",
+                  "reason": "Dựa trên phản biện, mặc dù có những điểm hợp lý, nhưng các yếu tố như thu nhập thấp so với khoản vay, điểm GPA thấp, và thiếu việc làm thêm vẫn tạo ra rủi ro cao về khả năng trả nợ. Các yếu tố này cho thấy khả năng quản lý tài chính và trách nhiệm tài chính của người vay chưa đủ ổn định để đảm bảo an toàn cho khoản vay.",
+                  "risk_level": "high"
+                },
+                "original_profile": "Hồ sơ sinh viên vay vốn (ID: f88e4228-2347-469e-9463-5c4c62ac2f18):\n- Thông tin cá nhân: 21 tuổi, Nữ, nhóm tuổi 18-22, khu vực Nam\n- Thông tin học tập: Đại học tier 2, trường công lập, ngành Y khoa, năm 2, GPA chuẩn hóa: 0.78/1.0\n- Hoạt động ngoại khóa: CLB Y tế\n- Tài chính gia đình: Thu nhập 7,500,000 VND/tháng\n- Tình hình cá nhân: Không có việc làm thêm, Không có nợ\n- Bảo lãnh: Anh chị\n- Yêu cầu vay: 25,000,000 VND cho mục đích 'Thiết bị học tập'"
+              }
+            }
+          },
+          {
+            "from": "DecisionAgent",
+            "to": "coordinator",
+            "message": {
+              "type": "final_decision",
+              "payload": {
+                "decision": "approve",
+                "reason": "Vi phạm 1 special feature nhưng passed_count = 6 >= 6 - CHẤP NHẬN có điều kiện.",
+                "detailed_analysis": {
+                  "features_analysis": {
+                    "feature_1_thu_nhap": true,
+                    "feature_2_hoc_luc": true,
+                    "feature_3_truong_hoc": true,
+                    "feature_4_nganh_uu_tien": true,
+                    "feature_5_bao_lanh": false,
+                    "feature_6_khoan_vay": true,
+                    "feature_7_no_existing_debt": true
+                  },
+                  "rule_calculation": {
+                    "total_passed_count": 6,
+                    "special_violations_count": 1,
+                    "special_features_status": {
+                      "feature_2": true,
+                      "feature_5": false,
+                      "feature_7": true
+                    }
+                  },
+                  "regulation_compliance": "Nghị định 07/2021/NĐ-CP, Quyết định 05/2022/QĐ-TTg, Thông tư 19/2023/TT-BGDĐT (cập nhật 2025)",
+                  "subjective_inputs": {
+                    "academic_decision": "approve",
+                    "finance_decision": "reject",
+                    "academic_reason": "Hồ sơ thể hiện tiềm năng phát triển rõ ràng với GPA còn thấp nhưng có khả năng cải thiện nhờ động lực và môi trường học tập tốt tại trường đại học tier 2 uy tín trong ngành Y khoa. Sinh viên đã tích cực tham gia hoạt động ngoại khóa trong CLB Y tế, cho thấy đam mê và năng động, điều này sẽ hỗ trợ phát triển kỹ năng mềm và kiến thức chuyên môn. Ngành Y khoa có triển vọng nghề nghiệp ổn định và lâu dài, mang lại cơ hội thành công cao trong tương lai. Mặc dù tài chính gia đình có thu nhập trung bình, nhưng việc có người bảo lãnh và mục đích vay là thiết bị học tập thể hiện ý thức học tập và mong muốn nâng cao trình độ. Các yếu tố tích cực này hoàn toàn có thể bù đắp rủi ro tài chính, tạo điều kiện thuận lợi để sinh viên phát triển và thành công trong học tập cũng như sự nghiệp sau này.",
+                    "finance_reason": "Thu nhập hàng tháng của người vay là 7,5 triệu VND, thấp so với khoản vay 25 triệu VND, gây áp lực tài chính lớn và rủi ro vỡ nợ cao. Người vay chưa có việc làm thêm, không có nợ hiện tại, nhưng điểm GPA thấp (0.78/1.0) cho thấy khả năng học tập và trách nhiệm tài chính chưa ổn định. Mục đích vay là để mua thiết bị học tập, phù hợp với mục tiêu học tập, nhưng không đủ để giảm thiểu rủi ro. Bảo lãnh bởi anh chị là điểm cộng, nhưng không đủ để cân bằng rủi ro tổng thể. Tập trung vào bảo vệ tài sản và tránh bad debt, đánh giá rủi ro tổng thể là cao."
+                  }
+                },
+                "rule_based_system": true,
+                "hybrid_approach": "subjective_debate_to_objective_rules"
+              }
+            }
+          }
+        ],
+        "processing_time_seconds": 30.54,
+        "request_id": "f88e4228-2347-469e-9463-5c4c62ac2f18"
+      },
+      "processing_time": 30.550978899002075,
+      "timestamp": "2025-07-27T16:53:00.591451"
+    }
+  ]
+}

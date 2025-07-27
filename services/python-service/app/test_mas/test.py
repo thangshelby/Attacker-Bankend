@@ -1,3 +1,12 @@
+"""
+MAS Test Runner - UPDATED for 7 Features Schema
+===============================================
+Test runner cho Multi-Agent System với schema mới:
+- Thêm 2 trường: public_university, guarantor 
+- Mapping chính xác với 7 features trong decision_agent.py
+- Schema validation để đảm bảo data quality
+- Enhanced reporting với all fields
+"""
 import pandas as pd
 import requests
 import json
@@ -41,6 +50,39 @@ class MASTestRunner:
             print(f"❌ Error loading CSV: {str(e)}")
             return None
     
+    def validate_request_schema(self, request_data):
+        """Validate request data matches API schema"""
+        required_fields = [
+            "age_group", "age", "gender", "province_region", "university_tier", 
+            "public_university", "major_category", "gpa_normalized", "study_year",
+            "family_income", "has_part_time_job", "existing_debt", "guarantor",
+            "loan_amount_requested", "loan_purpose"
+        ]
+        
+        missing_fields = [field for field in required_fields if field not in request_data]
+        if missing_fields:
+            print(f"⚠️ Missing fields: {missing_fields}")
+            return False
+        
+        # Validate data types and ranges
+        validations = [
+            (request_data["age"] >= 16 and request_data["age"] <= 30, "age must be 16-30"),
+            (request_data["university_tier"] >= 1 and request_data["university_tier"] <= 5, "university_tier must be 1-5"),
+            (request_data["gpa_normalized"] >= 0.0 and request_data["gpa_normalized"] <= 1.0, "gpa_normalized must be 0.0-1.0"),
+            (request_data["study_year"] >= 1 and request_data["study_year"] <= 6, "study_year must be 1-6"),
+            (request_data["family_income"] >= 0, "family_income must be >= 0"),
+            (request_data["loan_amount_requested"] >= 1000000, "loan_amount must be >= 1M"),
+            (request_data["province_region"] in ["Bắc", "Trung", "Nam"], "province_region invalid"),
+            (request_data["gender"] in ["Nam", "Nữ", "Khác"], "gender invalid")
+        ]
+        
+        for is_valid, error_msg in validations:
+            if not is_valid:
+                print(f"❌ Validation error: {error_msg}")
+                return False
+        
+        return True
+
     def csv_row_to_request(self, row):
         """Convert CSV row to API request format"""
         try:
@@ -63,13 +105,14 @@ class MASTestRunner:
             else:  # Đã là thang 1 (like 0.725, 0.85)
                 fixed_gpa = raw_gpa
             
-            # Map CSV columns to API schema
+            # Map CSV columns to API schema (UPDATED với 2 trường mới)
             request_data = {
                 "age_group": str(row.get("age_group", "18-22")),
                 "age": int(row.get("age", 20)),
                 "gender": str(row.get("gender", "Nam")),
                 "province_region": fixed_province,
                 "university_tier": int(row.get("university_tier", 1)),
+                "public_university": bool(row.get("public_university", row.get("public_uni", True))),  # NEW FIELD
                 "major_category": str(row.get("major_category", "STEM")),
                 "gpa_normalized": fixed_gpa,
                 "study_year": int(row.get("study_year", 3)),
@@ -77,11 +120,19 @@ class MASTestRunner:
                 "family_income": int(row.get("family_income", 8000000)),
                 "has_part_time_job": bool(row.get("has_part_time_job", False)),
                 "existing_debt": bool(row.get("existing_debt", False)),
+                "guarantor": str(row.get("guarantor", "Cha mẹ")) if pd.notna(row.get("guarantor")) and str(row.get("guarantor")) != "nan" else "Không có",  # NEW FIELD
                 "loan_amount_requested": int(row.get("loan_amount_requested", 45000000)),
                 "loan_purpose": str(row.get("loan_purpose", "Học phí"))
             }
             
             print(f"🔧 Fixed: province='{raw_province}'→'{fixed_province}', gpa={raw_gpa}→{fixed_gpa}")
+            print(f"📋 New fields: public_uni={request_data['public_university']}, guarantor='{request_data['guarantor']}'")
+            
+            # Validate schema
+            if not self.validate_request_schema(request_data):
+                print(f"❌ Schema validation failed for row")
+                return None
+            
             return request_data
         except Exception as e:
             print(f"❌ Error converting row to request: {str(e)}")
@@ -248,7 +299,11 @@ class MASTestRunner:
                     "income": result["input_data"]["family_income"],
                     "loan_amount": result["input_data"]["loan_amount_requested"],
                     "existing_debt": result["input_data"]["existing_debt"],
-                    "university_tier": result["input_data"]["university_tier"]
+                    "university_tier": result["input_data"]["university_tier"],
+                    "public_university": result["input_data"]["public_university"],  # NEW FIELD
+                    "guarantor": result["input_data"]["guarantor"],  # NEW FIELD
+                    "major_category": result["input_data"]["major_category"],
+                    "has_part_time_job": result["input_data"]["has_part_time_job"]
                 })
         
         if summary_data:
