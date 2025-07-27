@@ -42,7 +42,7 @@ class FinanceAgent(BaseAgent):
             )
             
             try:
-                response_text = self.llm.complete(prompt, max_tokens=150)
+                response_text = self.llm.complete(prompt, max_tokens=256)
                 response_str = str(response_text).strip()
                 print(f"[FinanceAgent] LLM Response: {response_str}")
                 
@@ -91,7 +91,7 @@ class FinanceAgent(BaseAgent):
                 'JSON: {"decision": "approve/reject", "reason": "lý do tái đánh giá", "risk_level": "low/medium/high"}'
             )
             try:
-                response_text = self.llm.complete(prompt, max_tokens=150)
+                response_text = self.llm.complete(prompt, max_tokens=256)
                 response_data = json.loads(str(response_text).strip())
                 self.send_message(sender, "repredict_loan", response_data)
             except:

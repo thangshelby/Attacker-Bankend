@@ -74,22 +74,52 @@ class DecisionAgent(BaseAgent):
         major_keywords = ['STEM', 'Y khoa', 'IT', 'Sư phạm', 'Computer', 'Engineering', 'Medicine', 'Science']
         major_priority = any(keyword.lower() in profile_text.lower() for keyword in major_keywords)
         
-        # Extract Income (in VND)
-        income_patterns = [
-            r'thu nhập[:\s]*([0-9,\.]+)\s*(?:triệu|M|VND)',
-            r'([0-9,\.]+)\s*(?:triệu|M)\s*VND',
-            r'([0-9,\.]+)\s*VND'
+        # Extract Public University (feature_3_truong_hoc)
+        is_public_university = 'trường công lập' in profile_text.lower()
+        
+        # Extract Guarantor (feature_5_bao_lanh)
+        # Dataset logic: "Không có" = không có bảo lãnh (False), mọi giá trị khác = có bảo lãnh (True)
+        has_guarantor = True  # Default assume có bảo lãnh
+        
+        # Check for explicit "Không có" patterns
+        no_guarantor_patterns = [
+            'bảo lãnh: không có',
+            'người bảo lãnh: không có', 
+            'không có người bảo lãnh',
+            ': không có'  # Generic pattern
         ]
-        family_income = 15000000  # Default
+        
+        for pattern in no_guarantor_patterns:
+            if pattern in profile_text.lower():
+                has_guarantor = False
+                break
+        
+        # Extract Income (in VND) - Format: "Thu nhập 8,000,000 VND/tháng"
+        income_patterns = [
+            r'thu nhập[:\s]*([0-9,\.]+)\s*VND/tháng',  # Exact format from profile
+            r'thu nhập[:\s]*([0-9,\.]+)\s*VND',
+            r'([0-9,\.]+)\s*VND/tháng',
+            r'thu nhập[:\s]*([0-9,\.]+)\s*(?:triệu|M)',  # Backup patterns
+        ]
+        family_income = 15000000  # Default (conservative high income)
+        
         for pattern in income_patterns:
             income_match = re.search(pattern, profile_text, re.IGNORECASE)
             if income_match:
                 income_str = income_match.group(1).replace(',', '').replace('.', '')
-                income_val = float(income_str)
-                if income_val < 1000:  # Likely in millions
-                    income_val *= 1000000
-                family_income = income_val
-                break
+                try:
+                    income_val = int(income_str)  # Use int instead of float
+                    # If value is reasonable (> 100,000), use as-is
+                    if income_val >= 100000:  # Assume already in VND
+                        family_income = income_val
+                    elif income_val < 1000:  # Likely in millions
+                        family_income = income_val * 1000000
+                    else:
+                        family_income = income_val
+                    print(f"[DecisionAgent] 💰 Extracted family_income: {family_income:,} VND")
+                    break
+                except ValueError:
+                    continue  # Try next pattern
                 
         # Extract Debt Status - cần phân biệt "Đang có nợ" vs "Không có nợ"
         debt_positive_keywords = ['đang có nợ', 'hiện có nợ', 'có nợ hiện tại']
@@ -124,13 +154,23 @@ class DecisionAgent(BaseAgent):
                 break
         
         # Apply RULE-BASED LOGIC (QUY ĐỊNH 2025)
-        feature_1_thu_nhap = family_income <= 10000000
-        feature_2_hoc_luc = gpa_normalized >= 0.7  # SPECIAL
-        feature_3_truong_hoc = university_tier <= 3
+        feature_1_thu_nhap = family_income <= 8000000  # Thu nhập ≤ 10M = ưu tiên (PASS)
+        feature_2_hoc_luc = gpa_normalized >= 0.65  # SPECIAL
+        feature_3_truong_hoc = is_public_university  # UPDATED: Trường công lập = PASS
         feature_4_nganh_uu_tien = major_priority
-        feature_5_bao_lanh = family_income > 0  # SPECIAL (assume có bảo lãnh)
+        feature_5_bao_lanh = has_guarantor  # UPDATED: Có người bảo lãnh = PASS
         feature_6_khoan_vay = loan_amount <= 60000000 or loan_amount <= 3000000 * 12  # per year
         feature_7_no_existing_debt = not has_debt  # SPECIAL - existing_debt=false (không có nợ) = PASS
+        
+        # Debug log features
+        print(f"[DecisionAgent] 🔍 Feature Analysis:")
+        print(f"  F1 Thu nhập: {family_income:,} VND ≤ 10M? → {feature_1_thu_nhap}")
+        print(f"  F2 Học lực: GPA {gpa_normalized:.2f} ≥ 0.7? → {feature_2_hoc_luc}")  
+        print(f"  F3 Trường học: Công lập? → {feature_3_truong_hoc}")
+        print(f"  F4 Ngành ưu tiên: STEM/Y khoa? → {feature_4_nganh_uu_tien}")
+        print(f"  F5 Bảo lãnh: Có người bảo lãnh? → {feature_5_bao_lanh}")
+        print(f"  F6 Khoản vay: {loan_amount:,} VND ≤ 60M? → {feature_6_khoan_vay}")
+        print(f"  F7 Không nợ: Không có nợ hiện tại? → {feature_7_no_existing_debt}")
         
         return {
             'feature_1_thu_nhap': feature_1_thu_nhap,
@@ -145,13 +185,13 @@ class DecisionAgent(BaseAgent):
     def _get_default_features(self):
         """Default conservative features when profile parsing fails"""
         return {
-            'feature_1_thu_nhap': False,
-            'feature_2_hoc_luc': False,
-            'feature_3_truong_hoc': False,
-            'feature_4_nganh_uu_tien': False,
-            'feature_5_bao_lanh': False,
-            'feature_6_khoan_vay': False,
-            'feature_7_no_existing_debt': False  # Assume có nợ (conservative)
+            'feature_1_thu_nhap': False,    # Thu nhập cao (conservative)
+            'feature_2_hoc_luc': False,     # GPA thấp (conservative)
+            'feature_3_truong_hoc': False,  # Trường tư thục (conservative)
+            'feature_4_nganh_uu_tien': False, # Ngành không ưu tiên (conservative)
+            'feature_5_bao_lanh': False,    # "Không có" bảo lãnh (conservative)
+            'feature_6_khoan_vay': False,   # Số tiền vay cao (conservative)
+            'feature_7_no_existing_debt': False  # Có nợ hiện tại (conservative)
         }
 
     def aggregate_all(self, merged_payload):
@@ -303,7 +343,7 @@ class DecisionAgent(BaseAgent):
             
         llm = OpenAI(api_key=api_key, model='gpt-4.1-nano')
         try:
-            response_text = llm.complete(prompt, max_tokens=256)
+            response_text = llm.complete(prompt, max_tokens=512)
             response_data = json.loads(str(response_text))
             print(f"[{self.name}] QUYẾT ĐỊNH CUỐI CÙNG (Legacy): {response_data}")
             return response_data

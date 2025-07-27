@@ -40,7 +40,7 @@ class AcademicAgent(BaseAgent):
                 '{"decision": "approve", "reason": "lý do lạc quan chi tiết"}'
             )
             try:
-                response_text = self.llm.complete(prompt, max_tokens=150)
+                response_text = self.llm.complete(prompt, max_tokens=256)
                 response_str = str(response_text).strip()
                 print(f"[AcademicAgent] LLM Response: {response_str}")
                 
@@ -85,7 +85,7 @@ class AcademicAgent(BaseAgent):
                 'JSON: {"decision": "approve/reject", "reason": "lý do tái đánh giá"}'
             )
             try:
-                response_text = self.llm.complete(prompt, max_tokens=150)
+                response_text = self.llm.complete(prompt, max_tokens=256)
                 response_data = json.loads(str(response_text).strip())
                 self.send_message(sender, "repredict_scholarship", response_data)
             except:

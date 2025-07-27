@@ -1,9 +1,4 @@
-﻿age_group,age,gender,province_region,university_tier,major_category,gpa_normalized,study_year,club,family_income,has_part_time_job,existing_debt,loan_amount_requested,loan_purpose
-26-27,26,Nam,Bắc,3,Truyền thông,7.25,1,CLB Kỹ năng mềm,12082000,FALSE,FALSE,18000000,Chi phí sinh hoạt
-23-25,23,Nữ,Nam,2,Khoa học dữ liệu,6.42,1,CLB Âm nhạc,3409000,TRUE,FALSE,40500000,Học phí
-18-20,19,Nữ,Trung,3,Ngôn ngữ,7.48,4,CLB Phim ảnh,9483000,FALSE,TRUE,17000000,Thực tập
-18-20,18,Nữ,Bắc,3,Du lịch,7.17,1,CLB Phim ảnh,0,TRUE,FALSE,43000000,Khóa học
-18-20,19,Nam,Nam,2,Luật,5.76,5,CLB Công nghệ,20490000,FALSE,FALSE,48000000,Khởi nghiệp
-21-22,22,Khác,Trung,2,Tâm lý học,7.65,5,CLB Ngoại ngữ,8274000,FALSE,TRUE,13500000,Mua laptop
-18-20,19,Khác,Trung,1,Luật,5.53,3,CLB Môi trường,3230000,FALSE,TRUE,15500000,Khởi nghiệp
-18-20,18,Nam,Bắc,3,Công nghệ thực phẩm,7.69,1,CLB Phim ảnh,15232000,FALSE,TRUE,42100000,Mua laptop
+﻿age_group,age,gender,province_region,university_tier,public_university,major_category,gpa_normalized,study_year,club,family_income,has_part_time_job,existing_debt,guarantor,loan_amount_requested,loan_purpose
+18-22,20,Nam,Bắc,1,TRUE,STEM,0.85,3,CLB IT,6000000,TRUE,FALSE,Cha mẹ,30000000,Học phí
+18-22,21,Nữ,Nam,2,TRUE,Y khoa,0.78,2,CLB Y tế,7500000,FALSE,FALSE,Anh chị,25000000,Thiết bị học tập
+
