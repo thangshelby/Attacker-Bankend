@@ -1,3 +1,0 @@
-row_index,decision,reason,processing_time,gpa,income,loan_amount,existing_debt,university_tier,public_university,guarantor,major_category,has_part_time_job
-0,approve,Không vi phạm special features và passed_count = 7 >= 6 - CHẤP NHẬN.,30.31423282623291,0.85,6000000,30000000,False,1,True,Cha mẹ,STEM,True
-1,approve,Vi phạm 1 special feature nhưng passed_count = 6 >= 6 - CHẤP NHẬN có điều kiện.,30.550978899002075,0.78,7500000,25000000,False,2,True,Anh chị,Y khoa,False

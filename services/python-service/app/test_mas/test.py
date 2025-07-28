@@ -1,11 +1,12 @@
 """
-MAS Test Runner - UPDATED for 7 Features Schema
-===============================================
+MAS Test Runner - UPDATED for 7 Features Schema + Evaluation
+============================================================
 Test runner cho Multi-Agent System với schema mới:
 - Thêm 2 trường: public_university, guarantor 
 - Mapping chính xác với 7 features trong decision_agent.py
 - Schema validation để đảm bảo data quality
 - Enhanced reporting với all fields
+- Accuracy, F1 score evaluation với ground truth
 """
 import pandas as pd
 import requests
@@ -14,6 +15,8 @@ import time
 import os
 from datetime import datetime
 import csv
+import numpy as np
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, classification_report
 
 class MASTestRunner:
     def __init__(self, api_base_url="http://localhost:8000/api/v1", csv_file_path="test.csv"):
@@ -30,6 +33,10 @@ class MASTestRunner:
             "start_time": None,
             "end_time": None
         }
+        # For evaluation
+        self.ground_truth = []
+        self.predictions = []
+        self.evaluation_metrics = {}
         
     def load_csv_data(self):
         """Load and validate CSV data"""
@@ -84,7 +91,7 @@ class MASTestRunner:
         return True
 
     def csv_row_to_request(self, row):
-        """Convert CSV row to API request format"""
+        """Convert CSV row to API request format and extract ground truth"""
         try:
             # Fix province_region mapping
             raw_province = str(row.get("province_region", "Bắc"))
@@ -99,7 +106,7 @@ class MASTestRunner:
             fixed_province = province_mapping.get(raw_province, "Bắc")
             
             # Fix GPA normalization (convert thang 10 → thang 1)
-            raw_gpa = float(row.get("gpa_normalized", 0.5))
+            raw_gpa = float(row.get("gpa", row.get("gpa_normalized", 0.5)))
             if raw_gpa > 1:  # Thang 10 (like 7.25, 6.42, 8.5)
                 fixed_gpa = raw_gpa / 10.0
             else:  # Đã là thang 1 (like 0.725, 0.85)
@@ -120,7 +127,7 @@ class MASTestRunner:
                 "family_income": int(row.get("family_income", 8000000)),
                 "has_part_time_job": bool(row.get("has_part_time_job", False)),
                 "existing_debt": bool(row.get("existing_debt", False)),
-                "guarantor": str(row.get("guarantor", "Cha mẹ")) if pd.notna(row.get("guarantor")) and str(row.get("guarantor")) != "nan" else "Không có",  # NEW FIELD
+                "guarantor": str(row.get("guarantor", "Cha mẹ")) if pd.notna(row.get("guarantor")) and str(row.get("guarantor")) not in ["nan", "None", ""] else "Không có",  # NEW FIELD
                 "loan_amount_requested": int(row.get("loan_amount_requested", 45000000)),
                 "loan_purpose": str(row.get("loan_purpose", "Học phí"))
             }
@@ -131,12 +138,15 @@ class MASTestRunner:
             # Validate schema
             if not self.validate_request_schema(request_data):
                 print(f"❌ Schema validation failed for row")
-                return None
+                return None, None
             
-            return request_data
+            # Extract ground truth
+            ground_truth = bool(row.get("loan_approved", False))
+            
+            return request_data, ground_truth
         except Exception as e:
             print(f"❌ Error converting row to request: {str(e)}")
-            return None
+            return None, None
     
     def call_mas_api(self, request_data):
         """Call the multi-agent system API"""
@@ -182,8 +192,8 @@ class MASTestRunner:
         for index, row in df.iterrows():
             print(f"\n📋 Processing record {index + 1}/{len(df)}")
             
-            # Convert to API request
-            request_data = self.csv_row_to_request(row)
+            # Convert to API request and get ground truth
+            request_data, ground_truth = self.csv_row_to_request(row)
             if request_data is None:
                 self.stats["failed_requests"] += 1
                 continue
@@ -197,6 +207,7 @@ class MASTestRunner:
             test_result = {
                 "row_index": index,
                 "input_data": request_data,
+                "ground_truth": ground_truth,
                 "success": success,
                 "result": result,
                 "processing_time": processing_time,
@@ -204,7 +215,7 @@ class MASTestRunner:
             }
             self.results.append(test_result)
             
-            # Update stats
+            # Update stats and collect predictions
             if success:
                 self.stats["successful_requests"] += 1
                 self.stats["total_processing_time"] += processing_time
@@ -216,7 +227,15 @@ class MASTestRunner:
                 elif decision == "reject":
                     self.stats["reject_count"] += 1
                 
-                print(f"✅ SUCCESS: {decision} ({processing_time:.2f}s)")
+                # Store for evaluation
+                self.ground_truth.append(ground_truth)
+                self.predictions.append(decision)
+                
+                gt_label = "✅ APPROVE" if ground_truth else "❌ REJECT"
+                pred_label = "✅ APPROVE" if decision == "approve" else "❌ REJECT"
+                match_status = "✅" if (ground_truth and decision == "approve") or (not ground_truth and decision == "reject") else "❌"
+                
+                print(f"✅ SUCCESS: {pred_label} | GT: {gt_label} | Match: {match_status} ({processing_time:.2f}s)")
             else:
                 self.stats["failed_requests"] += 1
                 print(f"❌ FAILED: {result.get('error', 'Unknown error')}")
@@ -230,7 +249,13 @@ class MASTestRunner:
                 time.sleep(delay_between_requests)
         
         self.stats["end_time"] = time.time()
+        
+        # Calculate evaluation metrics
+        self.calculate_evaluation_metrics()
+        
+        # Print results
         self.print_final_stats()
+        self.print_evaluation_results()
         self.save_results()
     
     def print_progress_stats(self):
@@ -281,6 +306,7 @@ class MASTestRunner:
         with open(results_file, 'w', encoding='utf-8') as f:
             json.dump({
                 "stats": self.stats,
+                "evaluation_metrics": self.evaluation_metrics,
                 "results": self.results
             }, f, indent=2, ensure_ascii=False)
         
@@ -290,9 +316,15 @@ class MASTestRunner:
         for result in self.results:
             if result["success"]:
                 r = result["result"]
+                prediction = r.get("decision", "").lower()
+                ground_truth = result.get("ground_truth", False)
+                correct = (prediction == "approve" and ground_truth) or (prediction == "reject" and not ground_truth)
+                
                 summary_data.append({
                     "row_index": result["row_index"],
-                    "decision": r.get("decision", ""),
+                    "prediction": prediction,
+                    "ground_truth": ground_truth,
+                    "correct": correct,
                     "reason": r.get("reason", ""),
                     "processing_time": result["processing_time"],
                     "gpa": result["input_data"]["gpa_normalized"],
@@ -300,8 +332,8 @@ class MASTestRunner:
                     "loan_amount": result["input_data"]["loan_amount_requested"],
                     "existing_debt": result["input_data"]["existing_debt"],
                     "university_tier": result["input_data"]["university_tier"],
-                    "public_university": result["input_data"]["public_university"],  # NEW FIELD
-                    "guarantor": result["input_data"]["guarantor"],  # NEW FIELD
+                    "public_university": result["input_data"]["public_university"],
+                    "guarantor": result["input_data"]["guarantor"],
                     "major_category": result["input_data"]["major_category"],
                     "has_part_time_job": result["input_data"]["has_part_time_job"]
                 })
@@ -312,7 +344,9 @@ class MASTestRunner:
         
         print(f"\n💾 Results saved:")
         print(f"   📄 Detailed: {results_file}")
-        print(f"   📊 Summary: {summary_file}")
+        if summary_data:
+            print(f"   📊 Summary: {summary_file}")
+            print(f"   🎯 Evaluation metrics included in detailed results")
     
     def test_api_connection(self):
         """Test if API is accessible"""
@@ -330,6 +364,88 @@ class MASTestRunner:
             print(f"❌ API connection error: {str(e)}")
             print(f"💡 Make sure the FastAPI server is running on {self.api_base_url}")
             return False
+
+    def calculate_evaluation_metrics(self):
+        """Calculate accuracy, precision, recall, F1 score"""
+        if len(self.predictions) == 0 or len(self.ground_truth) == 0:
+            print("⚠️ No valid predictions or ground truth for evaluation")
+            return
+        
+        if len(self.predictions) != len(self.ground_truth):
+            print(f"⚠️ Mismatch: predictions={len(self.predictions)}, ground_truth={len(self.ground_truth)}")
+            return
+        
+        # Convert to binary: approve=1, reject=0
+        y_true = [1 if gt else 0 for gt in self.ground_truth]
+        y_pred = [1 if pred == "approve" else 0 for pred in self.predictions]
+        
+        # Calculate metrics
+        accuracy = accuracy_score(y_true, y_pred)
+        precision = precision_score(y_true, y_pred, zero_division=0)
+        recall = recall_score(y_true, y_pred, zero_division=0)
+        f1 = f1_score(y_true, y_pred, zero_division=0)
+        
+        # Confusion matrix
+        tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
+        
+        self.evaluation_metrics = {
+            "accuracy": accuracy,
+            "precision": precision,
+            "recall": recall,
+            "f1_score": f1,
+            "confusion_matrix": {
+                "true_negative": int(tn),
+                "false_positive": int(fp), 
+                "false_negative": int(fn),
+                "true_positive": int(tp)
+            },
+            "total_samples": len(y_true),
+            "ground_truth_approve": sum(y_true),
+            "predicted_approve": sum(y_pred)
+        }
+        
+        return self.evaluation_metrics
+    
+    def print_evaluation_results(self):
+        """Print detailed evaluation results"""
+        if not self.evaluation_metrics:
+            return
+            
+        print("\n" + "="*60)
+        print("📊 MODEL EVALUATION RESULTS")
+        print("="*60)
+        
+        metrics = self.evaluation_metrics
+        cm = metrics["confusion_matrix"]
+        
+        print(f"📈 PERFORMANCE METRICS:")
+        print(f"   🎯 Accuracy:  {metrics['accuracy']:.4f} ({metrics['accuracy']*100:.2f}%)")
+        print(f"   ⚡ Precision: {metrics['precision']:.4f} ({metrics['precision']*100:.2f}%)")
+        print(f"   🔍 Recall:    {metrics['recall']:.4f} ({metrics['recall']*100:.2f}%)")
+        print(f"   🏆 F1-Score:  {metrics['f1_score']:.4f} ({metrics['f1_score']*100:.2f}%)")
+        
+        print(f"\n📊 CONFUSION MATRIX:")
+        print(f"                    Predicted")
+        print(f"                 Reject  Approve")
+        print(f"   Actual Reject   {cm['true_negative']:3d}     {cm['false_positive']:3d}")
+        print(f"          Approve  {cm['false_negative']:3d}     {cm['true_positive']:3d}")
+        
+        print(f"\n📋 SAMPLE DISTRIBUTION:")
+        print(f"   Total Samples: {metrics['total_samples']}")
+        print(f"   Ground Truth Approve: {metrics['ground_truth_approve']} ({metrics['ground_truth_approve']/metrics['total_samples']*100:.1f}%)")
+        print(f"   Predicted Approve: {metrics['predicted_approve']} ({metrics['predicted_approve']/metrics['total_samples']*100:.1f}%)")
+        
+        # Performance analysis
+        if metrics['f1_score'] >= 0.8:
+            performance = "🎉 EXCELLENT"
+        elif metrics['f1_score'] >= 0.7:
+            performance = "✅ GOOD"
+        elif metrics['f1_score'] >= 0.6:
+            performance = "⚠️ FAIR"
+        else:
+            performance = "❌ POOR"
+            
+        print(f"\n🏅 OVERALL PERFORMANCE: {performance} (F1: {metrics['f1_score']:.3f})")
 
 def main():
     """Main test execution"""
