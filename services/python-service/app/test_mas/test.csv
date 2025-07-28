@@ -1,4 +1,10 @@
-﻿age_group,age,gender,province_region,university_tier,public_university,major_category,gpa_normalized,study_year,club,family_income,has_part_time_job,existing_debt,guarantor,loan_amount_requested,loan_purpose
-18-22,20,Nam,Bắc,1,TRUE,STEM,0.85,3,CLB IT,6000000,TRUE,FALSE,Cha mẹ,30000000,Học phí
-18-22,21,Nữ,Nam,2,TRUE,Y khoa,0.78,2,CLB Y tế,7500000,FALSE,FALSE,Anh chị,25000000,Thiết bị học tập
-
+﻿,student_id,national_id,province,age_group,age,gender,province_region,university_tier,public_university,major_category,gpa,study_year,club,family_income,guarantor,has_part_time_job,existing_debt,loan_amount_requested,loan_purpose,loan_approved
+291,SV9052,67104581086,Đắk Nông,21-22,21,Nữ,Miền Trung,2,True,Công nghệ thực phẩm,7.84,3,CLB Học thuật,45330590,Mẹ ruột,True,True,17000000,Khóa học,False
+292,SV9397,40102688603,Nghệ An,23-25,23,Nữ,Miền Nam,1,False,Khoa học máy tính,6.56,3,CLB Thể thao,10483401,Cha ruột,True,False,22900000,Chi phí sinh hoạt,False
+293,SV5815,68103252054,Lâm Đồng,21-22,22,Nam,Miền Nam,3,False,Nông nghiệp,8.76,2,CLB Học thuật,0,Chị ruột,True,False,48000000,Khóa học,False
+294,SV6598,79003854444,Thành phố Hồ Chí Minh,21-22,22,Khác,Miền Bắc,1,True,Chăm sóc sức khỏe,7.11,2,CLB Tình nguyện,4753904,Chú ruột,False,True,15000000,Chi phí sinh hoạt,False
+295,SV1572,64004363679,Gia Lai,21-22,21,Nam,Miền Trung,1,True,Y dược,6.53,2,CLB Công nghệ,26503650,Mẹ ruột,True,True,27000000,Mua laptop,False
+296,SV1778,72003580177,Tây Ninh,21-22,22,Nam,Miền Bắc,3,False,Ngôn ngữ,7.12,3,CLB Ngoại ngữ,41324438,Chị ruột,False,False,30500000,Mua laptop,False
+297,SV6438,51104522051,Quảng Ngãi,21-22,21,Khác,Miền Trung,1,True,Công nghệ thông tin,8.45,2,CLB Thể thao,5697515,Mẹ ruột,True,False,51000000,Khởi nghiệp,True
+298,SV8084,58107143439,Ninh Thuận,18-20,18,Khác,Miền Bắc,1,True,Công nghệ thực phẩm,7.35,1,CLB Ngoại ngữ,0,Chị ruột,True,False,47000000,Chi phí sinh hoạt,True
+299,SV6251,82006223182,Tiền Giang,18-20,19,Nữ,Miền Trung,1,True,Quản trị nhân lực,6.99,1,CLB Thể thao,18790102,Chú ruột,True,False,48500000,Chi phí sinh hoạt,False
