@@ -8,6 +8,8 @@ const LoanProfileSchema = mongoose.Schema({
   loan_purpose: { type: Number, required: true },
   monthly_installment: { type: Number, required: true },
   status: { type: String, enum: ['pending', 'rejected', 'accepted'], default: 'pending' },
+  proof_template_id: { type: String },
+  proof_request_id: { type: String },
   created_at: { type: Date, default: Date.now },
   updated_at: { type: Date, default: Date.now },
 });

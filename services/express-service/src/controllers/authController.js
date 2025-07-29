@@ -10,6 +10,7 @@ import StudentModel from "../models/studentModel.js";
 
 // [POST] /register
 export const register = async (req, res) => {
+  console.log(req.body);
   try {
     const isEmailExist = await UserModel.findOne({ email: req.body.email });
 

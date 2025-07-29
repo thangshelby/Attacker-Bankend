@@ -19,3 +19,4 @@ userRouter.get("/role/:role", userController.getUsersByRole);
 userRouter.delete("/delete_user/:id", userController.deleteUserById);
 
 export default userRouter;
+    

@@ -27,7 +27,7 @@ export const sendOtpEmail = async (toEmailAddress) => {
         <h2 style="color: #702272;">${otpToken}</h2>
         <p>Vui lòng nhập mã này để tiếp tục quá trình xác thực. Mã có hiệu lực trong vòng 5 phút.</p>
         <p>Trân trọng,<br />Đội ngũ hỗ trợ</p>
-      </div>
+      </div>    
     `,
   };
 
@@ -60,3 +60,32 @@ export const sendOtpSms = async (phoneNumber, otp) => {
     throw error;
   }
 };
+
+
+import FormData from "form-data"; // form-data v4.0.1
+import Mailgun from "mailgun.js"; // mailgun.js v11.1.0
+
+async function sendSimpleMessage() {
+  const mailgun = new Mailgun(FormData);
+  const mg = mailgun.client({
+    username: "api",
+    key: "4d2e08e39666ed4b8825633e62278b22-03fd4b1a-08238cbb",
+    // When you have an EU-domain, you must specify the endpoint:
+    // url: "https://api.eu.mailgun.net"
+  });
+  try {
+    const data = await mg.messages.create("sandbox41c6e335844b42a3a344005c603bdc23.mailgun.org", {
+      from: "Mailgun Sandbox <postmaster@sandbox41c6e335844b42a3a344005c603bdc23.mailgun.org>",
+      to: ["Ngo Nguyen Duc Thang <thangnnd22414@st.uel.edu.vn>"],
+      subject: "Hello Ngo Nguyen Duc Thang",
+      text: "Congratulations Ngo Nguyen Duc Thang, you just sent an email with Mailgun! You are truly awesome!",
+    });
+
+    console.log(data); // logs response data
+  } catch (error) {
+    console.log(error); //logs any error
+  }
+}
+sendSimpleMessage()
+  .then(() => console.log("Email sent successfully"))
+  .catch((error) => console.error("Error sending email:", error));
