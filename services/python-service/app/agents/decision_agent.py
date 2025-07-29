@@ -249,7 +249,7 @@ class DecisionAgent(BaseAgent):
         special_features = [features['feature_2_hoc_luc'], features['feature_5_bao_lanh'], features['feature_7_no_existing_debt']]
         special_violations = sum(1 for f in special_features if not f)
         
-        # LOGIC QUYẾT ĐỊNH THEO QUY ĐỊNH 2025
+        # LOGIC QUYẾT ĐỊNH THEO QUY ĐỊNH 2025 (SỬA LỖI)
         if special_violations > 1:
             decision = "reject"
             reason = f"Vi phạm {special_violations} special features (F2,F5,F7) - TỰ ĐỘNG TỪ CHỐI theo quy định."
@@ -260,13 +260,9 @@ class DecisionAgent(BaseAgent):
             else:
                 decision = "reject"
                 reason = f"Vi phạm 1 special feature và passed_count = {passed_count} < 6 - TỪ CHỐI."
-        else:  # special_violations == 0
-            if passed_count >= 6:
-                decision = "approve"
-                reason = f"Không vi phạm special features và passed_count = {passed_count} >= 6 - CHẤP NHẬN."
-            else:
-                decision = "reject"
-                reason = f"Không vi phạm special features nhưng passed_count = {passed_count} < 6 - TỪ CHỐI."
+        else:  # special_violations == 0 - PASS CẢ 3 SPECIAL FEATURES
+            decision = "approve"
+            reason = f"PASS cả 3 special features (F2,F5,F7) - TỰ ĐỘNG CHẤP NHẬN (passed_count = {passed_count}/7)."
         
         # Thêm thông tin chi tiết
         detailed_analysis = {

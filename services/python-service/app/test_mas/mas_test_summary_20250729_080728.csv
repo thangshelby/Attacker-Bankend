@@ -1,0 +1,10 @@
+row_index,prediction,ground_truth,correct,reason,processing_time,gpa,income,loan_amount,existing_debt,university_tier,public_university,guarantor,major_category,has_part_time_job
+1,approve,True,True,"PASS cả 3 special features (F2,F5,F7) - TỰ ĐỘNG CHẤP NHẬN (passed_count = 5/7).",27.663720846176147,0.8089999999999999,22045560,50000000,False,1,True,Bác ruột,Công nghệ thông tin,True
+0,reject,False,True,Vi phạm 1 special feature và passed_count = 5 < 6 - TỪ CHỐI.,53.12839221954346,0.6900000000000001,0,7000000,True,3,True,Cha ruột,Du lịch,True
+2,reject,False,True,Vi phạm 1 special feature và passed_count = 5 < 6 - TỪ CHỐI.,48.68110156059265,0.657,4999103,15000000,True,1,True,Mẹ ruột,Khoa học xã hội,True
+3,reject,False,True,Vi phạm 1 special feature và passed_count = 4 < 6 - TỪ CHỐI.,48.19756817817688,0.728,0,15000000,False,3,False,Anh ruột,Tài chính ngân hàng,False
+4,approve,True,True,"PASS cả 3 special features (F2,F5,F7) - TỰ ĐỘNG CHẤP NHẬN (passed_count = 5/7).",52.06764030456543,0.7110000000000001,17473191,49500000,False,2,True,Cha ruột,Công nghệ thông tin,True
+5,approve,True,True,"PASS cả 3 special features (F2,F5,F7) - TỰ ĐỘNG CHẤP NHẬN (passed_count = 6/7).",52.91210865974426,0.86,7633719,44000000,False,1,True,Cha ruột,Khoa học xã hội,True
+6,approve,True,True,"PASS cả 3 special features (F2,F5,F7) - TỰ ĐỘNG CHẤP NHẬN (passed_count = 5/7).",52.1488676071167,0.737,14058297,36200000,False,1,True,Chú ruột,Công nghệ thông tin,True
+7,approve,True,True,"PASS cả 3 special features (F2,F5,F7) - TỰ ĐỘNG CHẤP NHẬN (passed_count = 6/7).",54.695998668670654,0.701,6000560,43000000,False,1,True,Mẹ ruột,Ngôn ngữ,True
+9,reject,False,True,"Vi phạm 2 special features (F2,F5,F7) - TỰ ĐỘNG TỪ CHỐI theo quy định.",55.34283113479614,0.819,2795674,43500000,True,2,True,Người giám hộ hợp pháp,Thiết kế đồ họa,False

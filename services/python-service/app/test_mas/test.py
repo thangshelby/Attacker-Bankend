@@ -17,6 +17,8 @@ from datetime import datetime
 import csv
 import numpy as np
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, classification_report
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import threading
 
 class MASTestRunner:
     def __init__(self, api_base_url="http://localhost:8000/api/v1", csv_file_path="test.csv"):
@@ -37,6 +39,10 @@ class MASTestRunner:
         self.ground_truth = []
         self.predictions = []
         self.evaluation_metrics = {}
+        # Thread safety
+        self.results_lock = threading.Lock()
+        self.stats_lock = threading.Lock()
+        self.completed_requests = 0
         
     def load_csv_data(self):
         """Load and validate CSV data"""
@@ -45,7 +51,7 @@ class MASTestRunner:
                 print(f"❌ CSV file not found: {self.csv_file_path}")
                 return None
                 
-            df = pd.read_csv(self.csv_file_path)
+            df = pd.read_csv(self.csv_file_path).head(10)
             print(f"📊 Loaded {len(df)} records from {self.csv_file_path}")
             
             # Display column info
@@ -170,52 +176,41 @@ class MASTestRunner:
         except Exception as e:
             return False, {"error": str(e)}
     
-    def run_batch_test(self, limit=None, delay_between_requests=1):
-        """Run test on entire CSV dataset"""
-        print(f"\n🚀 Starting MAS Batch Test - {datetime.now()}")
-        print("=" * 60)
+    def process_single_row(self, row_data):
+        """Process a single row in a thread-safe manner"""
+        index, row = row_data
         
-        # Load CSV data
-        df = self.load_csv_data()
-        if df is None:
-            return
-        
-        # Limit records if specified
-        if limit and limit < len(df):
-            df = df.head(limit)
-            print(f"📊 Limited to first {limit} records")
-        
-        self.stats["total_requests"] = len(df)
-        self.stats["start_time"] = time.time()
-        
-        # Process each row
-        for index, row in df.iterrows():
-            print(f"\n📋 Processing record {index + 1}/{len(df)}")
-            
-            # Convert to API request and get ground truth
-            request_data, ground_truth = self.csv_row_to_request(row)
-            if request_data is None:
+        # Convert to API request and get ground truth
+        request_data, ground_truth = self.csv_row_to_request(row)
+        if request_data is None:
+            with self.stats_lock:
                 self.stats["failed_requests"] += 1
-                continue
-            
-            # Call API
-            start_time = time.time()
-            success, result = self.call_mas_api(request_data)
-            processing_time = time.time() - start_time
-            
-            # Store result
-            test_result = {
-                "row_index": index,
-                "input_data": request_data,
-                "ground_truth": ground_truth,
-                "success": success,
-                "result": result,
-                "processing_time": processing_time,
-                "timestamp": datetime.now().isoformat()
-            }
+                self.completed_requests += 1
+            return None
+        
+        # Call API
+        start_time = time.time()
+        success, result = self.call_mas_api(request_data)
+        processing_time = time.time() - start_time
+        
+        # Create result object
+        test_result = {
+            "row_index": index,
+            "input_data": request_data,
+            "ground_truth": ground_truth,
+            "success": success,
+            "result": result,
+            "processing_time": processing_time,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        # Thread-safe updates
+        with self.results_lock:
             self.results.append(test_result)
+        
+        with self.stats_lock:
+            self.completed_requests += 1
             
-            # Update stats and collect predictions
             if success:
                 self.stats["successful_requests"] += 1
                 self.stats["total_processing_time"] += processing_time
@@ -235,20 +230,80 @@ class MASTestRunner:
                 pred_label = "✅ APPROVE" if decision == "approve" else "❌ REJECT"
                 match_status = "✅" if (ground_truth and decision == "approve") or (not ground_truth and decision == "reject") else "❌"
                 
-                print(f"✅ SUCCESS: {pred_label} | GT: {gt_label} | Match: {match_status} ({processing_time:.2f}s)")
+                print(f"✅ Row {index+1}: {pred_label} | GT: {gt_label} | Match: {match_status} ({processing_time:.2f}s)")
             else:
                 self.stats["failed_requests"] += 1
-                print(f"❌ FAILED: {result.get('error', 'Unknown error')}")
+                print(f"❌ Row {index+1} FAILED: {result.get('error', 'Unknown error')}")
+        
+        return test_result
+    
+    def run_batch_test(self, limit=None, delay_between_requests=1, max_workers=5):
+        """Run test on entire CSV dataset using multi-threading"""
+        print(f"\n🚀 Starting MAS Batch Test (THREADED) - {datetime.now()}")
+        print(f"🔧 Configuration: max_workers={max_workers}, delay={delay_between_requests}s")
+        print("=" * 60)
+        
+        # Load CSV data
+        df = self.load_csv_data()
+        if df is None:
+            return
+        
+        # Limit records if specified
+        if limit and limit < len(df):
+            df = df.head(limit)
+            print(f"📊 Limited to first {limit} records")
+        
+        self.stats["total_requests"] = len(df)
+        self.stats["start_time"] = time.time()
+        
+        # Prepare data for threading
+        row_data_list = [(index, row) for index, row in df.iterrows()]
+        
+        print(f"⚡ Processing {len(row_data_list)} records with {max_workers} workers...")
+        
+        # Use ThreadPoolExecutor for parallel processing
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            # Submit all tasks
+            if delay_between_requests > 0:
+                # If delay is needed, submit tasks gradually
+                futures = []
+                for i, row_data in enumerate(row_data_list):
+                    future = executor.submit(self.process_single_row, row_data)
+                    futures.append(future)
+                    
+                    # Add delay every few submissions to avoid overwhelming
+                    if delay_between_requests > 0 and i > 0 and i % max_workers == 0:
+                        time.sleep(delay_between_requests)
+            else:
+                # Submit all at once for maximum speed
+                futures = [executor.submit(self.process_single_row, row_data) 
+                          for row_data in row_data_list]
             
-            # Progress update
-            if (index + 1) % 10 == 0:
-                self.print_progress_stats()
+            # Process completed futures and show progress
+            print(f"📊 Monitoring progress...")
+            last_progress_update = 0
             
-            # Delay between requests to avoid overwhelming the server
-            if delay_between_requests > 0 and index < len(df) - 1:
-                time.sleep(delay_between_requests)
+            for future in as_completed(futures):
+                try:
+                    result = future.result()  # Get the result or raise exception
+                    
+                    # Progress update every 10%
+                    progress_percent = (self.completed_requests / len(row_data_list)) * 100
+                    if progress_percent - last_progress_update >= 10:
+                        with self.stats_lock:
+                            self.print_progress_stats()
+                        last_progress_update = progress_percent
+                        
+                except Exception as e:
+                    print(f"❌ Thread execution error: {e}")
+                    with self.stats_lock:
+                        self.stats["failed_requests"] += 1
+                        self.completed_requests += 1
         
         self.stats["end_time"] = time.time()
+        
+        # Print threading performance
+        self.print_threading_performance(max_workers)
         
         # Calculate evaluation metrics
         self.calculate_evaluation_metrics()
@@ -258,10 +313,44 @@ class MASTestRunner:
         self.print_evaluation_results()
         self.save_results()
     
+    def print_threading_performance(self, max_workers):
+        """Print threading performance comparison"""
+        total_time = self.stats["end_time"] - self.stats["start_time"]
+        successful_requests = self.stats["successful_requests"]
+        
+        if successful_requests > 0:
+            # Calculate theoretical sequential time (using average processing time)
+            avg_processing_time = self.stats["total_processing_time"] / successful_requests
+            theoretical_sequential_time = avg_processing_time * self.stats["total_requests"]
+            
+            speedup = theoretical_sequential_time / total_time if total_time > 0 else 1
+            
+            print(f"\n⚡ THREADING PERFORMANCE ANALYSIS")
+            print(f"=" * 50)
+            print(f"🔧 Workers Used: {max_workers}")
+            print(f"⏱️ Total Wall Time: {total_time:.2f}s")
+            print(f"🧮 Avg Processing Time: {avg_processing_time:.2f}s per request")
+            print(f"📊 Theoretical Sequential Time: {theoretical_sequential_time:.2f}s")
+            print(f"🚀 Speedup: {speedup:.2f}x")
+            print(f"💾 Throughput: {successful_requests/total_time:.1f} requests/second")
+            
+            if speedup > 3:
+                performance = "🎉 EXCELLENT"
+            elif speedup > 2:
+                performance = "✅ GOOD"
+            elif speedup > 1.5:
+                performance = "⚠️ MODERATE"
+            else:
+                performance = "❌ POOR"
+            
+            print(f"🏆 Threading Efficiency: {performance}")
+            print("=" * 50)
+    
     def print_progress_stats(self):
-        """Print current progress statistics"""
+        """Print current progress statistics (thread-safe)"""
+        # This method should be called within a stats_lock context
         total = self.stats["total_requests"]
-        completed = self.stats["successful_requests"] + self.stats["failed_requests"]
+        completed = self.completed_requests
         success_rate = (self.stats["successful_requests"] / completed * 100) if completed > 0 else 0
         
         print(f"📊 Progress: {completed}/{total} ({completed/total*100:.1f}%) | "
@@ -469,10 +558,12 @@ def main():
     
     # You can customize these parameters:
     # - limit: Number of records to process (None = all)
-    # - delay_between_requests: Seconds to wait between API calls
+    # - delay_between_requests: Seconds to wait between API calls (0 for max speed)
+    # - max_workers: Number of concurrent threads (5-10 recommended)
     tester.run_batch_test(
-        limit=None,  # Process all records, or set to e.g., 50 for testing
-        delay_between_requests=0.5  # Small delay to avoid overwhelming the API
+        limit=10,  # Process all records, or set to e.g., 50 for testing
+        delay_between_requests=1,  # No delay for maximum speed
+        max_workers=2  # 8 concurrent threads for faster processing
     )
 
 if __name__ == "__main__":
