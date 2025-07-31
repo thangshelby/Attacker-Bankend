@@ -27,18 +27,16 @@ export const register = async (req, res) => {
         status: false,
       });
     }
-
     const hashPassword = await bcrypt.hash(req.body.password, 10);
     const otpToken = await sendOtpEmail(req.body.email);
 
     const user = new UserModel({
-      citizen_id: new Date().toISOString(),
-      date_of_birth: req.body.date_of_birth,
-      user_name: req.body.user_name,
+      name: req.body.name,
       email: req.body.email,
       password: hashPassword,
       otp_token: otpToken,
     });
+    console.log(user);
     const result = await user.save();
 
     const accessToken = generateAccessToken(result);
@@ -77,6 +75,7 @@ export const login = async (req, res) => {
         message: {
           email: "Your email is not registered",
           password: null,
+          server: null,
         },
         status: false,
       });
@@ -91,6 +90,7 @@ export const login = async (req, res) => {
         message: {
           email: null,
           password: "Your password is incorrect",
+          server: null,
         },
         status: false,
       });
