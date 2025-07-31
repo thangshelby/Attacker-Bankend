@@ -3,7 +3,7 @@ from app.agents.coordinator_agent import CoordinatorAgent
 from app.agents.finance_agent import FinanceAgent
 from app.agents.acadamic_agent import AcademicAgent  
 from app.agents.critical_agent import CriticalAgent
-from app.agents.decision import DecisionAgent
+from app.agents.decision_agent import DecisionAgent
 from app.core.decision_workflow import get_persona_prompt
 import time  # Để thêm delay nhỏ nếu cần polling
 
@@ -30,17 +30,17 @@ def debate_to_decide_workflow(profile, return_log: bool = False):
         return orig_route_message(sender, recipient, message_type, payload)
     coordinator.route_message = route_message_with_memory
 
-    # Vòng 1: Initial Arguments
-    print("\n=== Vòng 1: Initial Arguments ===")
+    # Vòng 1: Initial Arguments - SUBJECTIVE DEBATE
+    print("\n=== Vòng 1: Subjective Arguments ===")
     academic_prompt = get_persona_prompt("optimist", profile)
     finance_prompt = get_persona_prompt("realist", profile)
     coordinator.route_message("coordinator", "AcademicAgent", "scholarship_application", {"profile": academic_prompt})
     coordinator.route_message("coordinator", "FinanceAgent", "loan_application", {"profile": finance_prompt})
 
-    # Đợi một chút để agents xử lý (nếu cần, tùy thuộc vào thread-based implementation)
-    time.sleep(1)  # Delay nhỏ để message_log cập nhật
+    # Đợi một chút để agents xử lý
+    time.sleep(1)
 
-    # Vòng 2: Critique & Rebuttal - FIXED VERSION
+    # Vòng 2: Critique & Rebuttal - SUBJECTIVE CRITIQUE
     print("\n=== Vòng 2: Critique & Rebuttal ===")
 
     # Thu thập decisions từ Vòng 1
@@ -109,24 +109,34 @@ def debate_to_decide_workflow(profile, return_log: bool = False):
     # Đợi repredict hoàn thành
     time.sleep(5)
 
-    # Vòng 3: Gộp tất cả response và gửi 1 lần cho DecisionAgent
-    print("\n=== Vòng 3: Synthesis & Final Recommendation ===")
+    # Vòng 3: HYBRID DECISION - Subjective → Objective
+    print("\n=== Vòng 3: Hybrid Decision (Subjective → Rule-Based) ===")
+    
+    # SAFETY: Đảm bảo luôn gửi dict thay vì None để tránh crash
     merged_payload = {
-        "scholarship_decision": academic_decision,
-        "loan_decision": finance_decision,
-        "scholarship_decision_critical_response": critical_responses["AcademicAgent"],
-        "loan_decision_critical_response": critical_responses["FinanceAgent"],
-        "repredict_scholarship": None,
-        "repredict_loan": None
+        "scholarship_decision": academic_decision if academic_decision else {},
+        "loan_decision": finance_decision if finance_decision else {},
+        "scholarship_decision_critical_response": critical_responses["AcademicAgent"] if critical_responses["AcademicAgent"] else {},
+        "loan_decision_critical_response": critical_responses["FinanceAgent"] if critical_responses["FinanceAgent"] else {},
+        "repredict_scholarship": {},
+        "repredict_loan": {},
+        "original_profile": profile  # ⭐ PASS PROFILE FOR RULE EXTRACTION ⭐
     }
-    # Thu thập repredict từ message_log
+    # Thu thập repredict từ message_log với safety check
     for entry in list(coordinator.message_log):
         msg_type = entry["message"].get("type")
         if entry["from"] == "AcademicAgent" and msg_type == "repredict_scholarship":
-            merged_payload["repredict_scholarship"] = entry["message"]["payload"]
+            payload = entry["message"]["payload"]
+            merged_payload["repredict_scholarship"] = payload if payload else {}
         elif entry["from"] == "FinanceAgent" and msg_type == "repredict_loan":
-            merged_payload["repredict_loan"] = entry["message"]["payload"]
+            payload = entry["message"]["payload"]
+            merged_payload["repredict_loan"] = payload if payload else {}
 
+    print(f"[Coordinator] HYBRID: Subjective debate → Objective rule-based decision")
+    print(f"[Debug] Original profile available: {bool(profile)}")
+    print(f"[Debug] Academic data valid: {bool(merged_payload['scholarship_decision'])}")
+    print(f"[Debug] Finance data valid: {bool(merged_payload['loan_decision'])}")
+    
     coordinator.route_message("coordinator", "DecisionAgent", "aggregate_all", merged_payload)
 
     # Đợi final decision
@@ -140,16 +150,36 @@ def debate_to_decide_workflow(profile, return_log: bool = False):
             break
 
     if return_log:
-        return {
-            "decision": final_decision.get("decision") if final_decision else None,
-            "reason": final_decision.get("reason") if final_decision else None,
-            "logs": session_memory.get_conversation()
-        }
+        # SAFETY: Đảm bảo luôn có decision và reason
+        if final_decision and isinstance(final_decision, dict):
+            decision = final_decision.get("decision", "reject")
+            reason = final_decision.get("reason", "Không có lý do từ DecisionAgent")
+            # Thêm detailed_analysis nếu có
+            result = {
+                "decision": decision,
+                "reason": reason,
+                "logs": session_memory.get_conversation()
+            }
+            if "detailed_analysis" in final_decision:
+                result["detailed_analysis"] = final_decision["detailed_analysis"]
+            if "rule_based_system" in final_decision:
+                result["rule_based_system"] = final_decision["rule_based_system"]
+            if "hybrid_approach" in final_decision:
+                result["hybrid_approach"] = final_decision["hybrid_approach"]
+            return result
+        else:
+            # Fallback nếu DecisionAgent hoàn toàn fail
+            return {
+                "decision": "reject", 
+                "reason": "Lỗi hệ thống: DecisionAgent không trả về kết quả hợp lệ",
+                "logs": session_memory.get_conversation(),
+                "error": "decision_agent_failed"
+            }
     else:
         for entry in session_memory.get_conversation():
             print(entry)
 
 if __name__ == "__main__":
-    # Hồ sơ mẫu
-    profile = "Sinh viên: Trần Thị B, GPA 3.9/4.0, đạt giải Nhất Olympic Toán, hoạt động ngoại khóa xuất sắc. Thu nhập gia đình 20 triệu/tháng, không có nợ xấu."
+    # Test hybrid workflow
+    profile = "Sinh viên: 21 tuổi, Nữ, tier 1, STEM, GPA: 0.85, Thu nhập gia đình: 8M VND/tháng, không nợ, vay: 45M VND học phí"
     debate_to_decide_workflow(profile)
