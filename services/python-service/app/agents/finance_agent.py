@@ -37,8 +37,9 @@ class FinanceAgent(BaseAgent):
                 "- Việc làm thêm = điểm cộng trách nhiệm\n"
                 "- Mục đích học phí = hợp lý hơn sinh hoạt\n"
                 "- Tập trung bảo vệ tài sản, tránh bad debt\n\n"
-                "Trả lời JSON:\n"
-                '{"decision": "reject", "reason": "lý do thận trọng chi tiết", "risk_level": "high"}'
+                "YÊU CẦU: Trả lời theo format sau (không thêm gì khác):\n"
+                "QUYẾT ĐỊNH: REJECT\n"
+                "LÝ DO: [lý do thận trọng chi tiết]"
             )
             
             try:
@@ -46,60 +47,106 @@ class FinanceAgent(BaseAgent):
                 response_str = str(response_text).strip()
                 print(f"[FinanceAgent] LLM Response: {response_str}")
                 
-                # Try to parse JSON
-                response_data = json.loads(response_str)
+                # Parse structured text response
                 
-                # Validate required fields
-                if "decision" not in response_data:
-                    response_data["decision"] = "reject"  # Default cautious
-                if "reason" not in response_data:
-                    response_data["reason"] = "Đánh giá thận trọng về rủi ro tài chính"
-                if "risk_level" not in response_data:
-                    response_data["risk_level"] = "medium"
+                import re
+                # Extract QUYẾT ĐỊNH and LÝ DO from text
+                decision_match = re.search(r'QUYẾT ĐỊNH:\s*(APPROVE|REJECT|CHẤP NHẬN|TỪ CHỐI)', response_str, re.IGNORECASE)
+                reason_match = re.search(r'LÝ DO:\s*(.+)', response_str, re.DOTALL | re.IGNORECASE)
+                
+                if decision_match and reason_match:
+                    decision_text = decision_match.group(1).upper()
+                    reason_text = reason_match.group(1).strip()
+                    
+                    # Normalize decision
+                    if decision_text in ['APPROVE', 'CHẤP NHẬN']:
+                        decision = "approve"
+                    else:
+                        decision = "reject"
+                    
+                    response_data = {
+                        "decision": decision,
+                        "reason": reason_text[:300]  # Limit length
+                    }
+                    print(f"[FinanceAgent] 📝 Parsed structured response: {decision}")
+                else:
+                    # Keyword fallback
+                    text_lower = response_str.lower()
+                    if any(word in text_lower for word in ['approve', 'chấp nhận', 'đồng ý']):
+                        decision = "approve"
+                    else:
+                        decision = "reject"  # Default cautious
+                    
+                    # Use first sentence as reason
+                    sentences = [s.strip() for s in response_str.split('.') if len(s.strip()) > 10]
+                    reason = sentences[0][:200] if sentences else "Đánh giá thận trọng về rủi ro tài chính"
+                    
+                    response_data = {
+                        "decision": decision,
+                        "reason": reason
+                    }
+                    print(f"[FinanceAgent] 🔄 Used keyword fallback: {decision}")
                     
                 self.send_message(sender, "loan_decision", response_data)
                 print(f"[FinanceAgent] ✅ Sent decision: {response_data['decision']}")
                 
-            except json.JSONDecodeError as e:
-                print(f"[FinanceAgent] ❌ JSON Error: {e}")
+            except Exception as e:
+                print(f"[FinanceAgent] ❌ Error parsing response: {e}")
                 print(f"[FinanceAgent] Raw response: {response_str if 'response_str' in locals() else 'N/A'}")
-                # Intelligent fallback based on profile analysis
+                # Ultimate fallback
                 fallback_response = {
                     "decision": "reject",  # Finance agent is cautious by default
-                    "reason": "Đánh giá ban đầu: phát hiện rủi ro tài chính cao do thu nhập thấp và có nợ hiện tại",
-                    "risk_level": "high"
-                }
-                self.send_message(sender, "loan_decision", fallback_response)
-                print(f"[FinanceAgent] ✅ Sent fallback decision: {fallback_response['decision']}")
-                
-            except Exception as e:
-                print(f"[FinanceAgent] ❌ General Error: {str(e)}")
-                fallback_response = {
-                    "decision": "reject",  # Stay cautious
-                    "reason": f"Lỗi kỹ thuật trong đánh giá tài chính - áp dụng nguyên tắc thận trọng từ chối để tránh rủi ro",
-                    "risk_level": "high"
+                    "reason": "Lỗi hệ thống - áp dụng nguyên tắc thận trọng từ chối để tránh rủi ro"
                 }
                 self.send_message(sender, "loan_decision", fallback_response)
                 print(f"[FinanceAgent] ✅ Sent error fallback: {fallback_response['decision']}")
                 
+
+                
         elif message_type == "repredict_loan":
             memory = message.get("payload", {}).get("memory", "")
             critical_response = message.get("payload", {}).get("critical_response", "")
+            recommended_decision = message.get("payload", {}).get("recommended_decision", "")
+            
             prompt = (
-                f"TÁI ĐÁNH GIÁ tài chính sau phản biện:\n{critical_response}\n\n"
-                "Xem xét lại rủi ro, điều chỉnh nếu hợp lý nhưng giữ thận trọng.\n"
-                'JSON: {"decision": "approve/reject", "reason": "lý do tái đánh giá", "risk_level": "low/medium/high"}'
+                f"TÁI ĐÁNH GIÁ tài chính sau phản biện từ Critical Agent:\n"
+                f"Phản biện: {critical_response}\n"
+                f"Khuyến nghị từ Critical Agent: {recommended_decision}\n\n"
+                f"HƯỚNG DẪN:\n"
+                f"- Xem xét kỹ phản biện và khuyến nghị của Critical Agent\n"
+                f"- Điều chỉnh quyết định nếu phản biện có cơ sở\n"
+                f"- Giữ thái độ thận trọng nhưng công bằng hơn\n"
+                f"- Nếu Critical Agent khuyến nghị '{recommended_decision}', hãy cân nhắc nghiêm túc\n\n"
+                'YÊU CẦU: Trả lời theo format sau:\n'
+                'QUYẾT ĐỊNH: APPROVE/REJECT\n'
+                'LÝ DO: [lý do tái đánh giá sau khi xem xét phản biện]'
             )
             try:
                 response_text = self.llm.complete(prompt, max_tokens=256)
-                response_data = json.loads(str(response_text).strip())
+                response_str = str(response_text).strip()
+                
+                # Parse structured response for repredict
+                import re
+                decision_match = re.search(r'QUYẾT ĐỊNH:\s*(APPROVE|REJECT|CHẤP NHẬN|TỪ CHỐI)', response_str, re.IGNORECASE)
+                reason_match = re.search(r'LÝ DO:\s*(.+)', response_str, re.DOTALL | re.IGNORECASE)
+                
+                if decision_match and reason_match:
+                    decision_text = decision_match.group(1).upper()
+                    decision = "approve" if decision_text in ['APPROVE', 'CHẤP NHẬN'] else "reject"
+                    reason = reason_match.group(1).strip()[:300]
+                else:
+                    decision = "reject"  # Cautious default
+                    reason = "Sau phản biện vẫn giữ thái độ thận trọng về rủi ro tài chính"
+                
+                response_data = {"decision": decision, "reason": reason}
                 self.send_message(sender, "repredict_loan", response_data)
-            except:
+            except Exception as e:
+                print(f"[FinanceAgent] ❌ Error in repredict_loan: {str(e)}")
                 fallback_response = {
                     "decision": "reject",
-                    "reason": "Sau phản biện vẫn giữ thái độ thận trọng về rủi ro tài chính",
-                    "risk_level": "high"
+                    "reason": "Sau phản biện vẫn giữ thái độ thận trọng về rủi ro tài chính"
                 }
+                print(f"[FinanceAgent] 🔄 Using fallback response: {fallback_response}")
                 self.send_message(sender, "repredict_loan", fallback_response)
         else:
             # Gửi lại tin nhắn lỗi nếu không xử lý được

@@ -65,7 +65,7 @@ async def debate_loan(request: LoanApplicationRequest):
         # Calculate processing time
         processing_time = time.time() - start_time
         
-        # Add request metadata to result
+        # Add request metadata to structured result
         result["request_metadata"] = {
             "request_id": request_id,
             "loan_amount": request.loan_amount_requested,
@@ -86,7 +86,10 @@ async def debate_loan(request: LoanApplicationRequest):
         result["processing_time_seconds"] = round(processing_time, 2)
         result["request_id"] = request_id
         
-        print(f"✅ Decision: {result.get('decision', 'unknown')} (took {processing_time:.2f}s)")
+        # Extract final decision for logging (compatible with new structure)
+        final_decision = result.get("final_result", {}).get("decision", 
+                                   result.get("responses", {}).get("final_decision", {}).get("decision", "unknown"))
+        print(f"✅ Decision: {final_decision} (took {processing_time:.2f}s)")
         
         return result
         
@@ -96,15 +99,34 @@ async def debate_loan(request: LoanApplicationRequest):
         
         print(f"❌ Error processing {request_id}: {error_msg}")
         
-        # Return structured error response
+        # Return structured error response (compatible with new schema)
         raise HTTPException(
             status_code=500,
             detail={
-                "error": "workflow_execution_failed",
-                "message": error_msg,
-                "request_id": request_id,
+                "responses": {
+                    "academic_repredict": None,
+                    "finance_repredict": None,
+                    "critical_academic": None,
+                    "critical_finance": None,
+                    "final_decision": {
+                        "decision": "reject",
+                        "reason": error_msg
+                    }
+                },
+                "rule_based": {},
+                "agent_status": {},
+                "final_result": {
+                    "decision": "reject",
+                    "reason": error_msg,
+                    "error": "workflow_execution_failed"
+                },
+                "request_metadata": {
+                    "request_id": request_id,
+                    "processing_time_seconds": round(processing_time, 2),
+                    "timestamp": time.time()
+                },
                 "processing_time_seconds": round(processing_time, 2),
-                "timestamp": time.time()
+                "request_id": request_id
             }
         )
 

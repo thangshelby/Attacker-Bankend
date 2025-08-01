@@ -36,59 +36,109 @@ class AcademicAgent(BaseAgent):
                 "- STEM/Y khoa = triển vọng nghề nghiệp\n"
                 "- Hoạt động CLB = tích cực, năng động\n"
                 "- Tập trung tiềm năng phát triển\n\n"
-                "Trả lời JSON:\n"
-                '{"decision": "approve", "reason": "lý do lạc quan chi tiết"}'
+                "YÊU CẦU: Trả lời theo format sau (không thêm gì khác):\n"
+                "QUYẾT ĐỊNH: APPROVE\n"
+                "LÝ DO: [lý do lạc quan chi tiết]"
             )
             try:
                 response_text = self.llm.complete(prompt, max_tokens=256)
                 response_str = str(response_text).strip()
                 print(f"[AcademicAgent] LLM Response: {response_str}")
                 
-                # Try to parse JSON
-                response_data = json.loads(response_str)
+                # Parse structured text response
+                import re
+                # Extract QUYẾT ĐỊNH and LÝ DO from text
+                decision_match = re.search(r'QUYẾT ĐỊNH:\s*(APPROVE|REJECT|CHẤP NHẬN|TỪ CHỐI)', response_str, re.IGNORECASE)
+                reason_match = re.search(r'LÝ DO:\s*(.+)', response_str, re.DOTALL | re.IGNORECASE)
                 
-                # Validate required fields
-                if "decision" not in response_data:
-                    response_data["decision"] = "approve"
-                if "reason" not in response_data:
-                    response_data["reason"] = "Đánh giá lạc quan về tiềm năng sinh viên"
+                if decision_match and reason_match:
+                    decision_text = decision_match.group(1).upper()
+                    reason_text = reason_match.group(1).strip()
+                    
+                    # Normalize decision
+                    if decision_text in ['REJECT', 'TỪ CHỐI']:
+                        decision = "reject"
+                    else:
+                        decision = "approve"  # Default optimistic
+                    
+                    response_data = {
+                        "decision": decision,
+                        "reason": reason_text[:300]  # Limit length
+                    }
+                    print(f"[AcademicAgent] 📝 Parsed structured response: {decision}")
+                else:
+                    # Keyword fallback
+                    text_lower = response_str.lower()
+                    if any(word in text_lower for word in ['reject', 'từ chối', 'không đồng ý']):
+                        decision = "reject"
+                    else:
+                        decision = "approve"  # Default optimistic
+                    
+                    # Use first sentence as reason
+                    sentences = [s.strip() for s in response_str.split('.') if len(s.strip()) > 10]
+                    reason = sentences[0][:200] if sentences else "Đánh giá lạc quan về tiềm năng sinh viên"
+                    
+                    response_data = {
+                        "decision": decision,
+                        "reason": reason
+                    }
+                    print(f"[AcademicAgent] 🔄 Used keyword fallback: {decision}")
                     
                 self.send_message(sender, "scholarship_decision", response_data)
                 print(f"[AcademicAgent] ✅ Sent decision: {response_data['decision']}")
                 
-            except json.JSONDecodeError as e:
-                print(f"[AcademicAgent] ❌ JSON Error: {e}")
+            except Exception as e:
+                print(f"[AcademicAgent] ❌ Error parsing response: {e}")
                 print(f"[AcademicAgent] Raw response: {response_str if 'response_str' in locals() else 'N/A'}")
-                # More intelligent fallback based on profile analysis
+                # Ultimate fallback
                 fallback_response = {
                     "decision": "approve",  # Academic agent is optimistic by default
-                    "reason": "Đánh giá ban đầu: sinh viên có tiềm năng phát triển dù GPA hiện tại thấp, ngành học có triển vọng."
-                }
-                self.send_message(sender, "scholarship_decision", fallback_response)
-                print(f"[AcademicAgent] ✅ Sent fallback decision: {fallback_response['decision']}")
-                
-            except Exception as e:
-                print(f"[AcademicAgent] ❌ General Error: {str(e)}")
-                fallback_response = {
-                    "decision": "approve",  # Stay optimistic
-                    "reason": f"Lỗi kỹ thuật trong đánh giá nhưng vẫn tin tưởng vào tiềm năng sinh viên."
+                    "reason": "Lỗi hệ thống - vẫn tin tưởng vào tiềm năng phát triển của sinh viên"
                 }
                 self.send_message(sender, "scholarship_decision", fallback_response)
                 print(f"[AcademicAgent] ✅ Sent error fallback: {fallback_response['decision']}")
                 
+
+                
         elif message_type == "repredict_scholarship":
             memory = message.get("payload", {}).get("memory", "")
             critical_response = message.get("payload", {}).get("critical_response", "")
+            recommended_decision = message.get("payload", {}).get("recommended_decision", "")
+            
             prompt = (
-                f"TÁI ĐÁNH GIÁ học thuật sau phản biện:\n{critical_response}\n\n"
-                "Điều chỉnh quan điểm nếu hợp lý nhưng giữ tinh thần lạc quan.\n"
-                'JSON: {"decision": "approve/reject", "reason": "lý do tái đánh giá"}'
+                f"TÁI ĐÁNH GIÁ học thuật sau phản biện từ Critical Agent:\n"
+                f"Phản biện: {critical_response}\n"
+                f"Khuyến nghị từ Critical Agent: {recommended_decision}\n\n"
+                f"HƯỚNG DẪN:\n"
+                f"- Xem xét kỹ phản biện và khuyến nghị của Critical Agent\n"
+                f"- Điều chỉnh quyết định nếu phản biện có lý\n"
+                f"- Giữ tinh thần lạc quan nhưng thực tế hơn\n"
+                f"- Nếu Critical Agent khuyến nghị '{recommended_decision}', hãy cân nhắc nghiêm túc\n\n"
+                'YÊU CẦU: Trả lời theo format sau:\n'
+                'QUYẾT ĐỊNH: APPROVE/REJECT\n'
+                'LÝ DO: [lý do tái đánh giá sau khi xem xét phản biện]'
             )
             try:
                 response_text = self.llm.complete(prompt, max_tokens=256)
-                response_data = json.loads(str(response_text).strip())
+                response_str = str(response_text).strip()
+                
+                # Parse structured response for repredict
+                import re
+                decision_match = re.search(r'QUYẾT ĐỊNH:\s*(APPROVE|REJECT|CHẤP NHẬN|TỪ CHỐI)', response_str, re.IGNORECASE)
+                reason_match = re.search(r'LÝ DO:\s*(.+)', response_str, re.DOTALL | re.IGNORECASE)
+                
+                if decision_match and reason_match:
+                    decision_text = decision_match.group(1).upper()
+                    decision = "approve" if decision_text in ['APPROVE', 'CHẤP NHẬN'] else "reject"
+                    reason = reason_match.group(1).strip()[:300]
+                else:
+                    decision = "approve"  # Optimistic default
+                    reason = "Sau phản biện vẫn tin vào tiềm năng phát triển của sinh viên"
+                
+                response_data = {"decision": decision, "reason": reason}
                 self.send_message(sender, "repredict_scholarship", response_data)
-            except:
+            except Exception as e:
+                print(f"[AcademicAgent] ❌ Repredict error: {e}")
                 fallback_response = {
                     "decision": "approve",
                     "reason": "Sau phản biện vẫn tin vào tiềm năng phát triển của sinh viên"

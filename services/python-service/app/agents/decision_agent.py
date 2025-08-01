@@ -249,20 +249,65 @@ class DecisionAgent(BaseAgent):
         special_features = [features['feature_2_hoc_luc'], features['feature_5_bao_lanh'], features['feature_7_no_existing_debt']]
         special_violations = sum(1 for f in special_features if not f)
         
-        # LOGIC QUYẾT ĐỊNH THEO QUY ĐỊNH 2025 (SỬA LỖI)
+        # STEP 1: Rule-based Decision (preliminary)
+        rule_based_decision = None
+        rule_based_reason = None
+        
         if special_violations > 1:
-            decision = "reject"
-            reason = f"Vi phạm {special_violations} special features (F2,F5,F7) - TỰ ĐỘNG TỪ CHỐI theo quy định."
+            rule_based_decision = "reject"
+            rule_based_reason = f"Vi phạm {special_violations} special features (F2,F5,F7) - TỰ ĐỘNG TỪ CHỐI theo quy định."
         elif special_violations == 1:
             if passed_count >= 6:
-                decision = "approve"
-                reason = f"Vi phạm 1 special feature nhưng passed_count = {passed_count} >= 6 - CHẤP NHẬN có điều kiện."
+                rule_based_decision = "approve"
+                rule_based_reason = f"Vi phạm 1 special feature nhưng passed_count = {passed_count} >= 6 - CHẤP NHẬN có điều kiện theo quy định."
             else:
-                decision = "reject"
-                reason = f"Vi phạm 1 special feature và passed_count = {passed_count} < 6 - TỪ CHỐI."
+                rule_based_decision = "reject"
+                rule_based_reason = f"Vi phạm 1 special feature và passed_count = {passed_count} < 6 - TỪ CHỐI theo quy định."
         else:  # special_violations == 0 - PASS CẢ 3 SPECIAL FEATURES
-            decision = "approve"
-            reason = f"PASS cả 3 special features (F2,F5,F7) - TỰ ĐỘNG CHẤP NHẬN (passed_count = {passed_count}/7)."
+            rule_based_decision = "approve"
+            rule_based_reason = f"PASS cả 3 special features (F2,F5,F7) - CHẤP NHẬN theo quy định (passed_count = {passed_count}/7)."
+        
+        # STEP 2: Check Agent Consensus (only if rule-based PASS)
+        academic_approve = academic_data.get("decision", "").lower() == "approve"
+        finance_approve = finance_data.get("decision", "").lower() == "approve"
+        at_least_one_agent_approve = academic_approve or finance_approve
+        
+        print(f"[DecisionAgent] 🤖 Agent Decisions: Academic={academic_data.get('decision', 'N/A')}, Finance={finance_data.get('decision', 'N/A')}")
+        print(f"[DecisionAgent] ✅ At least one agent approve: {at_least_one_agent_approve}")
+        
+        # STEP 3: DUAL CONDITION LOGIC
+        print(f"[DecisionAgent] 🎯 DUAL CONDITION ANALYSIS:")
+        print(f"  📋 Rule-based decision: {rule_based_decision}")
+        print(f"  🤖 Academic approve: {academic_approve}")
+        print(f"  💰 Finance approve: {finance_approve}")
+        print(f"  ✅ At least one agent approve: {at_least_one_agent_approve}")
+        
+        if rule_based_decision == "reject":
+            # Rule-based fail → automatic reject regardless of agents
+            decision = "reject"
+            reason = rule_based_reason
+            print(f"  🚫 FINAL: REJECT (Rule-based failed)")
+        elif rule_based_decision == "approve":
+            if at_least_one_agent_approve:
+                # Rule-based PASS + At least 1 agent APPROVE = APPROVE
+                decision = "approve"
+                agent_support = []
+                if academic_approve:
+                    agent_support.append("Academic")
+                if finance_approve:
+                    agent_support.append("Finance")
+                reason = f"{rule_based_reason} + Agent support: {', '.join(agent_support)} agent(s) đồng ý."
+                print(f"  ✅ FINAL: APPROVE (Rule-based pass + Agent support: {', '.join(agent_support)})")
+            else:
+                # Rule-based PASS + Both agents REJECT = REJECT
+                decision = "reject"
+                reason = f"Dù thỏa mãn quy định ({rule_based_reason}) nhưng CẢ HAI agent (Academic + Finance) đều từ chối - KHÔNG CHẤP NHẬN do thiếu sự đồng thuận từ chuyên gia."
+                print(f"  🚫 FINAL: REJECT (Rule-based pass but NO agent support)")
+        else:
+            # Fallback (shouldn't happen)
+            decision = "reject"
+            reason = "Lỗi logic quyết định - áp dụng nguyên tắc thận trọng."
+            print(f"  ⚠️ FINAL: REJECT (Fallback error)")
         
         # Thêm thông tin chi tiết
         detailed_analysis = {
@@ -274,7 +319,21 @@ class DecisionAgent(BaseAgent):
                     "feature_2": features['feature_2_hoc_luc'],
                     "feature_5": features['feature_5_bao_lanh'],
                     "feature_7": features['feature_7_no_existing_debt']
-                }
+                },
+                "rule_based_decision": rule_based_decision,
+                "rule_based_reason": rule_based_reason
+            },
+            "agent_consensus": {
+                "academic_approve": academic_approve,
+                "finance_approve": finance_approve,
+                "at_least_one_agent_approve": at_least_one_agent_approve,
+                "agent_consensus_met": at_least_one_agent_approve
+            },
+            "dual_condition_logic": {
+                "rule_based_pass": rule_based_decision == "approve",
+                "agent_support_available": at_least_one_agent_approve,
+                "both_conditions_met": rule_based_decision == "approve" and at_least_one_agent_approve,
+                "final_decision_rationale": "Rule-based compliance + Agent consensus required"
             },
             "regulation_compliance": "Nghị định 07/2021/NĐ-CP, Quyết định 05/2022/QĐ-TTg, Thông tư 19/2023/TT-BGDĐT (cập nhật 2025)",
             "subjective_inputs": {
@@ -308,12 +367,8 @@ class DecisionAgent(BaseAgent):
             if isinstance(payload, dict):
                 decision = payload.get("decision", "")
                 reason = payload.get("reason", "")
-                risk_level = payload.get("risk_level", "")
                 
-                line = f"{who}: {decision.upper()}"
-                if risk_level:
-                    line += f" (risk: {risk_level})"
-                line += f" - {reason}"
+                line = f"{who}: {decision.upper()} - {reason}"
                 dialogue.append(line)
             elif isinstance(payload, str):
                 dialogue.append(f"{who}: {payload}")
@@ -363,8 +418,7 @@ if __name__ == "__main__":
         },
         "loan_decision": {
             "decision": "approve", 
-            "reason": "Thu nhập 8M VND/tháng, không nợ, vay 45M học phí",
-            "risk_level": "low"
+            "reason": "Thu nhập 8M VND/tháng, không nợ, vay 45M học phí"
         }
     }
     
