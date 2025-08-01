@@ -21,13 +21,7 @@ class BaseAgent(Thread):
         Gửi một tin nhắn đến một agent khác thông qua Coordinator.
         """
         if self.coordinator:
-            full_message = {
-                "sender": self.name,
-                "recipient": recipient,
-                "type": message_type,
-                "payload": payload
-            }
-            self.coordinator.route_message(full_message)
+            self.coordinator.route_message(self.name, recipient, message_type, payload)
         else:
             print(f"[{self.name}] Lỗi: Không có coordinator để gửi tin nhắn.")
 

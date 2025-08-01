@@ -1,89 +1,86 @@
-import json
-import os
-from dotenv import load_dotenv
-from llama_index.llms.openai import OpenAI
 from .base_agent import BaseAgent
+from llama_index.llms.openai import OpenAI
+import json
 
 class CriticalAgent(BaseAgent):
+    """Critical Agent - Phản biện và đánh giá quyết định của các agent khác"""
+    
     def __init__(self, name="CriticalAgent", coordinator=None):
         super().__init__(name, coordinator)
-        load_dotenv()
-        api_key = os.getenv("OPENAI_API_KEY")
-        if not api_key:
-            raise ValueError("OPENAI_API_KEY không được tìm thấy trong môi trường.")
-        self.llm = OpenAI(api_key=api_key, model='gpt-4.1-nano')
-
+        self.llm = OpenAI(model="gpt-4.1-nano")
+        self.persona = "phản biện khách quan"
+        
     def handle_message(self, message: dict):
-        """
-        Nhận quyết định từ agent khác và phản biện lại.
-        """
-        message_type = message.get("type")
-        sender = message.get("sender")
-        payload = message.get("payload", {})
-
-        if message_type in ["loan_decision", "scholarship_decision"]:
-            decision = payload.get("decision", "")
+        """Xử lý tin nhắn từ các agent khác"""
+        sender = message.get("sender", "unknown")
+        message_type = message.get("type", "unknown")
+        print(f"[CriticalAgent] Nhận message từ {sender}: {message_type}")
+        
+        if message_type in ["scholarship_decision", "loan_decision"]:
+            payload = message.get("payload", {})
+            decision = payload.get("decision", "unknown")
             reason = payload.get("reason", "")
-            risk_level = payload.get("risk_level", "")
+            memory = payload.get("memory", "")
             
-            # Tạo critique dựa trên agent type
-            if sender == "AcademicAgent":
-                prompt = (
-                    f"PHẢN BIỆN quyết định Academic Agent:\n"
-                    f"Quyết định: {decision}\n"
-                    f"Lý do: {reason}\n\n"
-                    f"CÂU HỎI CHẤT VẤN:\n"
-                    f"- GPA hiện tại có thực sự phản ánh hết năng lực?\n"
-                    f"- Ngành STEM có đảm bảo việc làm tương lai?\n"
-                    f"- Tier 1 có bù đắp được GPA thấp?\n"
-                    f"- Có quá lạc quan với thành tích yếu?\n"
-                    f"Đưa ra 2-3 điểm phản biện sắc bén."
-                )
-            elif sender == "FinanceAgent":
-                prompt = (
-                    f"PHẢN BIỆN quyết định Finance Agent:\n"
-                    f"Quyết định: {decision}\n"
-                    f"Lý do: {reason}\n"
-                    f"Risk level: {risk_level}\n\n"
-                    f"CÂU HỎI CHẤT VẤN:\n"
-                    f"- Thu nhập 8M có thực sự quá thấp?\n"
-                    f"- Nợ hiện tại có nghiêm trọng thế nào?\n"
-                    f"- Có quá thận trọng với mục đích học phí?\n"
-                    f"- Việc làm thêm có giảm rủi ro?\n"
-                    f"Đưa ra 2-3 điểm phản biện cân bằng."
-                )
-            else:
-                prompt = f"Phản biện quyết định của {sender}: {decision} - {reason}. Có logic không? Có thiếu sót gì?"
-                
+            prompt = (
+                f"Bạn là CHUYÊN GIA PHẢN BIỆN KHÁCH QUAN với 20 năm kinh nghiệm phân tích rủi ro tín dụng.\n"
+                f"QUYẾT ĐỊNH ĐANG XEM XÉT: {decision}\n"
+                f"LÝ DO ĐƯỢC ĐƯA RA: {reason}\n"
+                f"HỒ SƠ GỐC: {memory}\n\n"
+                f"FRAMEWORK PHẢN BIỆN KHÁCH QUAN:\n"
+                f"1. LOGIC VÀ BẰNG CHỨNG:\n"
+                f"   - Lý do có dựa trên dữ liệu cụ thể?\n"
+                f"   - Có thiếu yếu tố quan trọng nào?\n"
+                f"   - Tính toán có chính xác?\n\n"
+                f"2. RỦI RO CHƯA XEM XÉT:\n"
+                f"   - Yếu tố rủi ro bị bỏ qua\n"
+                f"   - Giả định không thực tế\n"
+                f"   - Hậu quả dài hạn\n\n"
+                f"3. QUAN ĐIỂM ĐỐI LẬP:\n"
+                f"   - Góc nhìn ngược lại có hợp lý?\n"
+                f"   - Dữ liệu có thể giải thích khác?\n"
+                f"   - Quyết định có quá lạc quan/thận trọng?\n\n"
+                f"YÊU CẦU: Phản biện dựa trên LOGIC và SỐ LIỆU, không chung chung.\n\n"
+                f"FORMAT:\n"
+                f"PHẢN BIỆN: [Chỉ ra lỗ hổng cụ thể trong lập luận với dữ liệu]\n"
+                f"KHUYẾN NGHỊ: APPROVE hoặc REJECT"
+            )
+            
             try:
-                response_text = self.llm.complete(prompt, max_tokens=256)
+                response_text = self.llm.complete(prompt, max_tokens=512)
                 response_str = str(response_text).strip()
-                print(f"[CriticalAgent] ✅ Generated critique for {sender}")
-                self.send_message(sender, f"{message_type}_critical_response", {"critical_response": response_str})
+                print(f"[CriticalAgent] Response: {response_str}")
+                
+                # Simple parsing - just find APPROVE/REJECT
+                if "APPROVE" in response_str.upper():
+                    recommended_decision = "approve"
+                elif "REJECT" in response_str.upper():
+                    recommended_decision = "reject"
+                else:
+                    # Default: opposite of original decision
+                    recommended_decision = "reject" if decision == "approve" else "approve"
+                
+                # Extract critique (first 100 chars)
+                critique = response_str[:100] if response_str else f"Phản biện {decision}"
+                
+                response_data = {
+                    "critical_response": critique,
+                    "recommended_decision": recommended_decision,
+                    "raw_response": response_str
+                }
+                
+                print(f"[CriticalAgent] ✅ Critique: {recommended_decision}")
+                self.send_message(sender, f"{message_type}_critical_response", response_data)
+                
             except Exception as e:
-                print(f"[CriticalAgent] ❌ Error generating critique: {str(e)}")
-                fallback_critique = f"Quyết định {decision} của {sender} cần xem xét thêm các yếu tố và cân nhắc kỹ hơn."
-                self.send_message(sender, f"{message_type}_critical_response", {"critical_response": fallback_critique})
+                print(f"[CriticalAgent] ❌ Error: {e}")
+                # Simple fallback
+                fallback_response = {
+                    "critical_response": f"Cần xem xét lại quyết định {decision}",
+                    "recommended_decision": "reject" if decision == "approve" else "approve",
+                    "raw_response": response_str if 'response_str' in locals() else "Error: No LLM response"
+                }
+                self.send_message(sender, f"{message_type}_critical_response", fallback_response)
         else:
-            error_payload = {"error": f"Loại tin nhắn '{message_type}' không được hỗ trợ cho CriticalAgent."}
+            error_payload = {"error": f"Message type '{message_type}' not supported"}
             self.send_message(sender, "unsupported_message", error_payload)
-
-    def send_message(self, recipient, message_type, payload):
-        if self.coordinator:
-            self.coordinator.route_message(self.name, recipient, message_type, payload)
-        else:
-            print(f"[{self.name}] (Test) Gửi tới {recipient} | type: {message_type} | payload: {payload}")
-
-if __name__ == "__main__":
-    agent = CriticalAgent()
-    decision_payload = {
-        "decision": "approve",
-        "reason": "Thu nhập ổn định, ngành STEM có triển vọng",
-        "risk_level": "low"
-    }
-    message = {
-        "type": "loan_decision",
-        "sender": "FinanceAgent",
-        "payload": decision_payload
-    }
-    agent.handle_message(message)

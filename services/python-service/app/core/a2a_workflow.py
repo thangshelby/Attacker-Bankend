@@ -94,15 +94,19 @@ def debate_to_decide_workflow(profile, return_log: bool = False):
     repredict_done = {"AcademicAgent": False, "FinanceAgent": False}
     memory_data = simplify_memory(session_memory.get_conversation())
     if critical_responses["AcademicAgent"]:
+        critical_data = critical_responses["AcademicAgent"]
         coordinator.route_message("coordinator", "AcademicAgent", "repredict_scholarship", {
             "memory": memory_data,
-            "critical_response": critical_responses["AcademicAgent"]
+            "critical_response": critical_data.get("critical_response", ""),
+            "recommended_decision": critical_data.get("recommended_decision", "")
         })
         repredict_done["AcademicAgent"] = True
     if critical_responses["FinanceAgent"]:
+        critical_data = critical_responses["FinanceAgent"]
         coordinator.route_message("coordinator", "FinanceAgent", "repredict_loan", {
             "memory": memory_data,
-            "critical_response": critical_responses["FinanceAgent"]
+            "critical_response": critical_data.get("critical_response", ""),
+            "recommended_decision": critical_data.get("recommended_decision", "")
         })
         repredict_done["FinanceAgent"] = True
 
@@ -150,30 +154,155 @@ def debate_to_decide_workflow(profile, return_log: bool = False):
             break
 
     if return_log:
-        # SAFETY: Đảm bảo luôn có decision và reason
+        # Thu thập 4 response chính theo yêu cầu
+        academic_repredict = None
+        finance_repredict = None
+        critical_academic = None
+        critical_finance = None
+        
+        print(f"[Workflow] 🔍 Collecting 4 responses from message log ({len(coordinator.message_log)} total messages)")
+        
+        # Duyệt message_log để collect responses
+        for entry in coordinator.message_log:
+            msg_type = entry["message"].get("type")
+            sender = entry["from"]
+            payload = entry["message"]["payload"]
+            
+            # Academic repredict response
+            if sender == "AcademicAgent" and msg_type == "repredict_scholarship":
+                academic_repredict = payload
+                print(f"[Workflow] ✅ Found academic_repredict: {payload}")
+            
+            # Finance repredict response  
+            elif sender == "FinanceAgent" and msg_type == "repredict_loan":
+                finance_repredict = payload
+                print(f"[Workflow] ✅ Found finance_repredict: {payload}")
+                
+            # Critical response to Academic
+            elif sender == "CriticalAgent" and msg_type == "scholarship_decision_critical_response":
+                critical_academic = payload
+                print(f"[Workflow] ✅ Found critical_academic: {payload}")
+                
+            # Critical response to Finance
+            elif sender == "CriticalAgent" and msg_type == "loan_decision_critical_response":
+                critical_finance = payload
+                print(f"[Workflow] ✅ Found critical_finance: {payload}")
+        
+        print(f"[Workflow] 📊 Collection summary:")
+        print(f"  - academic_repredict: {'✅' if academic_repredict else '❌'}")
+        print(f"  - finance_repredict: {'✅' if finance_repredict else '❌'}")
+        print(f"  - critical_academic: {'✅' if critical_academic else '❌'}")
+        print(f"  - critical_finance: {'✅' if critical_finance else '❌'}")
+        
+        # STRUCTURED OUTPUT theo yêu cầu
         if final_decision and isinstance(final_decision, dict):
             decision = final_decision.get("decision", "reject")
             reason = final_decision.get("reason", "Không có lý do từ DecisionAgent")
-            # Thêm detailed_analysis nếu có
+            detailed_analysis = final_decision.get("detailed_analysis", {})
+            
+            # Extract rule-based info từ detailed_analysis
+            rule_based_info = detailed_analysis.get("rule_calculation", {})
+            agent_consensus = detailed_analysis.get("agent_consensus", {})
+            dual_condition = detailed_analysis.get("dual_condition_logic", {})
+            
+            # SAFE HANDLING: Ensure all responses have proper structure
+            def safe_agent_response(response):
+                if response and isinstance(response, dict):
+                    return {
+                        "decision": response.get("decision"),
+                        "reason": response.get("reason"),
+                        "raw_response": response.get("raw_response")
+                    }
+                return None
+            
+            def safe_critical_response(response):
+                if response and isinstance(response, dict):
+                    return {
+                        "critical_response": response.get("critical_response"),
+                        "recommended_decision": response.get("recommended_decision"),
+                        "raw_response": response.get("raw_response")
+                    }
+                return None
+            
             result = {
-                "decision": decision,
-                "reason": reason,
-                "logs": session_memory.get_conversation()
+                # 4 RESPONSES CHÍNH
+                "responses": {
+                    "academic_repredict": safe_agent_response(academic_repredict),
+                    "finance_repredict": safe_agent_response(finance_repredict), 
+                    "critical_academic": safe_critical_response(critical_academic),
+                    "critical_finance": safe_critical_response(critical_finance),
+                    "final_decision": {
+                        "decision": decision,
+                        "reason": reason
+                    }
+                },
+                
+                # RULE-BASED INFORMATION
+                "rule_based": {
+                    "total_passed_count": rule_based_info.get("total_passed_count", 0),
+                    "special_violations_count": rule_based_info.get("special_violations_count", 0),
+                    "rule_based_decision": rule_based_info.get("rule_based_decision", "unknown"),
+                    "rule_based_reason": rule_based_info.get("rule_based_reason", "N/A"),
+                    "features_analysis": detailed_analysis.get("features_analysis", {})
+                },
+                
+                # AGENT STATUS
+                "agent_status": {
+                    "academic_approve": agent_consensus.get("academic_approve", False),
+                    "finance_approve": agent_consensus.get("finance_approve", False),
+                    "at_least_one_agent_approve": agent_consensus.get("at_least_one_agent_approve", False),
+                    "both_conditions_met": dual_condition.get("both_conditions_met", False)
+                },
+                
+                # FINAL RESULT
+                "final_result": {
+                    "decision": decision,
+                    "reason": reason,
+                    "rule_based_pass": dual_condition.get("rule_based_pass", False),
+                    "agent_support_available": dual_condition.get("agent_support_available", False),
+                    "hybrid_approach": final_decision.get("hybrid_approach", "unknown")
+                }
             }
-            if "detailed_analysis" in final_decision:
-                result["detailed_analysis"] = final_decision["detailed_analysis"]
-            if "rule_based_system" in final_decision:
-                result["rule_based_system"] = final_decision["rule_based_system"]
-            if "hybrid_approach" in final_decision:
-                result["hybrid_approach"] = final_decision["hybrid_approach"]
+            
             return result
         else:
-            # Fallback nếu DecisionAgent hoàn toàn fail
+            # Fallback nếu DecisionAgent hoàn toàn fail - use safe handling
+            def safe_agent_response(response):
+                if response and isinstance(response, dict):
+                    return {
+                        "decision": response.get("decision"),
+                        "reason": response.get("reason"),
+                        "raw_response": response.get("raw_response")
+                    }
+                return None
+            
+            def safe_critical_response(response):
+                if response and isinstance(response, dict):
+                    return {
+                        "critical_response": response.get("critical_response"),
+                        "recommended_decision": response.get("recommended_decision"),
+                        "raw_response": response.get("raw_response")
+                    }
+                return None
+            
             return {
-                "decision": "reject", 
-                "reason": "Lỗi hệ thống: DecisionAgent không trả về kết quả hợp lệ",
-                "logs": session_memory.get_conversation(),
-                "error": "decision_agent_failed"
+                "responses": {
+                    "academic_repredict": safe_agent_response(academic_repredict),
+                    "finance_repredict": safe_agent_response(finance_repredict),
+                    "critical_academic": safe_critical_response(critical_academic), 
+                    "critical_finance": safe_critical_response(critical_finance),
+                    "final_decision": {
+                        "decision": "reject",
+                        "reason": "Lỗi hệ thống: DecisionAgent không trả về kết quả hợp lệ"
+                    }
+                },
+                "rule_based": {},
+                "agent_status": {},
+                "final_result": {
+                    "decision": "reject",
+                    "reason": "Lỗi hệ thống",
+                    "error": "decision_agent_failed"
+                }
             }
     else:
         for entry in session_memory.get_conversation():
