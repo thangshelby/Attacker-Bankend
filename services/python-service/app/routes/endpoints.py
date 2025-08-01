@@ -7,8 +7,44 @@ from fastapi import APIRouter
 import json 
 import time
 import uuid
+import httpx
+import asyncio
 
 router = APIRouter()
+
+# Express service configuration
+EXPRESS_SERVICE_URL = "http://localhost:3000"  # Express service URL
+
+async def send_to_express(decision_result: dict, request_data: dict):
+    """
+    Send MAS decision result to Express service for database storage
+    """
+    try:
+        payload = {
+            "request_data": request_data,
+            "mas_result": decision_result,
+            "timestamp": time.time()
+        }
+        
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.post(
+                f"{EXPRESS_SERVICE_URL}/api/v1/python/loan-decision",
+                json=payload
+            )
+            
+            if response.status_code == 200:
+                print(f"✅ Successfully sent to Express: {response.json()}")
+                return True
+            else:
+                print(f"❌ Express service error: {response.status_code} - {response.text}")
+                return False
+                
+    except httpx.TimeoutException:
+        print("❌ Timeout connecting to Express service")
+        return False
+    except Exception as e:
+        print(f"❌ Error sending to Express: {str(e)}")
+        return False
 
 @router.get("/health")
 async def health_check():
@@ -21,8 +57,8 @@ async def health_check():
         "version": "1.0.0",
         "timestamp": time.time(),
         "endpoints": [
-            "/api/v1/debate-loan",
-            "/api/v1/health"
+            "/api/v1/health",
+            "/api/v1/debate-loan"
         ]
     }
 
@@ -90,6 +126,14 @@ async def debate_loan(request: LoanApplicationRequest):
         final_decision = result.get("final_result", {}).get("decision", 
                                    result.get("responses", {}).get("final_decision", {}).get("decision", "unknown"))
         print(f"✅ Decision: {final_decision} (took {processing_time:.2f}s)")
+        
+        # Send result to Express service for database storage (non-blocking)
+        try:
+            request_dict = request.dict()  # Convert Pydantic model to dict
+            await send_to_express(result, request_dict)
+        except Exception as e:
+            # Don't fail the main request if Express communication fails
+            print(f"⚠️  Warning: Failed to send to Express service: {e}")
         
         return result
         

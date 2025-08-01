@@ -210,7 +210,8 @@ def debate_to_decide_workflow(profile, return_log: bool = False):
                 if response and isinstance(response, dict):
                     return {
                         "decision": response.get("decision"),
-                        "reason": response.get("reason")
+                        "reason": response.get("reason"),
+                        "raw_response": response.get("raw_response")
                     }
                 return None
             
@@ -218,7 +219,8 @@ def debate_to_decide_workflow(profile, return_log: bool = False):
                 if response and isinstance(response, dict):
                     return {
                         "critical_response": response.get("critical_response"),
-                        "recommended_decision": response.get("recommended_decision")
+                        "recommended_decision": response.get("recommended_decision"),
+                        "raw_response": response.get("raw_response")
                     }
                 return None
             
@@ -269,7 +271,8 @@ def debate_to_decide_workflow(profile, return_log: bool = False):
                 if response and isinstance(response, dict):
                     return {
                         "decision": response.get("decision"),
-                        "reason": response.get("reason")
+                        "reason": response.get("reason"),
+                        "raw_response": response.get("raw_response")
                     }
                 return None
             
@@ -277,7 +280,8 @@ def debate_to_decide_workflow(profile, return_log: bool = False):
                 if response and isinstance(response, dict):
                     return {
                         "critical_response": response.get("critical_response"),
-                        "recommended_decision": response.get("recommended_decision")
+                        "recommended_decision": response.get("recommended_decision"),
+                        "raw_response": response.get("raw_response")
                     }
                 return None
             

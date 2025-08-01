@@ -7,7 +7,7 @@ class CriticalAgent(BaseAgent):
     
     def __init__(self, name="CriticalAgent", coordinator=None):
         super().__init__(name, coordinator)
-        self.llm = OpenAI(model="gpt-4o-mini", temperature=0.3)
+        self.llm = OpenAI(model="gpt-4.1-nano")
         self.persona = "phản biện khách quan"
         
     def handle_message(self, message: dict):
@@ -22,17 +22,32 @@ class CriticalAgent(BaseAgent):
             reason = payload.get("reason", "")
             memory = payload.get("memory", "")
             
-            # Simple prompt - no complex examples
             prompt = (
-                f"Phản biện quyết định {decision}.\n"
-                f"Lý do: {reason}\n\n"
-                f"Trả lời ngắn gọn:\n"
-                f"PHẢN BIỆN: [1 câu phản biện]\n"
+                f"Bạn là CHUYÊN GIA PHẢN BIỆN KHÁCH QUAN với 20 năm kinh nghiệm phân tích rủi ro tín dụng.\n"
+                f"QUYẾT ĐỊNH ĐANG XEM XÉT: {decision}\n"
+                f"LÝ DO ĐƯỢC ĐƯA RA: {reason}\n"
+                f"HỒ SƠ GỐC: {memory}\n\n"
+                f"FRAMEWORK PHẢN BIỆN KHÁCH QUAN:\n"
+                f"1. LOGIC VÀ BẰNG CHỨNG:\n"
+                f"   - Lý do có dựa trên dữ liệu cụ thể?\n"
+                f"   - Có thiếu yếu tố quan trọng nào?\n"
+                f"   - Tính toán có chính xác?\n\n"
+                f"2. RỦI RO CHƯA XEM XÉT:\n"
+                f"   - Yếu tố rủi ro bị bỏ qua\n"
+                f"   - Giả định không thực tế\n"
+                f"   - Hậu quả dài hạn\n\n"
+                f"3. QUAN ĐIỂM ĐỐI LẬP:\n"
+                f"   - Góc nhìn ngược lại có hợp lý?\n"
+                f"   - Dữ liệu có thể giải thích khác?\n"
+                f"   - Quyết định có quá lạc quan/thận trọng?\n\n"
+                f"YÊU CẦU: Phản biện dựa trên LOGIC và SỐ LIỆU, không chung chung.\n\n"
+                f"FORMAT:\n"
+                f"PHẢN BIỆN: [Chỉ ra lỗ hổng cụ thể trong lập luận với dữ liệu]\n"
                 f"KHUYẾN NGHỊ: APPROVE hoặc REJECT"
             )
             
             try:
-                response_text = self.llm.complete(prompt, max_tokens=256)
+                response_text = self.llm.complete(prompt, max_tokens=512)
                 response_str = str(response_text).strip()
                 print(f"[CriticalAgent] Response: {response_str}")
                 
@@ -50,7 +65,8 @@ class CriticalAgent(BaseAgent):
                 
                 response_data = {
                     "critical_response": critique,
-                    "recommended_decision": recommended_decision
+                    "recommended_decision": recommended_decision,
+                    "raw_response": response_str
                 }
                 
                 print(f"[CriticalAgent] ✅ Critique: {recommended_decision}")
@@ -61,7 +77,8 @@ class CriticalAgent(BaseAgent):
                 # Simple fallback
                 fallback_response = {
                     "critical_response": f"Cần xem xét lại quyết định {decision}",
-                    "recommended_decision": "reject" if decision == "approve" else "approve"
+                    "recommended_decision": "reject" if decision == "approve" else "approve",
+                    "raw_response": response_str if 'response_str' in locals() else "Error: No LLM response"
                 }
                 self.send_message(sender, f"{message_type}_critical_response", fallback_response)
         else:

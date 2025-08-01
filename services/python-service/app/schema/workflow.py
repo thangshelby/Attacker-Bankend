@@ -47,11 +47,13 @@ class AgentResponse(BaseModel):
     """Individual agent response model"""
     decision: Optional[str] = Field(None, description="Agent decision: approve or reject")
     reason: Optional[str] = Field(None, description="Agent reasoning")
+    raw_response: Optional[str] = Field(None, description="Full raw LLM response text")
 
 class CriticalResponse(BaseModel):
     """Critical agent response model"""
     critical_response: Optional[str] = Field(None, description="Critical analysis text")
     recommended_decision: Optional[str] = Field(None, description="Recommended decision: approve or reject")
+    raw_response: Optional[str] = Field(None, description="Full raw LLM response text")
 
 class FinalDecision(BaseModel):
     """Final decision from DecisionAgent"""

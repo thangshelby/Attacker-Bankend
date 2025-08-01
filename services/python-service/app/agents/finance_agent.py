@@ -29,21 +29,34 @@ class FinanceAgent(BaseAgent):
                 return
 
             prompt = (
-                "Bạn là chuyên gia tài chính THẬN TRỌNG đánh giá rủi ro cho vay.\n"
-                f"HỒ SƠ:\n{profile}\n\n"
-                "ĐÁNH GIÁ THẬN TRỌNG:\n"
-                "- Thu nhập thấp = rủi ro cao\n"
-                "- Có nợ hiện tại = rủi ro rất cao\n"
-                "- Việc làm thêm = điểm cộng trách nhiệm\n"
-                "- Mục đích học phí = hợp lý hơn sinh hoạt\n"
-                "- Tập trung bảo vệ tài sản, tránh bad debt\n\n"
-                "YÊU CẦU: Trả lời theo format sau (không thêm gì khác):\n"
-                "QUYẾT ĐỊNH: REJECT\n"
-                "LÝ DO: [lý do thận trọng chi tiết]"
+                "Bạn là CHUYÊN GIA RỦI RO TÀI CHÍNH với 15 năm kinh nghiệm ngân hàng và cho vay sinh viên.\n"
+                f"HỒ SƠ PHÂN TÍCH RỦI RO:\n{profile}\n\n"
+                "FRAMEWORK ĐÁNH GIÁ RỦI RO TÀI CHÍNH:\n"
+                "1. KHẢ NĂNG TRẢ NỢ:\n"
+                "   - Tỷ lệ thu nhập/khoản vay: [thu nhập tháng] vs [số tiền vay]\n"
+                "   - Debt-to-Income ratio hiện tại (nợ/thu nhập)\n"
+                "   - Thời hạn vay vs khả năng sinh lời sau tốt nghiệp\n\n"
+                "2. ỔN ĐỊNH TÀI CHÍNH:\n"
+                "   - Nguồn thu nhập gia đình: ổn định vs biến động\n"
+                "   - Nợ hiện tại: số tiền, lãi suất, thời hạn cụ thể\n"
+                "   - Tài sản đảm bảo: bảo lãnh vs tài sản thế chấp\n\n"
+                "3. RỦI RO VĨ MÔ:\n"
+                "   - Triển vọng ngành: tỷ lệ có việc làm sau tốt nghiệp\n"
+                "   - Mức lương dự kiến vs khả năng trả nợ\n"
+                "   - Yếu tố kinh tế: lạm phát, lãi suất, thất nghiệp\n\n"
+                "4. CHÍNH SÁCH CHO VAY:\n"
+                "   - Mục đích vay: học phí (ưu tiên) vs sinh hoạt (rủi ro)\n"
+                "   - Lịch sử tín dụng cá nhân/gia đình\n"
+                "   - Tuổi và giai đoạn học tập\n\n"
+                "NGUYÊN TẮC: Tính toán tỷ lệ, phần trăm cụ thể. Đưa ra số liệu thực tế.\n"
+                "YÊU CẦU: Phân tích từng rủi ro với con số, không đánh giá mơ hồ.\n\n"
+                "FORMAT TRẢ LỜI:\n"
+                "QUYẾT ĐỊNH: APPROVE/REJECT\n"
+                "LÝ DO: [Phân tích rủi ro chi tiết với tỷ lệ, con số cụ thể từ hồ sơ]"
             )
             
             try:
-                response_text = self.llm.complete(prompt, max_tokens=256)
+                response_text = self.llm.complete(prompt, max_tokens=512)
                 response_str = str(response_text).strip()
                 print(f"[FinanceAgent] LLM Response: {response_str}")
                 
@@ -66,7 +79,8 @@ class FinanceAgent(BaseAgent):
                     
                     response_data = {
                         "decision": decision,
-                        "reason": reason_text[:300]  # Limit length
+                        "reason": reason_text[:300],  # Limit length
+                        "raw_response": response_str
                     }
                     print(f"[FinanceAgent] 📝 Parsed structured response: {decision}")
                 else:
@@ -83,7 +97,8 @@ class FinanceAgent(BaseAgent):
                     
                     response_data = {
                         "decision": decision,
-                        "reason": reason
+                        "reason": reason,
+                        "raw_response": response_str
                     }
                     print(f"[FinanceAgent] 🔄 Used keyword fallback: {decision}")
                     
@@ -96,7 +111,8 @@ class FinanceAgent(BaseAgent):
                 # Ultimate fallback
                 fallback_response = {
                     "decision": "reject",  # Finance agent is cautious by default
-                    "reason": "Lỗi hệ thống - áp dụng nguyên tắc thận trọng từ chối để tránh rủi ro"
+                    "reason": "Lỗi hệ thống - áp dụng nguyên tắc thận trọng từ chối để tránh rủi ro",
+                    "raw_response": response_str if 'response_str' in locals() else "Error: No LLM response"
                 }
                 self.send_message(sender, "loan_decision", fallback_response)
                 print(f"[FinanceAgent] ✅ Sent error fallback: {fallback_response['decision']}")
@@ -109,20 +125,33 @@ class FinanceAgent(BaseAgent):
             recommended_decision = message.get("payload", {}).get("recommended_decision", "")
             
             prompt = (
-                f"TÁI ĐÁNH GIÁ tài chính sau phản biện từ Critical Agent:\n"
-                f"Phản biện: {critical_response}\n"
-                f"Khuyến nghị từ Critical Agent: {recommended_decision}\n\n"
-                f"HƯỚNG DẪN:\n"
-                f"- Xem xét kỹ phản biện và khuyến nghị của Critical Agent\n"
-                f"- Điều chỉnh quyết định nếu phản biện có cơ sở\n"
-                f"- Giữ thái độ thận trọng nhưng công bằng hơn\n"
-                f"- Nếu Critical Agent khuyến nghị '{recommended_decision}', hãy cân nhắc nghiêm túc\n\n"
-                'YÊU CẦU: Trả lời theo format sau:\n'
-                'QUYẾT ĐỊNH: APPROVE/REJECT\n'
-                'LÝ DO: [lý do tái đánh giá sau khi xem xét phản biện]'
+                f"TÁI ĐÁNH GIÁ RỦI RO TÀI CHÍNH - Bạn là chuyên gia ngân hàng sau khi nhận phản biện.\n"
+                f"HỒ SƠ KHÁCH HÀNG: {memory}\n"
+                f"PHẢN BIỆN NHẬN ĐƯỢC: {critical_response}\n"
+                f"KHUYẾN NGHỊ TỪ CHUYÊN GIA PHẢN BIỆN: {recommended_decision}\n\n"
+                f"FRAMEWORK TÁI ĐÁNH GIÁ RỦI RO:\n"
+                f"1. KIỂM TRA LẠI PHÂN TÍCH:\n"
+                f"   - Tính toán nào trong phản biện chính xác?\n"
+                f"   - Rủi ro nào tôi đã đánh giá quá cao/thấp?\n"
+                f"   - Yếu tố tích cực nào bị bỏ qua?\n\n"
+                f"2. TÁI TÍNH TOÁN RỦI RO:\n"
+                f"   - Debt-to-Income ratio: có thực sự nguy hiểm?\n"
+                f"   - Khả năng trả nợ: nguồn thu có ổn định?\n"
+                f"   - Tài sản đảm bảo: mức độ bảo vệ thực tế\n\n"
+                f"3. CÂN BẰNG RỦI RO - LỢI ÍCH:\n"
+                f"   - Lợi ích kinh tế từ cho vay này\n"
+                f"   - Rủi ro so với các khoản vay tương tự\n"
+                f"   - Chiến lược ngân hàng (thận trọng vs tăng trưởng)\n\n"
+                f"4. QUYẾT ĐỊNH SAU PHẢN BIỆN:\n"
+                f"   - Khuyến nghị '{recommended_decision}' có phù hợp?\n"
+                f"   - Điều kiện bổ sung nào có thể giảm rủi ro?\n\n"
+                f"YÊU CẦU: Quyết định dựa trên phân tích số liệu, không cảm tính.\n\n"
+                f"FORMAT:\n"
+                f"QUYẾT ĐỊNH: APPROVE/REJECT\n"
+                f"LÝ DO: [Phân tích chi tiết tại sao thay đổi/giữ nguyên quyết định]"
             )
             try:
-                response_text = self.llm.complete(prompt, max_tokens=256)
+                response_text = self.llm.complete(prompt, max_tokens=400)
                 response_str = str(response_text).strip()
                 
                 # Parse structured response for repredict
@@ -138,13 +167,14 @@ class FinanceAgent(BaseAgent):
                     decision = "reject"  # Cautious default
                     reason = "Sau phản biện vẫn giữ thái độ thận trọng về rủi ro tài chính"
                 
-                response_data = {"decision": decision, "reason": reason}
+                response_data = {"decision": decision, "reason": reason, "raw_response": response_str}
                 self.send_message(sender, "repredict_loan", response_data)
             except Exception as e:
                 print(f"[FinanceAgent] ❌ Error in repredict_loan: {str(e)}")
                 fallback_response = {
                     "decision": "reject",
-                    "reason": "Sau phản biện vẫn giữ thái độ thận trọng về rủi ro tài chính"
+                    "reason": "Sau phản biện vẫn giữ thái độ thận trọng về rủi ro tài chính",
+                    "raw_response": response_str if 'response_str' in locals() else "Error: No LLM response"
                 }
                 print(f"[FinanceAgent] 🔄 Using fallback response: {fallback_response}")
                 self.send_message(sender, "repredict_loan", fallback_response)

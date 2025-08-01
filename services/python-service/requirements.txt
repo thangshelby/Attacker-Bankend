@@ -6,3 +6,4 @@ fastapi              # Xây dựng API nhanh cho hệ thống (nếu cần expos
 uvicorn[standard]    # Server cho FastAPI (chạy ứng dụng web)
 scikit-learn         # Machine learning cơ bản (cho decision-making nếu dùng ML)
 pydantic             # Validation và modeling dữ liệu (tích hợp tốt với FastAPI và models)
+httpx                # HTTP client for async requests to Express service
