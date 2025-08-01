@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
 import UserModel from "../models/userModel.js";
+import StudentModel from "../models/studentModel.js";
 import { sendOtpEmail } from "../services/auth.service.js";
 import {
   generateAccessToken,
@@ -26,19 +26,15 @@ export const register = async (req, res) => {
         status: false,
       });
     }
-
     const hashPassword = await bcrypt.hash(req.body.password, 10);
     const otpToken = await sendOtpEmail(req.body.email);
 
     const user = new UserModel({
-      citizen_id: new Date().toISOString(),
-      date_of_birth: req.body.date_of_birth,
-      user_name: req.body.user_name,
+      name: req.body.name,
       email: req.body.email,
       password: hashPassword,
       otp_token: otpToken,
     });
-
     const result = await user.save();
 
     const accessToken = generateAccessToken(result);
@@ -76,7 +72,8 @@ export const login = async (req, res) => {
       return res.status(401).json({
         message: {
           email: "Your email is not registered",
-          password:null
+          password: null,
+          server: null,
         },
         status: false,
       });
@@ -91,6 +88,7 @@ export const login = async (req, res) => {
         message: {
           email: null,
           password: "Your password is incorrect",
+          server: null,
         },
         status: false,
       });
@@ -100,7 +98,6 @@ export const login = async (req, res) => {
 
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
-
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
@@ -126,23 +123,23 @@ export const login = async (req, res) => {
   }
 };
 
-export const verifyEmail= async(req,res)=>{
-  const {email, otp_token} = req.body;
+export const verifyEmail = async (req, res) => {
+  const { email, otp_token } = req.body;
   try {
     const user = await UserModel.findOne({ email, otp_token });
-    const isOtpTokenValid= user && user.otp_token === otp_token;
+    const isOtpTokenValid = user && user.otp_token === otp_token;
     if (!isOtpTokenValid) {
       return res.status(400).json({
         message: {
-          emal:null,
-          password:null,
+          emal: null,
+          password: null,
           otp_token: "Invalid OTP token",
         },
         status: false,
       });
     }
-    user.kyc_status= 'Verified'
-    user.otp_token = ''
+    user.kyc_status = "Verified";
+    user.otp_token = "";
     await user.save();
     res.status(200).json({
       message: "Email verified successfully",
@@ -151,7 +148,6 @@ export const verifyEmail= async(req,res)=>{
         user,
       },
     });
-    
   } catch (error) {
     res.status(500).json({
       message: "Failed to verify email",
@@ -159,7 +155,7 @@ export const verifyEmail= async(req,res)=>{
       error: error.message,
     });
   }
-}
+};
 
 // [DELETE] /delete_account/:id
 export const deleteAccount = async (req, res) => {
