@@ -7,8 +7,19 @@ import time
 from typing import List, Dict, Any, Optional
 from pinecone import Pinecone, ServerlessSpec
 from llama_index.core import Document, VectorStoreIndex, Settings
-from llama_index.vector_stores.pinecone import PineconeVectorStore
-from llama_index.embeddings.openai import OpenAIEmbedding
+try:
+    # New LlamaIndex structure (v0.9+)
+    from llama_index.vector_stores.pinecone import PineconeVectorStore
+    from llama_index.embeddings.openai import OpenAIEmbedding
+except ImportError:
+    # Fallback for newer versions
+    try:
+        from llama_index_vector_stores_pinecone import PineconeVectorStore
+        from llama_index_embeddings_openai import OpenAIEmbedding
+    except ImportError:
+        print("❌ Missing LlamaIndex Pinecone components!")
+        print("   Install: pip install llama-index-vector-stores-pinecone llama-index-embeddings-openai")
+        raise
 from llama_index.core.storage.storage_context import StorageContext
 
 class PineconeManager:
@@ -17,9 +28,9 @@ class PineconeManager:
     def __init__(
         self, 
         api_key: str, 
-        index_name: str = "rag-knowledge-base",
-        dimension: int = 1536,  # OpenAI ada-002 embedding size
-        environment: str = "us-east-1-aws"
+        index_name: str = "attacker2025",
+        dimension: int = 512,  # text-embedding-3-small dimension
+        environment: str = "us-east-1"
     ):
         self.api_key = api_key
         self.index_name = index_name
@@ -32,10 +43,11 @@ class PineconeManager:
         self.vector_store = None
         self.vector_index = None
         
-        # Setup embedding model
+        # Setup embedding model - MUST match index dimension (512)
         Settings.embed_model = OpenAIEmbedding(
-            model="text-embedding-ada-002",
-            api_key=os.getenv("OPENAI_API_KEY")
+            model="text-embedding-3-small",  # 512 dimensions
+            api_key=os.getenv("OPENAI_API_KEY"),
+            dimensions=512  # Explicitly set dimensions
         )
     
     def create_index(self) -> bool:
