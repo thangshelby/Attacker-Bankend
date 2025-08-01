@@ -1,7 +1,30 @@
 import StudentModel from "../models/studentModel.js";
 import SupporterModel from "../models/supporterModel.js";
 
-export const updateStudentById = async (req, res) => {
+export const getStudent = async (req, res) => {
+  const { citizen_id } = req.params;
+  try {
+    const student = await StudentModel.findOne({ citizen_id });
+    if (!student) {
+      return res.status(404).json({
+        message: "Student not found",
+        status: false,
+      });
+    }
+    res.status(200).json({
+      message: "Student fetched successfully",
+      data: {
+        student,
+      },
+      status: true,
+    });
+  } catch (error) {
+    console.error("Get Student Error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const updateStudent = async (req, res) => {
   const {
     student_id,
     citizen_id,
@@ -26,14 +49,16 @@ export const updateStudentById = async (req, res) => {
     }
 
     // Cập nhật chỉ khi có giá trị (đảm bảo không override field đang có với undefined/null)
-    if (student_id !== undefined) student.student_id = student_id;
+    if (student_id !== undefined && student_id != student.student_id) {
+      student.student_id = student_id;
+    }
     if (university !== undefined) student.university = university;
     if (faculty_name !== undefined) student.faculty_name = faculty_name;
     if (major_name !== undefined) student.major_name = major_name;
     if (year_of_study !== undefined) student.year_of_study = year_of_study;
     if (class_id !== undefined) student.class_id = class_id;
-    if (web3_address !== undefined) student.web3_address = web3_address;
-    if (did !== undefined) student.did = did;
+    // if (web3_address !== undefined) student.web3_address = web3_address;
+    // if (did !== undefined) student.did = did;
 
     student.updated_at = new Date();
 
@@ -42,6 +67,27 @@ export const updateStudentById = async (req, res) => {
     res.status(200).json({ message: "Student updated successfully", student });
   } catch (error) {
     console.error("Update Student Error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+export const updateStudentDIDById = async (req, res) => {
+  const { id } = req.params;
+  const { did } = req.body;
+
+  try {
+    const student = await StudentModel.findById(id);
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    student.did = did;
+    await student.save();
+
+    res
+      .status(200)
+      .json({ message: "Student DID updated successfully", student });
+  } catch (error) {
+    console.error("Update Student DID Error:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };

@@ -1,4 +1,7 @@
 import UserModel from "../models/userModel.js";
+import StudentModel from "../models/studentModel.js";
+import { db } from "../server.js";
+
 
 export const updateUser = async (req, res) => {
   const {
@@ -18,17 +21,32 @@ export const updateUser = async (req, res) => {
   } = req.body;
 
   try {
-    console.log(_id);
     const user = await UserModel.findOne({ _id });
 
     if (!user) {
       return res.status(404).json({ message: "User not found." });
     }
 
+    
+    if(!user.citizen_id && citizen_id) {
+      const student = await new StudentModel({
+        citizen_id,
+      })
+      await student.save();
+    }
+
+    if(user.citizen_id && user.citizen_id !== citizen_id) {
+      const student = await StudentModel.findOne({ citizen_id: user.citizen_id });
+      if (student) {
+        student.citizen_id = citizen_id;
+        await student.save();
+      }
+    }
+
     // Cập nhật từng trường nếu có truyền vào
     user.name = name ?? user.name;
     user.citizen_id = citizen_id ?? user.citizen_id;
-    user.birth = birth ?? user.birth;
+    user.birth = birth ?? new Date(user.birth);
     user.gender = gender ?? user.gender;
     user.address = address ?? user.address;
     user.email = email ?? user.email;
@@ -40,6 +58,7 @@ export const updateUser = async (req, res) => {
     user.otp_token = otp_token ?? user.otp_token;
     user.updated_at = new Date();
 
+    // Kiểm tra và cập nhật trạng thái verified nếu có đủ thông tin
     if (
       user.name &&
       user.citizen_id &&
@@ -99,10 +118,8 @@ export const getAllUsers = async (req, res) => {
   }
 };
 
-import { db } from "../server.js";
 export const getUsersBySchoolName = async (req, res) => {
   const schoolName = req.params.schoolName;
-  console.log(schoolName);
   try {
     const results = await db.then(async (db) => {
       const results = await db

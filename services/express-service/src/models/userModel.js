@@ -13,7 +13,7 @@ const UserSchema = mongoose.Schema({
   address: { type: String },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  number: { type: String },
+  phone: { type: String },
   citizen_image_front: { type: String },
   citizen_image_back: { type: String },
   role: { type: String, enum: ["Admin", "User"], default: "User" },

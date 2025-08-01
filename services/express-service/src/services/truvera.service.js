@@ -1,4 +1,6 @@
 // // import api from "../api";
+import fs from "fs";
+
 const jwt =
   "eyJzY29wZXMiOlsidGVzdCIsImFsbCJdLCJzdWIiOiIxOTQ1MyIsInNlbGVjdGVkVGVhbUlkIjowLCJjcmVhdG9ySWQiOiIxOTQ1MyIsImZtdCI6MSwiaWF0IjoxNzUzMTUyMzg2LCJleHAiOjQ4MzI0NDgzODZ9.Bta9N3ReZywgDH90SRnySvXqDGLat40ecf4yCaYIXpHRUatz0AIuooIPf4wAXJh4z1aDtZxgvTMh4hgJyMWD9g";
 import axios from "axios";
@@ -12,6 +14,13 @@ const api = axios.create({
 });
 
 export default api;
+
+
+const data = await response.json();
+fs.writeFileSync('did-export.jsonld', JSON.stringify(data, null, 2), 'utf-8');
+console.log(data);
+
+
 
 export const issueVc = async ({
   studentDid,
@@ -131,22 +140,16 @@ export const getProofRequestById = async (proofRequestId) => {
     return null;
   }
 };
+// getProofRequestById("2d40ca6e-e26b-45bf-abe3-eff0a4f26789")
 
-issueVc(
-  "did:key:z6MkmUMxvPs4CGg8HG141MnqepgZwK8Z9uPu2XQGWDDG2s4M",
-  "thangnnd22414@st.uel.edu.vn",
+const response = await fetch(
+  "https://api-testnet.truvera.io/proof-templates",
   {
-    current_gpa: 3.7,
-    has_scholarship: true,
-    scholarship_count: 4,
-    ailed_courses_count: 0,
-    has_leadership_role: false,
-    academic_award_count: 10,
-    total_credits_earned: 10,
-    extracurricular_activities_count: 10,
-  },
-  "securepasss"
-).then((data) => {
-  // console.log(data);
-});
-// console.log(response);
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${jwt}`,
+      Accept: "*/*",
+    },
+  }
+);
+
