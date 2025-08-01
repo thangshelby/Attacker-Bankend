@@ -9,6 +9,11 @@ import time
 import uuid
 import httpx
 import asyncio
+from pydantic import BaseModel
+from typing import Optional, List, Dict, Any
+
+# RAG Bot imports
+from app.botagent.main_bot import get_rag_bot
 
 router = APIRouter()
 
@@ -58,7 +63,8 @@ async def health_check():
         "timestamp": time.time(),
         "endpoints": [
             "/api/v1/health",
-            "/api/v1/debate-loan"
+            "/api/v1/debate-loan", 
+            "/api/v1/chat"
         ]
     }
 
@@ -173,5 +179,50 @@ async def debate_loan(request: LoanApplicationRequest):
                 "request_id": request_id
             }
         )
+
+
+# ========================
+# RAG BOT API - SINGLE ENDPOINT
+# ========================
+
+class ChatRequest(BaseModel):
+    """Simple chat request"""
+    message: str
+
+@router.post("/chat")
+async def chat_rag_bot(request: ChatRequest):
+    """
+    RAG Chat Bot - Trả lời câu hỏi dựa trên tài liệu
+    
+    Ví dụ câu hỏi:
+    - "Quy trình vay vốn sinh viên như thế nào?"
+    - "Các tiêu chí đánh giá hồ sơ là gì?"
+    - "Hệ thống multi-agent hoạt động ra sao?"
+    """
+    start_time = time.time()
+    
+    try:
+        # Get bot instance
+        bot = get_rag_bot()
+        
+        # Simple chat
+        result = await bot.chat(message=request.message)
+        
+        return {
+            "question": request.message,
+            "answer": result.get("response", "Không có câu trả lời"),
+            "sources": result.get("sources", []),
+            "processing_time": round(time.time() - start_time, 2)
+        }
+        
+    except Exception as e:
+        print(f"❌ Chat error: {e}")
+        return {
+            "question": request.message,
+            "answer": f"Xin lỗi, tôi gặp lỗi: {str(e)}",
+            "sources": [],
+            "processing_time": round(time.time() - start_time, 2),
+            "error": str(e)
+        }
 
 
