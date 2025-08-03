@@ -1,21 +1,7 @@
-// // import api from "../api";
-const jwt =
-  "eyJzY29wZXMiOlsidGVzdCIsImFsbCJdLCJzdWIiOiIxOTQ1MyIsInNlbGVjdGVkVGVhbUlkIjowLCJjcmVhdG9ySWQiOiIxOTQ1MyIsImZtdCI6MSwiaWF0IjoxNzUzMTUyMzg2LCJleHAiOjQ4MzI0NDgzODZ9.Bta9N3ReZywgDH90SRnySvXqDGLat40ecf4yCaYIXpHRUatz0AIuooIPf4wAXJh4z1aDtZxgvTMh4hgJyMWD9g";
-import axios from "axios";
-import { get, request } from "http";
-const api = axios.create({
-  baseURL: "https://api-testnet.truvera.io",
-  headers: {
-    Authorization: `Bearer ${jwt}`,
-    "Content-Type": "application/json",
-    Accept: "*/*",
-  },
-});
-
-export default api;
+import api from "./api.js";
 
 export const issueVc = async ({
-  studentDid,
+  student_DID,
   recipientEmail,
   subject,
   password = "securepass",
@@ -36,44 +22,23 @@ export const issueVc = async ({
         name: "Student Loan Eligibility Credential",
         description:
           "Credential to assess student's eligibility for financial support and loans.",
-        schema:
-          "https://schema.truvera.io/StudentLoanEligibilitySchema_2-V2-1753427555625.json",
-        context:
-          "https://schema.truvera.io/StudentLoanEligibilitySchema_2-V1753427555625.json-ld",
+        schema: process.env.CREDENTIAL_SCHEMA,
+        context: process.env.CREDENTIAL_CONTEXT,
         type: ["VerifiableCredential", "StudentLoanEligibilitySchema"],
         subject: {
-          id: studentDid,
-          name: "ngo nguyen duc thang",
-          current_gpa: 3.7,
-          has_scholarship: true,
-          scholarship_count: 4,
-          failed_courses_count: 0,
-          has_leadership_role: false,
-          academic_award_count: 10,
-          total_credits_earned: 10,
-          extracurricular_activities_count: 10,
+          id: student_DID,
+          ...subject,
         },
-        issuer: "did:cheqd:testnet:7c331522-98fd-4794-9327-e61d945419bc",
+
+        issuer: process.env.ISSUER_DID,
         issuanceDate: createdDate.toISOString(),
         expirationDate: expiredDate.toISOString(),
       },
       revocable: true,
     });
 
-    const response = await fetch("https://api-testnet.truvera.io/credentials", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${jwt}`,
-        "Content-Type": "application/json",
-      },
-      body,
-    }).then((data) => {
-      console.log(data.status);
-      console.log(data.statusText);
-      // console.log(data.json());
-      return data.json();
-    });
-    console.log(response);
+    const response = await api.post("/credentials", body);
+    return response.data;
   } catch (error) {
     console.error("Error issuing VC:", error);
     return null;
@@ -185,16 +150,69 @@ export const getProofRequestById = async (proofRequestId) => {
     return null;
   }
 };
-// getProofRequestById("2d40ca6e-e26b-45bf-abe3-eff0a4f26789")
 
-const response = await fetch(
-  "https://api-testnet.truvera.io/proof-templates",
-  {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${jwt}`,
-      Accept: "*/*",
-    },
-  }
-);
+// export const issueVcc = async ({
+//   studentDid,
+//   recipientEmail,
+//   subject,
+//   password = "securepass",
+// }) => {
+//   const createdDate = new Date();
+//   const expiredDate = new Date(createdDate);
+//   expiredDate.setMonth(createdDate.getMonth() + 4);
+//   const jwt="eyJzY29wZXMiOlsidGVzdCIsImFsbCJdLCJzdWIiOiIxOTQ1MyIsInNlbGVjdGVkVGVhbUlkIjowLCJjcmVhdG9ySWQiOiIxOTQ1MyIsImZtdCI6MSwiaWF0IjoxNzUzMTUyMzg2LCJleHAiOjQ4MzI0NDgzODZ9.Bta9N3ReZywgDH90SRnySvXqDGLat40ecf4yCaYIXpHRUatz0AIuooIPf4wAXJh4z1aDtZxgvTMh4hgJyMWD9g"
+//   try {
+//     const body = JSON.stringify({
+//       persist: true,
+//       password,
+//       recipientEmail,
+//       algorithm: "ed25519", // hoặc "dockbbs" nếu cần ZKP
+//       distribute: false, // hoặc false nếu muốn gửi thủ công
+//       format: "jsonld",
+//       credential: {
+//         name: "Student Loan Eligibility Credential",
+//         description:
+//           "Credential to assess student's eligibility for financial support and loans.",
+//         schema:
+//           "https://schema.truvera.io/StudentLoanEligibilitySchema-V2-1754100871243.json",
+//         context:
+//           "https://schema.truvera.io/StudentLoanEligibilitySchema-V1754100871243.json-ld",
+//         type: ["VerifiableCredential", "StudentLoanEligibilitySchema"],
+//         subject: {
+//           id: studentDid,
+//           // name: "ngo nguyen duc thang",
+//           curent_gpa: 3.7,
+//           gpa: 3.7,
+//           has_scholarship: true,
+//           scholarship_count: 4,
+//           failed_course_count: 0,
+//           has_leadership_role: false,
+//           academic_award_count: 10,
+//           total_credits_earned: 10,
+//           extracurricular_activity_count: 10,
+//         },
+//         issuer: "did:cheqd:testnet:3d8707e1-2425-4be9-ba41-0ad0c8a06f93",
+//         issuanceDate: createdDate.toISOString(),
+//         expirationDate: expiredDate.toISOString(),
+//       },
+//       revocable: true,
+//     });
 
+//     const response = await fetch("https://api-testnet.truvera.io/credentials", {
+//       method: "POST",
+//       headers: {
+//         Authorization: `Bearer ${jwt}`,
+//         "Content-Type": "application/json",
+//       },
+//       body,
+//     }).then((data) => {
+//       return data.json();
+//     });
+//     console.log(response);
+//   } catch (error) {
+//     console.error("Error issuing VC:", error);
+//     return null;
+//   }
+// };
+
+// issueVcc({})

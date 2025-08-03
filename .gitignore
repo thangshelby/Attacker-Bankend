@@ -33,3 +33,7 @@ yarn.lock
 *.pyc
 .gitignore
 .pkl
+
+*.csv
+mockdata.py
+.gitignore
