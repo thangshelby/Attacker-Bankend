@@ -1,18 +1,15 @@
 import UserModel from "../models/userModel.js";
-import StudentModel from "../models/studentModel.js";
-import { db } from "../server.js";
-
 
 export const updateUser = async (req, res) => {
   const {
     _id,
     citizen_id,
-    name,
-    birth,
+    user_name,
+    date_of_birth,
     gender,
-    address,
+    temporary_address,
     email,
-    phone,
+    phone_number,
     citizen_image_front,
     citizen_image_back,
     role,
@@ -27,30 +24,14 @@ export const updateUser = async (req, res) => {
       return res.status(404).json({ message: "User not found." });
     }
 
-    
-    if(!user.citizen_id && citizen_id) {
-      const student = await new StudentModel({
-        citizen_id,
-      })
-      await student.save();
-    }
-
-    if(user.citizen_id && user.citizen_id !== citizen_id) {
-      const student = await StudentModel.findOne({ citizen_id: user.citizen_id });
-      if (student) {
-        student.citizen_id = citizen_id;
-        await student.save();
-      }
-    }
-
     // Cập nhật từng trường nếu có truyền vào
-    user.name = name ?? user.name;
+    user.user_name = user_name ?? user.user_name;
     user.citizen_id = citizen_id ?? user.citizen_id;
-    user.birth = birth ?? new Date(user.birth);
+    user.date_of_birth = date_of_birth ?? user.date_of_birth;
     user.gender = gender ?? user.gender;
-    user.address = address ?? user.address;
+    user.temporary_address = temporary_address ?? user.temporary_address;
     user.email = email ?? user.email;
-    user.phone = phone ?? user.phone;
+    user.phone_number = phone_number ?? user.phone_number;
     user.citizen_image_front = citizen_image_front ?? user.citizen_image_front;
     user.citizen_image_back = citizen_image_back ?? user.citizen_image_back;
     user.role = role ?? user.role;
@@ -58,16 +39,6 @@ export const updateUser = async (req, res) => {
     user.otp_token = otp_token ?? user.otp_token;
     user.updated_at = new Date();
 
-    // Kiểm tra và cập nhật trạng thái verified nếu có đủ thông tin
-    if (
-      user.name &&
-      user.citizen_id &&
-      user.address &&
-      user.phone &&
-      user.email
-    ) {
-      user.verified = true;
-    }
     await user.save();
 
     res.status(200).json({ message: "User updated successfully", user });
@@ -118,8 +89,10 @@ export const getAllUsers = async (req, res) => {
   }
 };
 
+import { db } from "../server.js";
 export const getUsersBySchoolName = async (req, res) => {
   const schoolName = req.params.schoolName;
+  console.log(schoolName);
   try {
     const results = await db.then(async (db) => {
       const results = await db

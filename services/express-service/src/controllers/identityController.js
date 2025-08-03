@@ -1,37 +1,62 @@
 import IdentityProfileModel from "../models/identityProfileModel.js";
+import AcademicModel from "../models/academicModel.js";
+import StudentModel from "../models/studentModel.js";
+import UserModel from "../models/userModel.js";
+import * as TruveraService from "../services/truvera.service.js";
 
 // [POST] /create - Tạo identity profile mới
 export const createIdentityProfile = async (req, res) => {
   try {
     const {
+      email,
       student_id,
+      study_year,
+      term,
       name,
-      description,
-      image,
       method,
-      status,
+      description,
       did,
-    //   verifiable_credential,
     } = req.body;
 
-    // Kiểm tra student_id đã tồn tại chưa
-    const existingProfile = await IdentityProfileModel.findOne({ student_id });
-    if (existingProfile) {
-      return res.status(400).json({
-        message: "Student ID already exists",
-        status: false,
-      });
-    }
+    const academicData = await AcademicModel.findOne({
+      student_id:"k224141694",
+      // study_year:3,
+      // term:3,
+    });
+
+    const VC_subject = {
+      // name: studentData?.name || "",
+      curent_gpa: academicData?.current_gpa || 0,
+      gpa: academicData?.gpa || 0,
+      has_scholarship: academicData?.has_scholarship || false,
+      scholarship_count: academicData?.scholarship_count || 0,
+      failed_course_count: academicData?.failed_course_count || 0,
+      has_leadership_role: academicData?.has_leadership_role || false,
+      total_credits_earned: academicData?.total_credits_earned || 0,
+      extracurricular_activity_count:
+        academicData?.extracurricular_activity_count || 0,
+    };
+    console.log("VC Subject:", VC_subject);
+    
+    const response= await TruveraService.issueVc({
+      student_DID: did,
+      recipientEmail: email,
+      subject: VC_subject,
+      password: "securepass",
+    })
+    console.log("VC Response:", response);
+    // console.log("VC Response:", response);
 
     // Tạo identity profile mới
     const identityProfile = new IdentityProfileModel({
       student_id,
-      name,
+      study_year,
+      term,
+      name: name,
       description,
-      image,
       method: method || "did",
-      did,
-    //   verifiable_credential,
+      did: did,
+      credential_subject: response.credentialSubject
     });
 
     const result = await identityProfile.save();
@@ -209,7 +234,7 @@ export const deleteIdentityProfile = async (req, res) => {
 export const getIdentityProfilesByMethod = async (req, res) => {
   try {
     const { method } = req.params;
-    
+
     if (!["did", "web3"].includes(method)) {
       return res.status(400).json({
         message: "Invalid method. Must be 'did' or 'web3'",
@@ -217,7 +242,9 @@ export const getIdentityProfilesByMethod = async (req, res) => {
       });
     }
 
-    const profiles = await IdentityProfileModel.find({ method }).sort({ created_at: -1 });
+    const profiles = await IdentityProfileModel.find({ method }).sort({
+      created_at: -1,
+    });
 
     return res.status(200).json({
       message: `Identity profiles with method '${method}' retrieved successfully`,
@@ -239,9 +266,9 @@ export const getIdentityProfilesByMethod = async (req, res) => {
 export const searchIdentityProfiles = async (req, res) => {
   try {
     const { q, method } = req.query;
-    
+
     let query = {};
-    
+
     if (q) {
       query.$or = [
         { name: { $regex: q, $options: "i" } },
@@ -249,12 +276,14 @@ export const searchIdentityProfiles = async (req, res) => {
         { student_id: { $regex: q, $options: "i" } },
       ];
     }
-    
+
     if (method && ["did", "web3"].includes(method)) {
       query.method = method;
     }
 
-    const profiles = await IdentityProfileModel.find(query).sort({ created_at: -1 });
+    const profiles = await IdentityProfileModel.find(query).sort({
+      created_at: -1,
+    });
 
     return res.status(200).json({
       message: "Search completed successfully",

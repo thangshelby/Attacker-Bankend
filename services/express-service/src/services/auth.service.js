@@ -1,5 +1,4 @@
 import nodemailer from "nodemailer";
-import twilio from "twilio";
 import otpGenerator from "otp-generator";
 import dotenv from "dotenv";
 dotenv.config();
@@ -369,34 +368,4 @@ export const sendOtpEmail = async (toEmailAddress) => {
 </body>
 </html>
     `,
-  };
-
-  try {
-    await transporter.sendMail(mailOptions);
-    return otpToken; // Trả về mã OTP để lưu trữ hoặc sử dụng sau này
-  } catch (error) {
-    console.error("Failed to send OTP email:", error);
-    throw error;
-  }
-};
-
-const client = twilio(
-  process.env.TWILIO_ACCOUNT_SID,
-  process.env.TWILIO_AUTH_TOKEN
-);
-
-export const sendOtpSms = async (phoneNumber, otp) => {
-  try {
-    const message = await client.messages.create({
-      body: `Mã OTP của bạn là: ${otp}`,
-      from: process.env.TWILIO_PHONE_NUMBER, // số điện thoại đã đăng ký trong Twilio
-      to: phoneNumber, // ví dụ: "+849xxxxxxxx"
-    });
-
-    console.log(`OTP sent to ${phoneNumber}: ${message.sid}`);
-    return message.sid;
-  } catch (error) {
-    console.error("Error sending OTP via SMS:", error);
-    throw error;
-  }
-};
+  }}

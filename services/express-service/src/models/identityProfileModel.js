@@ -2,15 +2,15 @@ import mongoose from "mongoose";
 import mongooseUniqueValidator from "mongoose-unique-validator";
 
 const IdentityProfileSchema = mongoose.Schema({
-  student_id: { type: String, unique: true },
+  student_id: { type: String, required: true }, //FK
+  study_year: { type: String, required: true }, //FK
+  term: { type: Number, required: true }, //FK
   name: { type: String, required: true },
   description: { type: String, required: true },
   image: { type: String },
-  method: { type: String, enum: ["did", "web3"], default: "did" },
+  method: { type: String, default: "key" }, // did or email
   did: { type: String, required: true },
-  verifiable_credential: {
-    type: String,
-  },
+  credential_subject: { type: Object }, // Truvera VC subject
   status: { type: String, enum: ["active", "inactive"], default: "inactive" },
   created_at: { type: Date, default: Date.now },
   updated_at: { type: Date, default: Date.now },
