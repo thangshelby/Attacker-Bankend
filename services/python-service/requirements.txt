@@ -1,4 +1,7 @@
 llama-index          # Thư viện chính cho indexing và query vector
+llama-index-vector-stores-pinecone  # Pinecone vector store for LlamaIndex
+llama-index-embeddings-openai       # OpenAI embeddings for LlamaIndex
+llama-index-llms-openai             # OpenAI LLM for chat
 pyyaml               # Đọc file config YAML
 grpcio               # Hỗ trợ giao tiếp gRPC (cần cho A2A nâng cao)
 grpcio-tools         # Công cụ hỗ trợ gRPC (tạo protobuf, etc.)
@@ -7,3 +10,14 @@ uvicorn[standard]    # Server cho FastAPI (chạy ứng dụng web)
 scikit-learn         # Machine learning cơ bản (cho decision-making nếu dùng ML)
 pydantic             # Validation và modeling dữ liệu (tích hợp tốt với FastAPI và models)
 httpx                # HTTP client for async requests to Express service
+
+# RAG Bot Dependencies
+pinecone             # Vector database for RAG (new SDK)
+openai               # OpenAI API for embeddings and LLM
+beautifulsoup4       # Web scraping for documentation
+pypdf2               # PDF document parsing
+python-multipart     # File upload support
+aiofiles             # Async file operations
+docx2txt             # Extract text from .doc/.docx files
+requests             # HTTP requests
+python-dotenv        # Load environment variables from .env file
