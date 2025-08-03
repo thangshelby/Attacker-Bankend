@@ -11,11 +11,12 @@ userRouter.get("/get-me", jwtMiddleware, authController.getMe);
 userRouter.post("/logout", jwtMiddleware, authController.logout);
 
 userRouter.put("/update_user", userController.updateUser);
-userRouter.get("/all_users", userController.getAllUsers);
-userRouter.get("/user/:id", userController.getUserById);
-userRouter.get("/school/:schoolName", userController.getUsersBySchoolName);
-userRouter.get("/school_id/:schoolId", userController.getUsersBySchoolId);
-userRouter.get("/role/:role", userController.getUsersByRole);
-userRouter.delete("/delete_user/:id", userController.deleteUserById);
+// userRouter.get("/all_users", userController.getAllUsers);
+// userRouter.get("/user/:id", userController.getUserById);
+// userRouter.get("/school/:schoolName", userController.getUsersBySchoolName);
+// userRouter.get("/school_id/:schoolId", userController.getUsersBySchoolId);
+// userRouter.get("/role/:role", userController.getUsersByRole);
+// userRouter.delete("/delete_user/:id", userController.deleteUserById);
 
 export default userRouter;
+    
