@@ -4,9 +4,8 @@ import cors from "cors";
 import routes from "./routes/index.js";
 import setupSwagger from "./swagger.js";
 import bodyParser from "body-parser";
-import mongoose from "mongoose";
 import cookieParser from "cookie-parser";
-import { connectDatabase } from "./models/connectDB.js";
+import { connectDatabase } from "./config/connectDB.js";
 import multer from "multer";
 dotenv.config();
 

@@ -1,9 +1,8 @@
-import * as TruveraService from '../services/truvera.service.js'
+import * as TruveraService from "../services/thirparty/truvera.service.js";
 import MASConversationModel from "../models/MASConversationModel.js";
 import StudentModel from "../models/studentModel.js";
 import UserModel from "../models/userModel.js";
 import LoanProfileModel from "../models/loanProfileModel.js";
-// Loan Controller for handling loan application requests and MAS workflow integration
 
 const initialLoanProfile = {
   age_group: "",
@@ -26,20 +25,16 @@ const initialLoanProfile = {
 
 export const createLoanProfile = async () => {
   try {
-
   } catch (error) {}
 };
 
-export const createProofRequest= async(req, res) => {
-  
+export const createProofRequest = async (req, res) => {
   try {
-    const student_id = req.params.student_id
+    const student_id = req.params.student_id;
     const result = await TruveraService.createProofRequest(student_id);
     return res.status(200).json(result);
-  } catch (error) {
-    
-  }
-}
+  } catch (error) {}
+};
 
 export const storeMASConversation = async (data) => {
   try {
