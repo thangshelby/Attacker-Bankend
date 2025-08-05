@@ -8,7 +8,7 @@ const generateAccessToken = (user) => {
       role: user.role,
     },
     process.env.JWT_ACCESS_KEY,
-    { expiresIn: "20m" }
+    { expiresIn: "24h" }
   );
 };
 

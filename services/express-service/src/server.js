@@ -7,7 +7,7 @@ import bodyParser from "body-parser";
 import mongoose from "mongoose";
 import cookieParser from "cookie-parser";
 import { connectDatabase } from "./models/connectDB.js";
-
+import multer from "multer";
 dotenv.config();
 
 const server = express();
@@ -25,6 +25,10 @@ server.use(
 );
 
 export const db = connectDatabase();
+export const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // giới hạn 10MB (tuỳ bạn)
+});
 
 server.use(cookieParser());
 

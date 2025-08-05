@@ -15,6 +15,9 @@ const AcademicSchema = mongoose.Schema({
   has_leadership_role: { type: Boolean },
   study_year: { type: String, required: true },
   term: { type: Number, required: true },
+  transcripts:[
+    
+  ],
   created_at: { type: Date, default: Date.now },
   updated_at: { type: Date, default: Date.now },
 });

@@ -1,5 +1,4 @@
 import StudentModel from "../models/studentModel.js";
-import SupporterModel from "../models/supporterModel.js";
 
 export const getStudent = async (req, res) => {
   const { citizen_id } = req.params;
@@ -33,8 +32,8 @@ export const updateStudent = async (req, res) => {
     major_name,
     year_of_study,
     class_id,
-    web3_address,
-    did,
+    student_card_front, 
+    student_card_back,
   } = req.body;
 
   try {
@@ -57,6 +56,10 @@ export const updateStudent = async (req, res) => {
     if (major_name !== undefined) student.major_name = major_name;
     if (year_of_study !== undefined) student.year_of_study = year_of_study;
     if (class_id !== undefined) student.class_id = class_id;
+    if (student_card_front !== undefined)
+      student.student_card_front = student_card_front;
+    if (student_card_back !== undefined)
+      student.student_card_back = student_card_back;  
     // if (web3_address !== undefined) student.web3_address = web3_address;
     // if (did !== undefined) student.did = did;
 

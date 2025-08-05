@@ -4,12 +4,12 @@ export const updateUser = async (req, res) => {
   const {
     _id,
     citizen_id,
-    user_name,
-    date_of_birth,
+    name,
+    birth,
     gender,
-    temporary_address,
+    address,
     email,
-    phone_number,
+    phone,
     citizen_image_front,
     citizen_image_back,
     role,
@@ -25,13 +25,13 @@ export const updateUser = async (req, res) => {
     }
 
     // Cập nhật từng trường nếu có truyền vào
-    user.user_name = user_name ?? user.user_name;
+    user.name = name ?? user.name;
     user.citizen_id = citizen_id ?? user.citizen_id;
-    user.date_of_birth = date_of_birth ?? user.date_of_birth;
+    user.birth = birth ?? user.birth;
     user.gender = gender ?? user.gender;
-    user.temporary_address = temporary_address ?? user.temporary_address;
+    user.address = address ?? user.address;
     user.email = email ?? user.email;
-    user.phone_number = phone_number ?? user.phone_number;
+    user.phone = phone ?? user.phone;
     user.citizen_image_front = citizen_image_front ?? user.citizen_image_front;
     user.citizen_image_back = citizen_image_back ?? user.citizen_image_back;
     user.role = role ?? user.role;

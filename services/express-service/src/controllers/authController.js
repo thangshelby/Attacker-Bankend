@@ -33,9 +33,7 @@ export const register = async (req, res) => {
     const otpToken = await sendOtpEmail(req.body.email);
 
     const user = new UserModel({
-      citizen_id: new Date().toISOString(),
-      date_of_birth: req.body.date_of_birth,
-      user_name: req.body.user_name,
+      name: req.body.name,
       email: req.body.email,
       password: hashPassword,
       otp_token: otpToken,

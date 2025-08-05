@@ -9,10 +9,8 @@ const StudentSchema = mongoose.Schema({
   major_name: { type: String },
   year_of_study: { type: Number },
   class_id: { type: String },
-  web3_address: { type: String },
-  did: { type: String },
-  field1: { type: String }, // đổi tên nếu biết rõ
-  field2: { type: String }, // đổi tên nếu biết rõ
+  student_card_front: { type: String }, // URL to the front side of the student card
+  student_card_back: { type: String }, // URL to the back side of the student
   created_at: { type: Date, default: Date.now },
   updated_at: { type: Date, default: Date.now },
 });
