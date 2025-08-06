@@ -1,12 +1,12 @@
 import bcrypt from "bcryptjs";
 import UserModel from "../models/userModel.js";
+import StudentModel from "../models/studentModel.js";
 
-import { sendOtpEmail } from "../services/auth.service.js";
 import {
+  sendOtpEmail,
   generateAccessToken,
   generateRefreshToken,
-} from "../services/jwt.service.js";
-import StudentModel from "../models/studentModel.js";
+} from "../services/auth/auth.service.js";
 
 // [POST] /register
 export const register = async (req, res) => {
