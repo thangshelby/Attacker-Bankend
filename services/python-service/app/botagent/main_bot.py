@@ -38,7 +38,7 @@ class RAGBot:
         pinecone_api_key: str,
         openai_api_key: str,
         index_name: str = "attacker2025",
-        model: str = "gpt-4.1-mini"
+        model: str = "gpt-3.5-turbo"
     ):
         """Initialize RAG bot with Pinecone and OpenAI"""
         
@@ -58,8 +58,8 @@ class RAGBot:
         # Initialize LLM
         self.llm = OpenAI(
             model=model,
-            temperature=0.1,
-            max_tokens=1000
+            temperature=0.7,
+            max_tokens=400
         )
         
         # Load existing vector index
@@ -135,17 +135,22 @@ class RAGBot:
         return refine_template
     
     async def chat(self, message: str, conversation_id: Optional[str] = None) -> Dict[str, Any]:
-        """Main chat method combining RAG and function calling"""
+        """Smart chat method using LLM to decide response strategy"""
         
         start_time = time.time()
         
         try:
-            # Check if question needs function calling (database queries)
-            if self._needs_function_calling(message):
-                return await self._handle_function_calling(message, conversation_id)
+            # Use LLM to classify the question and decide response strategy
+            response_strategy = await self._classify_question(message)
             
-            # Use RAG for document-based questions
+            if response_strategy == "direct_answer":
+                # LLM can answer directly without needing documents
+                return await self._handle_direct_response(message, conversation_id, start_time)
+            elif response_strategy == "rag_search":
+                # Need to search documents for specific information
+                return await self._handle_rag_query(message, conversation_id, start_time)
             else:
+                # Default to RAG if unsure
                 return await self._handle_rag_query(message, conversation_id, start_time)
                 
         except Exception as e:
@@ -157,32 +162,90 @@ class RAGBot:
                 "error": str(e)
             }
     
-    def _needs_function_calling(self, message: str) -> bool:
-        """Determine if message needs function calling vs RAG"""
+    async def _classify_question(self, message: str) -> str:
+        """Use LLM to classify question and decide response strategy"""
         
-        # Keywords that suggest database queries
-        function_keywords = [
-            "thống kê", "số liệu", "bao nhiêu", "danh sách", 
-            "hồ sơ gần đây", "ứng viên", "tìm kiếm", "lọc",
-            "so sánh", "báo cáo", "phân tích dữ liệu"
-        ]
+        classification_prompt = f"""
+Bạn là một AI classifier cho hệ thống chatbot tư vấn vay vốn sinh viên.
+Hãy phân loại câu hỏi sau và quyết định chiến lược trả lời tốt nhất.
+
+Câu hỏi: "{message}"
+
+Các loại câu hỏi và chiến lược:
+1. "direct_answer" - Câu hỏi chào hỏi, cảm ơn, hoặc câu hỏi chung mà AI có thể trả lời trực tiếp mà không cần tìm kiếm tài liệu cụ thể
+2. "rag_search" - Câu hỏi cần thông tin cụ thể từ tài liệu, quy định, chính sách vay vốn
+
+Ví dụ:
+- "Xin chào" → direct_answer
+- "Cảm ơn bạn" → direct_answer  
+- "Vay vốn sinh viên là gì?" → direct_answer
+- "Quy trình vay vốn như thế nào?" → rag_search
+- "Lãi suất vay sinh viên hiện tại?" → rag_search
+- "Điều kiện vay vốn cụ thể?" → rag_search
+
+Chỉ trả lời một từ: direct_answer hoặc rag_search
+"""
         
-        message_lower = message.lower()
-        return any(keyword in message_lower for keyword in function_keywords)
+        try:
+            # Use a fast, lightweight call to classify
+            from llama_index.llms.openai import OpenAI
+            classifier_llm = OpenAI(model="gpt-3.5-turbo", temperature=0, max_tokens=20)
+            
+            response = await classifier_llm.acomplete(classification_prompt)
+            result = str(response).strip().lower()
+            
+            if "direct_answer" in result:
+                return "direct_answer"
+            elif "rag_search" in result:
+                return "rag_search"
+            else:
+                return "rag_search"  # Default to RAG if unclear
+                
+        except Exception as e:
+            print(f"❌ Classification error: {e}")
+            return "rag_search"  # Default to RAG on error
     
-    async def _handle_function_calling(self, message: str, conversation_id: Optional[str]) -> Dict[str, Any]:
-        """Handle database function calling"""
+    async def _handle_direct_response(self, message: str, conversation_id: Optional[str], start_time: float) -> Dict[str, Any]:
+        """Handle direct LLM responses for general questions"""
         
-        # TODO: Implement database function calling
-        # For now, return a placeholder response
-        
-        return {
-            "response": "Tính năng truy vấn cơ sở dữ liệu đang được phát triển. Vui lòng hỏi về nội dung tài liệu thay vì dữ liệu thống kê.",
-            "source": "function_calling",
-            "conversation_id": conversation_id,
-            "functions_used": [],
-            "processing_time": 0.1
-        }
+        try:
+            direct_prompt = f"""
+Bạn là trợ lý AI chuyên về tín dụng sinh viên của Student Credit.
+Hãy trả lời câu hỏi sau một cách tự nhiên, thân thiện và hữu ích.
+
+Câu hỏi: {message}
+
+Quy tắc trả lời:
+- Trả lời bằng tiếng Việt tự nhiên, thân thiện
+- Nếu là chào hỏi, hãy giới thiệu bản thân và dịch vụ
+- Nếu là câu hỏi chung về vay vốn, đưa ra thông tin tổng quan hữu ích
+- Không cần tìm kiếm tài liệu cụ thể, dựa vào kiến thức chung
+- Khuyến khích người dùng hỏi thêm nếu cần thông tin chi tiết
+- Trả lời ngắn gọn, súc tích (2-3 câu)
+
+Trả lời:
+"""
+            
+            # Use the main LLM for direct response
+            response = await self.llm.acomplete(direct_prompt)
+            response_text = str(response).strip()
+            
+            return {
+                "response": response_text,
+                "source": "direct_llm",
+                "conversation_id": conversation_id,
+                "processing_time": round(time.time() - start_time, 3)
+            }
+            
+        except Exception as e:
+            print(f"❌ Direct response error: {e}")
+            return {
+                "response": "Xin chào! Tôi là trợ lý AI của Student Credit. Tôi có thể giúp bạn về các thông tin vay vốn sinh viên. Bạn có câu hỏi gì không?",
+                "source": "fallback",
+                "conversation_id": conversation_id,
+                "processing_time": round(time.time() - start_time, 3),
+                "error": str(e)
+            }
     
     async def _handle_rag_query(self, message: str, conversation_id: Optional[str], start_time: float) -> Dict[str, Any]:
         """Handle RAG document search queries"""
