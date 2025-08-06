@@ -187,30 +187,35 @@ async def debate_loan(request: LoanApplicationRequest):
 # ========================
 
 class ChatRequest(BaseModel):
-    """Simple chat request for RAG bot"""
+    """Chat request for RAG bot with optional user context"""
     message: str
+    citizen_id: Optional[str] = None  # Optional citizen_id for database queries
 
 @router.post("/chat")
 async def chat_rag_bot(request: ChatRequest):
     """
-    RAG Chat Bot - Tự động quyết định chiến lược trả lời
+    RAG Chat Bot - Tự động quyết định chiến lược trả lời với hỗ trợ MCP
     
     Bot sẽ tự động phân loại câu hỏi và chọn chiến lược phù hợp:
     - Direct Answer: Câu hỏi chào hỏi, cảm ơn, thông tin chung
-    - Personal General: Câu hỏi cá nhân - hướng dẫn đăng nhập 
+    - Call Data DB: Câu hỏi về thông tin cá nhân từ database (cần citizen_id)
+    - Personal General: Câu hỏi cá nhân khác - hướng dẫn đăng nhập 
     - RAG Search: Câu hỏi cần tìm kiếm tài liệu
     
     Ví dụ câu hỏi:
     - "Xin chào" → Trả lời trực tiếp
+    - "Điểm GPA của tôi là bao nhiều?" → Truy vấn MCP (cần citizen_id)
     - "Tôi có thể vay bao nhiều?" → Hướng dẫn đăng nhập
     - "Quy trình vay vốn như thế nào?" → Tìm kiếm tài liệu (RAG)
     
     Request body:
     - message: Câu hỏi của người dùng
+    - citizen_id: (Optional) ID định danh để truy cập dữ liệu cá nhân
     
     Example requests:
     1. General question: {"message": "Vay vốn sinh viên là gì?"}
-    2. Personal question: {"message": "Tôi có thể vay bao nhiều?"}
+    2. Database question: {"message": "GPA của tôi là bao nhiều?", "citizen_id": "075204000105"}
+    3. Personal question: {"message": "Tôi có thể vay bao nhiều?"}
     """
     start_time = time.time()
     
@@ -218,9 +223,10 @@ async def chat_rag_bot(request: ChatRequest):
         # Get bot instance
         bot = get_rag_bot()
         
-        # Simple chat without user context
+        # Chat with optional user context
         result = await bot.chat(
-            message=request.message
+            message=request.message,
+            citizen_id=request.citizen_id
         )
         
         return {
@@ -232,10 +238,11 @@ async def chat_rag_bot(request: ChatRequest):
             "processing_time": round(time.time() - start_time, 2),
             "suggestion": result.get("suggestion", ""),
             
-            # Basic debug info
+            # Enhanced debug info
             "debug_info": {
                 "classification": result.get("source", "unknown"),
-                "user_context_available": False,  # No MCP context
+                "user_context_available": request.citizen_id is not None,
+                "citizen_id_provided": request.citizen_id,
                 "response_type": result.get("source", "unknown")
             }
         }

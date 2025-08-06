@@ -25,3 +25,7 @@ python-dotenv
 # MongoDB Dependencies
 motor
 pymongo
+
+# MCP Server Dependencies
+mcp
+llama-index-tools-mcp

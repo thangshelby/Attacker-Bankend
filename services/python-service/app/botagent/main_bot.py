@@ -1,14 +1,16 @@
 """
 RAG Chatbot with Function Calling
-Combines document search (RAG) with database function calling
+Combines document search (RAG) with database function calling via MCP server
 """
 import os
 import time
+import asyncio
 from typing import List, Dict, Any, Optional
 from dotenv import load_dotenv
 
 # Import existing components
 from app.botagent.vectordb import PineconeManager
+from app.botagent.mcp_server import AcademicMCPServer
 
 # LlamaIndex imports with fallback
 try:
@@ -40,10 +42,14 @@ class RAGBot:
         index_name: str = "attacker2",
         model: str = "gpt-4.1-mini"
     ):
-        """Initialize RAG bot with Pinecone and OpenAI"""
+        """Initialize RAG bot with Pinecone, OpenAI, and MCP server"""
         
         # Set environment variables
         os.environ["OPENAI_API_KEY"] = openai_api_key
+        
+        # Initialize MCP server for academic data
+        self.mcp_server = AcademicMCPServer()
+        self._mcp_initialized = False
         
         # Initialize Pinecone manager
         self.pinecone_manager = PineconeManager(
@@ -73,6 +79,17 @@ class RAGBot:
         self.memory = ChatMemoryBuffer.from_defaults(token_limit=20000)
         
         print(f"✅ RAG Bot initialized with index: {index_name}")
+        
+    async def _ensure_mcp_connected(self):
+        """Ensure MCP server is connected to database"""
+        if not self._mcp_initialized:
+            try:
+                await self.mcp_server.connect_database()
+                self._mcp_initialized = True
+                print("✅ MCP Academic Server connected")
+            except Exception as e:
+                print(f"❌ MCP connection failed: {e}")
+                raise
     
     def _create_query_engine(self):
         """Create query engine for RAG"""
@@ -146,6 +163,9 @@ class RAGBot:
             if response_strategy == "direct_answer":
                 # LLM can answer directly without needing documents or personal data
                 return await self._handle_direct_response(message, start_time)
+            elif response_strategy == "call_data_db":
+                # Database questions - get data from MCP server
+                return await self._handle_database_data(message, citizen_id, start_time)
             elif response_strategy == "personal":
                 # Personal questions - provide general guidance since no personal data available
                 return await self._handle_personal_guidance(message, start_time)
@@ -208,6 +228,96 @@ Trả lời:
                 "error": str(e)
             }
     
+    async def _handle_database_data(self, message: str, citizen_id: Optional[str], start_time: float) -> Dict[str, Any]:
+        """Handle database data questions using MCP server"""
+        
+        if not citizen_id:
+            return {
+                "response": "Để truy cập thông tin cá nhân, bạn cần đăng nhập vào hệ thống trước. Vui lòng đăng nhập để tôi có thể cung cấp thông tin chính xác về dữ liệu cá nhân của bạn.",
+                "source": "database_login_required",
+                "processing_time": round(time.time() - start_time, 3),
+                "requires_login": True
+            }
+        
+        try:
+            # Ensure MCP server is connected
+            await self._ensure_mcp_connected()
+            
+            # Get academic data from MCP server
+            academic_data = await self.mcp_server.get_academic_data(citizen_id)
+            
+            if "error" in academic_data:
+                return {
+                    "response": f"Xin lỗi, tôi không thể tìm thấy thông tin dữ liệu cho tài khoản của bạn. Vui lòng kiểm tra lại hoặc liên hệ hỗ trợ để được trợ giúp.",
+                    "source": "database_not_found",
+                    "processing_time": round(time.time() - start_time, 3),
+                    "error": academic_data["error"]
+                }
+            
+            # Format academic data for natural language response
+            academic_context = f"""
+Thông tin học tập của sinh viên (ID: {academic_data['student_id']}):
+
+📊 THÀNH TÍCH HỌC TẬP:
+• GPA tổng: {academic_data['academic_performance']['gpa']}/4.0
+• GPA học kỳ hiện tại: {academic_data['academic_performance']['current_gpa']}/4.0
+• Tổng tín chỉ đã hoàn thành: {academic_data['academic_performance']['total_credits_earned']}
+• Số môn thi rớt: {academic_data['academic_performance']['failed_course_count']}
+
+🏆 THÀNH TỰU & HỌC BỔNG:
+• Số giải thưởng/thành tích: {academic_data['achievements']['achievement_award_count']}
+• Có học bổng: {'Có' if academic_data['achievements']['has_scholarship'] else 'Không'}
+• Số lượng học bổng: {academic_data['achievements']['scholarship_count']}
+
+🎯 HOẠT ĐỘNG & LÃNH ĐẠO:
+• Câu lạc bộ: {academic_data['activities']['club']}
+• Số hoạt động ngoại khóa: {academic_data['activities']['extracurricular_activity_count']}
+• Có vai trò lãnh đạo: {'Có' if academic_data['activities']['has_leadership_role'] else 'Không'}
+
+📚 TÌNH TRẠNG HIỆN TẠI:
+• Năm học: {academic_data['current_status']['study_year']}
+• Học kỳ: {academic_data['current_status']['term']}
+• Trạng thái xác thực: {'Đã xác thực' if academic_data['current_status']['verified'] else 'Chưa xác thực'}
+"""
+
+            # Generate natural language response based on question and data
+            academic_prompt = f"""
+Bạn là trợ lý AI của Student Credit, chuyên tư vấn về tín dụng sinh viên.
+Người dùng hỏi: "{message}"
+
+Dựa vào thông tin học tập sau của sinh viên:
+{academic_context}
+
+Hãy trả lời câu hỏi một cách tự nhiên, thân thiện và hữu ích:
+- Trả lời trực tiếp câu hỏi được hỏi
+- Sử dụng thông tin cụ thể từ hồ sơ học tập
+- Có thể đưa ra nhận xét hoặc lời khuyên phù hợp
+- Trả lời bằng tiếng Việt tự nhiên
+- Ngắn gọn, 2-3 câu
+
+Trả lời:
+"""
+            
+            response = await self.llm.acomplete(academic_prompt)
+            response_text = str(response).strip()
+            
+            return {
+                "response": response_text,
+                "source": "database_data",
+                "processing_time": round(time.time() - start_time, 3),
+                "data": academic_data,
+                "citizen_id": citizen_id
+            }
+            
+        except Exception as e:
+            print(f"❌ Database data error: {e}")
+            return {
+                "response": "Xin lỗi, tôi gặp lỗi khi truy cập thông tin dữ liệu của bạn. Vui lòng thử lại sau hoặc liên hệ hỗ trợ.",
+                "source": "database_error",
+                "processing_time": round(time.time() - start_time, 3),
+                "error": str(e)
+            }
+
     async def _classify_question(self, message: str, citizen_id: Optional[str] = None) -> str:
         """Use LLM to classify question and decide response strategy"""
         
@@ -222,8 +332,9 @@ Thông tin ngữ cảnh: {context_info}
 
 Các loại câu hỏi và chiến lược:
 1. "direct_answer" - Câu hỏi chào hỏi, cảm ơn, hoặc câu hỏi chung không cần thông tin cá nhân
-2. "personal" - Câu hỏi về thông tin cá nhân của người dùng
-3. "rag_search" - Câu hỏi cần thông tin từ tài liệu, quy định chung về vay vốn
+2. "call_data_db" - Câu hỏi cần truy vấn database để lấy dữ liệu cá nhân (academic, profile, etc.)
+3. "personal" - Câu hỏi về thông tin cá nhân khác của người dùng (không cần database)
+4. "rag_search" - Câu hỏi cần thông tin từ tài liệu, quy định chung về vay vốn
 
 Ví dụ phân loại:
 
@@ -233,13 +344,24 @@ DIRECT_ANSWER:
 - "Vay vốn sinh viên là gì?" → direct_answer
 - "Bạn có thể giúp gì?" → direct_answer
 
-PERSONAL:
+CALL_DATA_DB (thông tin cá nhân từ database):
+- "Điểm GPA của tôi là bao nhiều?" → call_data_db
+- "Tôi có bao nhiêu tín chỉ?" → call_data_db
+- "Thông tin học tập của tôi như thế nào?" → call_data_db
+- "Tôi có học bổng không?" → call_data_db
+- "Kết quả học tập của tôi ra sao?" → call_data_db
+- "Tôi tham gia câu lạc bộ nào?" → call_data_db
+- "Hoạt động ngoại khóa của tôi?" → call_data_db
+- "Tôi có vai trò lãnh đạo không?" → call_data_db
+- "Năm học hiện tại của tôi?" → call_data_db
+- "Học kỳ này của tôi thế nào?" → call_data_db
+
+PERSONAL (thông tin cá nhân khác):
 - "Tôi có thể vay bao nhiều tiền?" → personal
-- "Hồ sơ của tôi như thế nào?" → personal
+- "Hồ sơ vay của tôi như thế nào?" → personal
 - "Tình trạng đơn vay của tôi?" → personal
-- "Điểm GPA của tôi có đủ không?" → personal
 - "Lịch sử vay của tôi ra sao?" → personal
-- "Thông tin sinh viên của tôi" → personal
+- "Thông tin cá nhân của tôi" → personal
 
 RAG_SEARCH (thông tin chung từ tài liệu):
 - "Quy trình vay vốn như thế nào?" → rag_search
@@ -248,7 +370,8 @@ RAG_SEARCH (thông tin chung từ tài liệu):
 - "Thời hạn vay tối đa bao lâu?" → rag_search
 - "Giấy tờ cần thiết để vay?" → rag_search
 - "System ứng dụng những công nghệ gì?" → rag_search
-Chỉ trả lời một từ: direct_answer, personal, hoặc rag_search
+
+Chỉ trả lời một từ: direct_answer, call_data_db, personal, hoặc rag_search
 """
         
         try:
@@ -265,14 +388,20 @@ Chỉ trả lời một từ: direct_answer, personal, hoặc rag_search
             
             if "direct_answer" in result:
                 return "direct_answer"
+            elif "call_data_db" in result:
+                return "call_data_db"
             elif "personal" in result:
                 return "personal"
             elif "rag_search" in result:
                 return "rag_search"
             else:
                 # Smart fallback logic
-                personal_keywords = ["tôi", "của tôi", "hồ sơ", "đơn vay", "gpa", "lịch sử"]
-                if any(keyword in message.lower() for keyword in personal_keywords):
+                database_keywords = ["gpa", "điểm", "tín chỉ", "học bổng", "thành tích", "câu lạc bộ", "hoạt động", "lãnh đạo", "năm học", "học kỳ"]
+                personal_keywords = ["tôi", "của tôi", "hồ sơ", "đơn vay", "lịch sử vay"]
+                
+                if any(keyword in message.lower() for keyword in database_keywords):
+                    return "call_data_db"
+                elif any(keyword in message.lower() for keyword in personal_keywords):
                     return "personal"
                 else:
                     return "rag_search"  # Default to RAG for general info
@@ -280,13 +409,16 @@ Chỉ trả lời một từ: direct_answer, personal, hoặc rag_search
         except Exception as e:
             print(f"❌ Classification error: {e}")
             # Fallback classification based on keywords
-            personal_keywords = ["tôi", "của tôi", "hồ sơ", "đơn vay", "thông tin cá nhân"]
+            database_keywords = ["gpa", "điểm", "tín chỉ", "học bổng", "thành tích", "câu lạc bộ", "hoạt động", "lãnh đạo", "năm học", "học kỳ"]
+            personal_keywords = ["tôi", "của tôi", "hồ sơ", "đơn vay", "thông tin cá nhân", "lịch sử vay"]
             greeting_keywords = ["xin chào", "hello", "chào", "cảm ơn", "thank"]
             
             message_lower = message.lower()
             
             if any(keyword in message_lower for keyword in greeting_keywords):
                 return "direct_answer"
+            elif any(keyword in message_lower for keyword in database_keywords):
+                return "call_data_db"
             elif any(keyword in message_lower for keyword in personal_keywords):
                 return "personal"
             else:
@@ -393,7 +525,7 @@ Trả lời:
                 },
                 "model": "gpt-4.1-mini",
                 "embedding_model": "text-embedding-3-large",
-                "response_strategies": ["direct_answer", "personal_general", "rag_search"]
+                "response_strategies": ["direct_answer", "call_data_db", "personal", "rag_search"]
             }
             
         except Exception as e:
