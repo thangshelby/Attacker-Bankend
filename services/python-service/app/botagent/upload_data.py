@@ -18,7 +18,7 @@ from llama_index.core import Document
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
 # ✅ REUSE existing components + cross-platform loader
-from app.botagent.chunking import chunk_documents_simple  
+from app.botagent.chunking import chunk_documents_by_sections
 from app.botagent.vectordb import PineconeManager
 
 # Cross-platform imports (optional)
@@ -195,7 +195,7 @@ async def upload_to_pinecone():
     
     # 2. ✅ Use chunking.py component  
     print("\n✂️ Chunking document...")
-    chunks = chunk_documents_simple(documents, chunk_size=400)  # ✅ EXISTING FUNCTION
+    chunks = chunk_documents_by_sections(documents, max_section_length=1000)  # ✅ SECTION-BASED CHUNKING
     print(f"✅ Created {len(chunks)} chunks")
     print(f"   Average chunk size: {sum(len(c.text) for c in chunks) // len(chunks)} chars")
     
@@ -206,8 +206,8 @@ async def upload_to_pinecone():
     print("\n🔧 Setting up Pinecone...")
     manager = PineconeManager(  # ✅ EXISTING CLASS
         api_key=PINECONE_API_KEY,
-        index_name="attacker2025",
-        dimension=512,
+        index_name="attacker2",
+        dimension=1024,
         environment="us-east-1"
     )
     
@@ -280,7 +280,7 @@ async def upload_to_pinecone():
         try:
             # Direct Pinecone query
             query_response = manager.index.query(
-                vector=[0.1] * 512,  # dummy vector
+                vector=[0.1] * 1024,  # dummy vector
                 top_k=3,
                 include_metadata=True
             )
