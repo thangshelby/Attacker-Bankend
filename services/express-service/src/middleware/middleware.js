@@ -1,4 +1,4 @@
-import { verifyAccessToken } from "../services/jwt.service.js";
+import { verifyAccessToken } from "../services/auth/auth.service.js";
 
 const jwtMiddleware = (req, res, next) => {
   try {
@@ -8,7 +8,7 @@ const jwtMiddleware = (req, res, next) => {
       return res
         .status(401)
         .json({ message: "No or invalid authorization header" });
-    }   
+    }
 
     const token = authHeader.split(" ")[1]; // Lấy token từ header
 
@@ -17,11 +17,11 @@ const jwtMiddleware = (req, res, next) => {
     if (!decoded) {
       return res.status(401).json({ message: "Expired Token " });
     }
-    
-    req.userId = decoded.userId ; 
-    next()
+
+    req.userId = decoded.userId;
+    next();
   } catch (error) {
-    console.error(error)
+    console.error(error);
     return res.status(401).json({ message: "Unauthorized" });
   }
 };

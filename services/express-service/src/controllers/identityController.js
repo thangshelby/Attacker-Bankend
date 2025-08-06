@@ -2,7 +2,7 @@ import IdentityProfileModel from "../models/identityProfileModel.js";
 import AcademicModel from "../models/academicModel.js";
 import StudentModel from "../models/studentModel.js";
 import UserModel from "../models/userModel.js";
-import * as TruveraService from "../services/truvera.service.js";
+import * as TruveraService from "../services/thirparty/truvera.service.js";
 
 // [POST] /create - Tạo identity profile mới
 export const createIdentityProfile = async (req, res) => {
@@ -19,7 +19,7 @@ export const createIdentityProfile = async (req, res) => {
     } = req.body;
 
     const academicData = await AcademicModel.findOne({
-      student_id:"k224141694",
+      student_id: "k224141694",
       // study_year:3,
       // term:3,
     });
@@ -37,13 +37,13 @@ export const createIdentityProfile = async (req, res) => {
         academicData?.extracurricular_activity_count || 0,
     };
     console.log("VC Subject:", VC_subject);
-    
-    const response= await TruveraService.issueVc({
+
+    const response = await TruveraService.issueVc({
       student_DID: did,
       recipientEmail: email,
       subject: VC_subject,
       password: "securepass",
-    })
+    });
     console.log("VC Response:", response);
     // console.log("VC Response:", response);
 
@@ -56,7 +56,7 @@ export const createIdentityProfile = async (req, res) => {
       description,
       method: method || "did",
       did: did,
-      credential_subject: response.credentialSubject
+      credential_subject: response.credentialSubject,
     });
 
     const result = await identityProfile.save();

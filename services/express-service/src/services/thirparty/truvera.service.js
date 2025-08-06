@@ -13,7 +13,7 @@ export const issueVc = async ({
   try {
     const body = JSON.stringify({
       persist: true,
-      password: 'securepass',
+      password: "securepass",
       recipientEmail: "thangnnd22414@st.uel.edu.vn",
       algorithm: "ed25519", // hoặc "dockbbs" nếu cần ZKP
       distribute: true, // hoặc false nếu muốn gửi thủ công
