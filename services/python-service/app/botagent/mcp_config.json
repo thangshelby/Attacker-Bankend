@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "academic-data-server": {
+      "command": "python",
+      "args": ["app/botagent/run_mcp_server.py"],
+      "cwd": "f:/ATTACKER2025/Attacker-Bankend/services/python-service/",
+      "env": {
+        "CONNECTION_STRING": "mongodb+srv://thangnnd22414:S3HfhztmwyyYL2G3@cluster0.cnqmsmh.mongodb.net/Attacker_Database",
+        "DATABASE_NAME": "Attacker_Database"
+      }
+    }
+  }
+}
