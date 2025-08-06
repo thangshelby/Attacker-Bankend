@@ -14,6 +14,7 @@ from typing import Optional, List, Dict, Any
 
 # RAG Bot imports
 from app.botagent.main_bot import get_rag_bot
+# MCP function calling removed
 
 router = APIRouter()
 
@@ -186,18 +187,30 @@ async def debate_loan(request: LoanApplicationRequest):
 # ========================
 
 class ChatRequest(BaseModel):
-    """Simple chat request"""
+    """Simple chat request for RAG bot"""
     message: str
 
 @router.post("/chat")
 async def chat_rag_bot(request: ChatRequest):
     """
-    RAG Chat Bot - Trả lời câu hỏi dựa trên tài liệu
+    RAG Chat Bot - Tự động quyết định chiến lược trả lời
+    
+    Bot sẽ tự động phân loại câu hỏi và chọn chiến lược phù hợp:
+    - Direct Answer: Câu hỏi chào hỏi, cảm ơn, thông tin chung
+    - Personal General: Câu hỏi cá nhân - hướng dẫn đăng nhập 
+    - RAG Search: Câu hỏi cần tìm kiếm tài liệu
     
     Ví dụ câu hỏi:
-    - "Quy trình vay vốn sinh viên như thế nào?"
-    - "Các tiêu chí đánh giá hồ sơ là gì?"
-    - "Hệ thống multi-agent hoạt động ra sao?"
+    - "Xin chào" → Trả lời trực tiếp
+    - "Tôi có thể vay bao nhiều?" → Hướng dẫn đăng nhập
+    - "Quy trình vay vốn như thế nào?" → Tìm kiếm tài liệu (RAG)
+    
+    Request body:
+    - message: Câu hỏi của người dùng
+    
+    Example requests:
+    1. General question: {"message": "Vay vốn sinh viên là gì?"}
+    2. Personal question: {"message": "Tôi có thể vay bao nhiều?"}
     """
     start_time = time.time()
     
@@ -205,24 +218,43 @@ async def chat_rag_bot(request: ChatRequest):
         # Get bot instance
         bot = get_rag_bot()
         
-        # Simple chat
-        result = await bot.chat(message=request.message)
+        # Simple chat without user context
+        result = await bot.chat(
+            message=request.message
+        )
         
         return {
             "question": request.message,
             "answer": result.get("response", "Không có câu trả lời"),
             "sources": result.get("sources", []),
-            "processing_time": round(time.time() - start_time, 2)
+            "strategy": result.get("source", "unknown"),
+            "requires_login": result.get("requires_login", False),
+            "processing_time": round(time.time() - start_time, 2),
+            "suggestion": result.get("suggestion", ""),
+            
+            # Basic debug info
+            "debug_info": {
+                "classification": result.get("source", "unknown"),
+                "user_context_available": False,  # No MCP context
+                "response_type": result.get("source", "unknown")
+            }
         }
         
     except Exception as e:
-        print(f"❌ Chat error: {e}")
+        print(f"❌ Enhanced chat error: {e}")
         return {
             "question": request.message,
             "answer": f"Xin lỗi, tôi gặp lỗi: {str(e)}",
             "sources": [],
+            "strategy": "error",
             "processing_time": round(time.time() - start_time, 2),
             "error": str(e)
         }
+
+
+# ===== END OF RAG BOT ENDPOINTS =====
+
+# MCP functionality has been removed
+# Only basic RAG chat is available
 
 

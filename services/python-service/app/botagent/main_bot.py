@@ -134,78 +134,166 @@ class RAGBot:
         
         return refine_template
     
-    async def chat(self, message: str, conversation_id: Optional[str] = None) -> Dict[str, Any]:
+    async def chat(self, message: str, citizen_id: Optional[str] = None) -> Dict[str, Any]:
         """Smart chat method using LLM to decide response strategy"""
         
         start_time = time.time()
         
         try:
             # Use LLM to classify the question and decide response strategy
-            response_strategy = await self._classify_question(message)
+            response_strategy = await self._classify_question(message, citizen_id)
             
             if response_strategy == "direct_answer":
-                # LLM can answer directly without needing documents
-                return await self._handle_direct_response(message, conversation_id, start_time)
+                # LLM can answer directly without needing documents or personal data
+                return await self._handle_direct_response(message, start_time)
+            elif response_strategy == "mcp_personal":
+                # Personal questions without MCP - provide general guidance
+                return await self._handle_personal_without_mcp(message, start_time)
             elif response_strategy == "rag_search":
                 # Need to search documents for specific information
-                return await self._handle_rag_query(message, conversation_id, start_time)
+                return await self._handle_rag_query(message, start_time)
             else:
                 # Default to RAG if unsure
-                return await self._handle_rag_query(message, conversation_id, start_time)
+                return await self._handle_rag_query(message, start_time)
                 
         except Exception as e:
             return {
                 "response": f"Xin lỗi, tôi gặp lỗi khi xử lý câu hỏi: {str(e)}",
                 "source": "error",
-                "conversation_id": conversation_id,
                 "processing_time": time.time() - start_time,
                 "error": str(e)
             }
     
-    async def _classify_question(self, message: str) -> str:
+    async def _handle_personal_without_mcp(self, message: str, start_time: float) -> Dict[str, Any]:
+        """Handle personal questions without MCP - provide general guidance"""
+        
+        try:
+            personal_prompt = f"""
+Bạn là trợ lý AI chuyên về tín dụng sinh viên của Student Credit.
+Người dùng hỏi một câu hỏi cá nhân nhưng chưa đăng nhập: "{message}"
+
+Hãy trả lời một cách hữu ích và hướng dẫn người dùng:
+- Giải thích tại sao cần thông tin cá nhân để trả lời chính xác
+- Đưa ra thông tin tổng quan hữu ích về chủ đề họ hỏi
+- Khuyến khích họ đăng nhập để được tư vấn cá nhân hóa
+- Trả lời thân thiện, không từ chối thẳng
+
+Quy tắc trả lời:
+- Trả lời bằng tiếng Việt tự nhiên
+- Không nói "tôi không thể trả lời"
+- Đưa ra thông tin hữu ích trước, sau đó mời đăng nhập
+- 3-4 câu ngắn gọn
+
+Trả lời:
+"""
+            
+            response = await self.llm.acomplete(personal_prompt)
+            response_text = str(response).strip()
+            
+            return {
+                "response": response_text,
+                "source": "personal_general",
+                "processing_time": round(time.time() - start_time, 3),
+                "requires_login": True,
+                "suggestion": "Đăng nhập để được tư vấn cá nhân hóa chính xác hơn"
+            }
+            
+        except Exception as e:
+            print(f"❌ Personal query error: {e}")
+            return {
+                "response": "Để trả lời câu hỏi cá nhân này, tôi cần bạn đăng nhập trước. Sau khi đăng nhập, tôi có thể cung cấp thông tin chính xác dựa trên hồ sơ của bạn. Bạn có muốn biết thông tin chung về vay vốn sinh viên không?",
+                "source": "personal_fallback",
+                "processing_time": round(time.time() - start_time, 3),
+                "requires_login": True,
+                "error": str(e)
+            }
+    
+    async def _classify_question(self, message: str, citizen_id: Optional[str] = None) -> str:
         """Use LLM to classify question and decide response strategy"""
+        
+        context_info = f"Người dùng {'có' if citizen_id else 'không có'} thông tin định danh (citizen_id)."
         
         classification_prompt = f"""
 Bạn là một AI classifier cho hệ thống chatbot tư vấn vay vốn sinh viên.
 Hãy phân loại câu hỏi sau và quyết định chiến lược trả lời tốt nhất.
 
 Câu hỏi: "{message}"
+Thông tin ngữ cảnh: {context_info}
 
 Các loại câu hỏi và chiến lược:
-1. "direct_answer" - Câu hỏi chào hỏi, cảm ơn, hoặc câu hỏi chung mà AI có thể trả lời trực tiếp mà không cần tìm kiếm tài liệu cụ thể
-2. "rag_search" - Câu hỏi cần thông tin cụ thể từ tài liệu, quy định, chính sách vay vốn
+1. "direct_answer" - Câu hỏi chào hỏi, cảm ơn, hoặc câu hỏi chung không cần thông tin cá nhân
+2. "mcp_personal" - Câu hỏi về thông tin CÁ NHÂN của người dùng (yêu cầu có citizen_id)
+3. "rag_search" - Câu hỏi cần thông tin từ tài liệu, quy định chung về vay vốn
 
-Ví dụ:
+Ví dụ phân loại:
+
+DIRECT_ANSWER:
 - "Xin chào" → direct_answer
 - "Cảm ơn bạn" → direct_answer  
 - "Vay vốn sinh viên là gì?" → direct_answer
+- "Bạn có thể giúp gì?" → direct_answer
+
+MCP_PERSONAL (cần citizen_id):
+- "Tôi có thể vay bao nhiều tiền?" → mcp_personal
+- "Hồ sơ của tôi như thế nào?" → mcp_personal
+- "Tình trạng đơn vay của tôi?" → mcp_personal
+- "Điểm GPA của tôi có đủ không?" → mcp_personal
+- "Lịch sử vay của tôi ra sao?" → mcp_personal
+- "Tôi đã KYC chưa?" → mcp_personal
+- "Thông tin sinh viên của tôi" → mcp_personal
+
+RAG_SEARCH (thông tin chung từ tài liệu):
 - "Quy trình vay vốn như thế nào?" → rag_search
 - "Lãi suất vay sinh viên hiện tại?" → rag_search
-- "Điều kiện vay vốn cụ thể?" → rag_search
+- "Điều kiện vay vốn là gì?" → rag_search
+- "Thời hạn vay tối đa bao lâu?" → rag_search
+- "Giấy tờ cần thiết để vay?" → rag_search
 
-Chỉ trả lời một từ: direct_answer hoặc rag_search
+Chỉ trả lời một từ: direct_answer, mcp_personal, hoặc rag_search
 """
         
         try:
             # Use a fast, lightweight call to classify
-            from llama_index.llms.openai import OpenAI
-            classifier_llm = OpenAI(model="gpt-3.5-turbo", temperature=0, max_tokens=20)
+            try:
+                from llama_index.llms.openai import OpenAI
+            except ImportError:
+                from llama_index_llms_openai import OpenAI
+                
+            classifier_llm = OpenAI(model="gpt-3.5-turbo", temperature=0, max_tokens=50)
             
             response = await classifier_llm.acomplete(classification_prompt)
             result = str(response).strip().lower()
             
             if "direct_answer" in result:
                 return "direct_answer"
+            elif "mcp_personal" in result:
+                return "mcp_personal"
             elif "rag_search" in result:
                 return "rag_search"
             else:
-                return "rag_search"  # Default to RAG if unclear
+                # Smart fallback logic
+                personal_keywords = ["tôi", "của tôi", "hồ sơ", "đơn vay", "gpa", "kyc", "lịch sử"]
+                if any(keyword in message.lower() for keyword in personal_keywords):
+                    return "mcp_personal" if citizen_id else "direct_answer"
+                else:
+                    return "rag_search"  # Default to RAG for general info
                 
         except Exception as e:
             print(f"❌ Classification error: {e}")
-            return "rag_search"  # Default to RAG on error
+            # Fallback classification based on keywords
+            personal_keywords = ["tôi", "của tôi", "hồ sơ", "đơn vay", "thông tin cá nhân"]
+            greeting_keywords = ["xin chào", "hello", "chào", "cảm ơn", "thank"]
+            
+            message_lower = message.lower()
+            
+            if any(keyword in message_lower for keyword in greeting_keywords):
+                return "direct_answer"
+            elif any(keyword in message_lower for keyword in personal_keywords) and citizen_id:
+                return "mcp_personal"
+            else:
+                return "rag_search"
     
-    async def _handle_direct_response(self, message: str, conversation_id: Optional[str], start_time: float) -> Dict[str, Any]:
+    async def _handle_direct_response(self, message: str, start_time: float) -> Dict[str, Any]:
         """Handle direct LLM responses for general questions"""
         
         try:
@@ -233,7 +321,6 @@ Trả lời:
             return {
                 "response": response_text,
                 "source": "direct_llm",
-                "conversation_id": conversation_id,
                 "processing_time": round(time.time() - start_time, 3)
             }
             
@@ -242,19 +329,17 @@ Trả lời:
             return {
                 "response": "Xin chào! Tôi là trợ lý AI của Student Credit. Tôi có thể giúp bạn về các thông tin vay vốn sinh viên. Bạn có câu hỏi gì không?",
                 "source": "fallback",
-                "conversation_id": conversation_id,
                 "processing_time": round(time.time() - start_time, 3),
                 "error": str(e)
             }
     
-    async def _handle_rag_query(self, message: str, conversation_id: Optional[str], start_time: float) -> Dict[str, Any]:
+    async def _handle_rag_query(self, message: str, start_time: float) -> Dict[str, Any]:
         """Handle RAG document search queries"""
         
         if not self.query_engine:
             return {
                 "response": "Hệ thống tìm kiếm tài liệu chưa sẵn sàng. Vui lòng thử lại sau.",
                 "source": "error",
-                "conversation_id": conversation_id,
                 "processing_time": time.time() - start_time
             }
         
@@ -275,7 +360,6 @@ Trả lời:
             return {
                 "response": str(response),
                 "source": "knowledge_base",
-                "conversation_id": conversation_id,
                 "sources": sources,
                 "processing_time": time.time() - start_time,
                 "query_stats": {
@@ -288,7 +372,6 @@ Trả lời:
             return {
                 "response": f"Không thể tìm kiếm trong tài liệu: {str(e)}",
                 "source": "error",
-                "conversation_id": conversation_id,
                 "processing_time": time.time() - start_time,
                 "error": str(e)
             }
@@ -304,11 +387,14 @@ Trả lời:
                 "pinecone_stats": pinecone_stats,
                 "features": {
                     "document_search": True,
-                    "function_calling": False,  # TODO: Implement
-                    "conversation_memory": True
+                    "function_calling": False,  # MCP function calling disabled
+                    "personal_context": False,  # No personal data from database
+                    "conversation_memory": True,
+                    "smart_routing": True  # Auto-route to RAG/Direct based on question
                 },
-                "model": "gpt-4.1-mini",
-                "embedding_model": "text-embedding-3-small"
+                "model": "gpt-3.5-turbo",
+                "embedding_model": "text-embedding-3-small",
+                "response_strategies": ["direct_answer", "personal_general", "rag_search"]
             }
             
         except Exception as e:
