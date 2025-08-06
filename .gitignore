@@ -2,6 +2,7 @@
 # Bỏ qua virtual environment và các file hệ thống
 services/python-service/virtual_env/
 services/python-service/myenv/
+services/python-service/.venv/
 __pycache__/
 *.pyc
 *.pyo
