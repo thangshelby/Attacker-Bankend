@@ -1,159 +1,194 @@
 """
-Simple Text Chunking for RAG Bot
-Split documents into optimal chunks for embedding
+Section-based Text Chunking for RAG Bot
+Split documents into chunks based on logical sections (PHẦN X:)
 """
 import re
 from typing import List, Dict, Any
 from llama_index.core import Document
-from llama_index.core.node_parser import SimpleNodeParser, SentenceSplitter
 
 class DocumentChunker:
-    """Split documents into chunks for better RAG performance"""
+    """Split documents into chunks based on sections for better RAG performance"""
     
-    def __init__(self, chunk_size: int = 1000, chunk_overlap: int = 200):
-        self.chunk_size = chunk_size
-        self.chunk_overlap = chunk_overlap
+    def __init__(self, max_section_length: int = 3000, fallback_chunk_size: int = 1000):
+        """
+        Initialize chunker with section-based approach
         
-        # Initialize LlamaIndex splitter
-        self.splitter = SentenceSplitter(
-            chunk_size=chunk_size,
-            chunk_overlap=chunk_overlap,
-            paragraph_separator="\n\n",
-            secondary_chunking_regex="[^,.;。]+[,.;。]?"
-        )
+        Args:
+            max_section_length: Maximum length for a single section before splitting
+            fallback_chunk_size: Fallback chunk size for non-sectioned content
+        """
+        self.max_section_length = max_section_length
+        self.fallback_chunk_size = fallback_chunk_size
     
     def chunk_documents(self, documents: List[Document]) -> List[Document]:
-        """Main method to chunk all documents"""
+        """Main method to chunk all documents based on sections"""
         all_chunks = []
         
         for doc in documents:
-            chunks = self._chunk_single_document(doc)
+            chunks = self.chunk_by_sections(doc)
             all_chunks.extend(chunks)
         
-        print(f"📝 Split {len(documents)} documents into {len(all_chunks)} chunks")
+        print(f"📝 Split {len(documents)} documents into {len(all_chunks)} section-based chunks")
         return all_chunks
     
-    def _chunk_single_document(self, document: Document) -> List[Document]:
-        """Chunk a single document"""
+    def chunk_by_sections(self, document: Document) -> List[Document]:
+        """
+        Chunk document by sections (PHẦN X:, SECTION, CHAPTER, etc.)
+        """
+        text = document.text.strip()
         chunks = []
         
-        try:
-            # Use LlamaIndex splitter
-            nodes = self.splitter.get_nodes_from_documents([document])
+        # Try different section patterns
+        sections = self._extract_sections(text)
+        
+        if len(sections) > 1:
+            print(f"🔍 Found {len(sections)} sections in document")
             
-            for i, node in enumerate(nodes):
-                # Create new document for each chunk
-                chunk_doc = Document(
-                    text=node.text,
-                    metadata={
-                        **document.metadata,  # Keep original metadata
-                        "chunk_id": i,
-                        "total_chunks": len(nodes),
-                        "chunk_size": len(node.text)
-                    }
-                )
-                chunks.append(chunk_doc)
-        
-        except Exception as e:
-            print(f"❌ Error chunking document: {e}")
-            # Fallback: return original document
-            chunks = [document]
-        
-        return chunks
-    
-    def smart_chunk_by_content_type(self, document: Document) -> List[Document]:
-        """Content-aware chunking based on document type"""
-        doc_type = document.metadata.get("type", "text")
-        
-        if doc_type == "pdf":
-            return self._chunk_pdf_document(document)
-        elif doc_type == "web":
-            return self._chunk_web_document(document)
-        else:
-            return self._chunk_single_document(document)
-    
-    def _chunk_pdf_document(self, document: Document) -> List[Document]:
-        """Special chunking for PDF documents"""
-        text = document.text
-        chunks = []
-        
-        # Split by pages first if page markers exist
-        if "--- Page" in text:
-            pages = re.split(r'\n--- Page \d+ ---\n', text)
-            
-            for i, page_content in enumerate(pages):
-                if page_content.strip():
-                    # Further split large pages
-                    page_chunks = self._split_text_smart(page_content)
+            for i, section in enumerate(sections):
+                section_title = section.get('title', f'Section {i+1}')
+                section_content = section.get('content', '')
+                
+                # If section is too long, split it further
+                if len(section_content) > self.max_section_length:
+                    subsections = self._split_long_section(section_content)
                     
-                    for j, chunk in enumerate(page_chunks):
+                    for j, subsection in enumerate(subsections):
                         chunk_doc = Document(
-                            text=chunk,
+                            text=subsection,
                             metadata={
                                 **document.metadata,
-                                "page_number": i,
-                                "chunk_id": f"{i}_{j}",
-                                "chunk_type": "pdf_page"
+                                "section_title": section_title,
+                                "section_number": i + 1,
+                                "subsection_number": j + 1,
+                                "chunk_id": f"section_{i+1}_{j+1}",
+                                "chunk_type": "section_based",
+                                "is_subsection": True
                             }
                         )
                         chunks.append(chunk_doc)
-        else:
-            # No page markers, use regular chunking
-            chunks = self._chunk_single_document(document)
-        
-        return chunks
-    
-    def _chunk_web_document(self, document: Document) -> List[Document]:
-        """Special chunking for web documents"""
-        text = document.text
-        
-        # Try to split by sections/headings
-        sections = re.split(r'\n(?=[A-Z][^a-z]*(?:\n|$))', text)
-        
-        chunks = []
-        for i, section in enumerate(sections):
-            if len(section.strip()) > 50:  # Skip very short sections
-                # Split large sections further
-                section_chunks = self._split_text_smart(section)
-                
-                for j, chunk in enumerate(section_chunks):
+                else:
+                    # Section fits in one chunk
                     chunk_doc = Document(
-                        text=chunk,
+                        text=section_content,
                         metadata={
                             **document.metadata,
-                            "section_id": i,
-                            "chunk_id": f"web_{i}_{j}",
-                            "chunk_type": "web_section"
+                            "section_title": section_title,
+                            "section_number": i + 1,
+                            "chunk_id": f"section_{i+1}",
+                            "chunk_type": "section_based",
+                            "is_subsection": False
                         }
                     )
                     chunks.append(chunk_doc)
+        else:
+            print(f"⚠️ No clear sections found, using fallback chunking")
+            chunks = self._fallback_chunking(document)
         
-        return chunks if chunks else self._chunk_single_document(document)
+        return chunks
     
-    def _split_text_smart(self, text: str) -> List[str]:
-        """Smart text splitting with sentence awareness"""
-        if len(text) <= self.chunk_size:
-            return [text]
+    def _extract_sections(self, text: str) -> List[Dict[str, str]]:
+        """
+        Extract sections from text using various patterns
+        """
+        sections = []
         
-        # Split by sentences first
-        sentences = re.split(r'(?<=[.!?])\s+', text)
+        # Pattern 1: PHẦN X: (Vietnamese sections)
+        section_pattern = r'(?:^|\n\n)(PHẦN\s+\d+[:\.].*?)(?=\n\n(?:PHẦN\s+\d+[:\.]|\Z))'
+        matches = re.findall(section_pattern, text, re.MULTILINE | re.DOTALL)
         
+        if matches:
+            for match in matches:
+                lines = match.strip().split('\n', 1)
+                title = lines[0].strip()
+                content = lines[1].strip() if len(lines) > 1 else ""
+                
+                if content:  # Only add if there's actual content
+                    sections.append({
+                        'title': title,
+                        'content': f"{title}\n{content}"
+                    })
+        
+        # Pattern 2: CHAPTER/SECTION (English)
+        if not sections:
+            chapter_pattern = r'(?:^|\n\n)((?:CHAPTER|SECTION)\s+\d+.*?)(?=\n\n(?:CHAPTER|SECTION)\s+\d+|\Z)'
+            matches = re.findall(chapter_pattern, text, re.MULTILINE | re.DOTALL | re.IGNORECASE)
+            
+            for match in matches:
+                lines = match.strip().split('\n', 1)
+                title = lines[0].strip()
+                content = lines[1].strip() if len(lines) > 1 else ""
+                
+                if content:
+                    sections.append({
+                        'title': title,
+                        'content': f"{title}\n{content}"
+                    })
+        
+        # Pattern 3: Numbered headings (1. 2. 3.)
+        if not sections:
+            numbered_pattern = r'(?:^|\n\n)(\d+\.\s+.*?)(?=\n\n\d+\.\s+|\Z)'
+            matches = re.findall(numbered_pattern, text, re.MULTILINE | re.DOTALL)
+            
+            for match in matches:
+                lines = match.strip().split('\n', 1)
+                title = lines[0].strip()
+                content = lines[1].strip() if len(lines) > 1 else ""
+                
+                if content:
+                    sections.append({
+                        'title': title,
+                        'content': f"{title}\n{content}"
+                    })
+        
+        # Pattern 4: Double line breaks as simple section separator
+        if not sections:
+            simple_sections = [s.strip() for s in text.split('\n\n') if s.strip()]
+            
+            # Only use this if we have reasonable sections (not too many small ones)
+            if len(simple_sections) <= 20 and all(len(s) > 100 for s in simple_sections):
+                for i, section in enumerate(simple_sections):
+                    # Try to extract title from first line
+                    lines = section.split('\n', 1)
+                    if len(lines) > 1 and len(lines[0]) < 100:
+                        title = lines[0].strip()
+                        content = section
+                    else:
+                        title = f"Section {i+1}"
+                        content = section
+                    
+                    sections.append({
+                        'title': title,
+                        'content': content
+                    })
+        
+        return sections
+    
+    def _split_long_section(self, content: str) -> List[str]:
+        """
+        Split a long section into smaller chunks while preserving meaning
+        """
         chunks = []
+        
+        # Try to split by paragraphs first
+        paragraphs = [p.strip() for p in content.split('\n\n') if p.strip()]
+        
         current_chunk = ""
         
-        for sentence in sentences:
-            # If adding this sentence would exceed chunk size
-            if len(current_chunk) + len(sentence) > self.chunk_size:
+        for paragraph in paragraphs:
+            # If adding this paragraph would exceed max length
+            if len(current_chunk) + len(paragraph) + 2 > self.max_section_length:
                 if current_chunk:
                     chunks.append(current_chunk.strip())
-                    # Start new chunk with overlap
-                    current_chunk = self._get_overlap_text(current_chunk) + sentence
+                    current_chunk = paragraph
                 else:
-                    # Single sentence too long, split it
-                    chunks.append(sentence[:self.chunk_size])
-                    current_chunk = sentence[self.chunk_size:]
+                    # Single paragraph too long, split by sentences
+                    sentence_chunks = self._split_by_sentences(paragraph)
+                    chunks.extend(sentence_chunks)
             else:
-                current_chunk += (" " if current_chunk else "") + sentence
+                if current_chunk:
+                    current_chunk += "\n\n" + paragraph
+                else:
+                    current_chunk = paragraph
         
         # Add final chunk
         if current_chunk.strip():
@@ -161,25 +196,99 @@ class DocumentChunker:
         
         return chunks
     
-    def _get_overlap_text(self, text: str) -> str:
-        """Get overlap text from end of current chunk"""
-        if len(text) <= self.chunk_overlap:
-            return text
+    def _split_by_sentences(self, text: str) -> List[str]:
+        """
+        Split text by sentences when paragraph is too long
+        """
+        # Split by Vietnamese and English sentence endings
+        sentences = re.split(r'(?<=[.!?])\s+', text)
         
-        # Get last chunk_overlap characters, but try to end at sentence boundary
-        overlap_text = text[-self.chunk_overlap:]
+        chunks = []
+        current_chunk = ""
         
-        # Find last sentence boundary
-        last_sentence = re.search(r'[.!?]\s+', overlap_text[::-1])
-        if last_sentence:
-            # Cut at sentence boundary
-            cut_point = len(overlap_text) - last_sentence.start()
-            overlap_text = overlap_text[cut_point:]
+        for sentence in sentences:
+            if len(current_chunk) + len(sentence) > self.max_section_length:
+                if current_chunk:
+                    chunks.append(current_chunk.strip())
+                    current_chunk = sentence
+                else:
+                    # Single sentence too long, just split it
+                    chunks.append(sentence[:self.max_section_length])
+                    current_chunk = sentence[self.max_section_length:]
+            else:
+                current_chunk += (" " if current_chunk else "") + sentence
         
-        return overlap_text + " "
+        if current_chunk.strip():
+            chunks.append(current_chunk.strip())
+        
+        return chunks
+    
+    def _fallback_chunking(self, document: Document) -> List[Document]:
+        """
+        Fallback to simple chunking when no sections are detected
+        """
+        text = document.text
+        chunks = []
+        
+        # Simple chunking by character count
+        start = 0
+        chunk_id = 0
+        
+        while start < len(text):
+            end = start + self.fallback_chunk_size
+            
+            # Try to end at sentence boundary
+            if end < len(text):
+                # Look for sentence ending within next 200 chars
+                sentence_end = text.rfind('.', end, end + 200)
+                if sentence_end == -1:
+                    sentence_end = text.rfind('!', end, end + 200)
+                if sentence_end == -1:
+                    sentence_end = text.rfind('?', end, end + 200)
+                
+                if sentence_end != -1:
+                    end = sentence_end + 1
+            
+            chunk_text = text[start:end].strip()
+            
+            if chunk_text:
+                chunk_doc = Document(
+                    text=chunk_text,
+                    metadata={
+                        **document.metadata,
+                        "chunk_id": f"fallback_{chunk_id}",
+                        "chunk_type": "fallback",
+                        "start_pos": start,
+                        "end_pos": end
+                    }
+                )
+                chunks.append(chunk_doc)
+                chunk_id += 1
+            
+            start = end
+        
+        return chunks
 
-# Simple usage
-def chunk_documents_simple(documents: List[Document], chunk_size: int = 1000) -> List[Document]:
-    """Simple wrapper for chunking"""
-    chunker = DocumentChunker(chunk_size=chunk_size)
+# Simple usage functions
+def chunk_documents_by_sections(documents: List[Document], max_section_length: int = 3000) -> List[Document]:
+    """Simple wrapper for section-based chunking"""
+    chunker = DocumentChunker(max_section_length=max_section_length)
     return chunker.chunk_documents(documents)
+
+def analyze_document_structure(document: Document) -> Dict[str, Any]:
+    """Analyze document structure to see how it would be chunked"""
+    chunker = DocumentChunker()
+    sections = chunker._extract_sections(document.text)
+    
+    return {
+        "total_length": len(document.text),
+        "sections_found": len(sections),
+        "sections": [
+            {
+                "title": s["title"],
+                "length": len(s["content"]),
+                "preview": s["content"][:100] + "..." if len(s["content"]) > 100 else s["content"]
+            }
+            for s in sections
+        ]
+    }

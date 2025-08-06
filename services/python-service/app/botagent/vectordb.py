@@ -28,8 +28,8 @@ class PineconeManager:
     def __init__(
         self, 
         api_key: str, 
-        index_name: str = "attacker2025",
-        dimension: int = 512,  # text-embedding-3-small dimension
+        index_name: str = "attacker2",
+        dimension: int = 1024,  # text-embedding-3-small dimension
         environment: str = "us-east-1"
     ):
         self.api_key = api_key
@@ -43,11 +43,11 @@ class PineconeManager:
         self.vector_store = None
         self.vector_index = None
         
-        # Setup embedding model - MUST match index dimension (512)
+        # Setup embedding model - MUST match index dimension
         Settings.embed_model = OpenAIEmbedding(
-            model="text-embedding-3-small",  # 512 dimensions
+            model="text-embedding-3-large",  # Default 1536 dimensions, can be set to 512 or 1024
             api_key=os.getenv("OPENAI_API_KEY"),
-            dimensions=512  # Explicitly set dimensions
+            dimensions=self.dimension  # Match index dimension dynamically
         )
     
     def create_index(self) -> bool:

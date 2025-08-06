@@ -37,8 +37,8 @@ class RAGBot:
         self,
         pinecone_api_key: str,
         openai_api_key: str,
-        index_name: str = "attacker2025",
-        model: str = "gpt-3.5-turbo"
+        index_name: str = "attacker2",
+        model: str = "gpt-4.1-mini"
     ):
         """Initialize RAG bot with Pinecone and OpenAI"""
         
@@ -70,7 +70,7 @@ class RAGBot:
         self.query_engine = self._create_query_engine()
         
         # Chat memory
-        self.memory = ChatMemoryBuffer.from_defaults(token_limit=2000)
+        self.memory = ChatMemoryBuffer.from_defaults(token_limit=20000)
         
         print(f"✅ RAG Bot initialized with index: {index_name}")
     
@@ -115,7 +115,7 @@ class RAGBot:
             "Hãy trả lời câu hỏi: {query_str} "
             "Quy tắc trả lời: Trả lời bằng 1 đoạn văn liền mạch, không xuống dòng, "
             "không dấu gạch đầu dòng, không markdown, chỉ văn bản thuần túy. "
-            "Nếu không có thông tin thì nói không có thông tin trong tài liệu. "
+            "Nếu không có thông tin thì nói tôi không biết "
             "Trả lời:"
         )
         
@@ -146,9 +146,9 @@ class RAGBot:
             if response_strategy == "direct_answer":
                 # LLM can answer directly without needing documents or personal data
                 return await self._handle_direct_response(message, start_time)
-            elif response_strategy == "mcp_personal":
-                # Personal questions without MCP - provide general guidance
-                return await self._handle_personal_without_mcp(message, start_time)
+            elif response_strategy == "personal":
+                # Personal questions - provide general guidance since no personal data available
+                return await self._handle_personal_guidance(message, start_time)
             elif response_strategy == "rag_search":
                 # Need to search documents for specific information
                 return await self._handle_rag_query(message, start_time)
@@ -164,24 +164,24 @@ class RAGBot:
                 "error": str(e)
             }
     
-    async def _handle_personal_without_mcp(self, message: str, start_time: float) -> Dict[str, Any]:
-        """Handle personal questions without MCP - provide general guidance"""
+    async def _handle_personal_guidance(self, message: str, start_time: float) -> Dict[str, Any]:
+        """Handle personal questions by providing general guidance"""
         
         try:
             personal_prompt = f"""
 Bạn là trợ lý AI chuyên về tín dụng sinh viên của Student Credit.
-Người dùng hỏi một câu hỏi cá nhân nhưng chưa đăng nhập: "{message}"
+Người dùng hỏi một câu hỏi cá nhân: "{message}"
 
 Hãy trả lời một cách hữu ích và hướng dẫn người dùng:
-- Giải thích tại sao cần thông tin cá nhân để trả lời chính xác
 - Đưa ra thông tin tổng quan hữu ích về chủ đề họ hỏi
-- Khuyến khích họ đăng nhập để được tư vấn cá nhân hóa
-- Trả lời thân thiện, không từ chối thẳng
+- Giải thích các yếu tố chung ảnh hưởng đến vấn đề này
+- Hướng dẫn cách tự đánh giá hoặc chuẩn bị
+- Trả lời thân thiện, hữu ích
 
 Quy tắc trả lời:
 - Trả lời bằng tiếng Việt tự nhiên
+- Đưa ra thông tin hữu ích và thực tiễn
 - Không nói "tôi không thể trả lời"
-- Đưa ra thông tin hữu ích trước, sau đó mời đăng nhập
 - 3-4 câu ngắn gọn
 
 Trả lời:
@@ -194,17 +194,17 @@ Trả lời:
                 "response": response_text,
                 "source": "personal_general",
                 "processing_time": round(time.time() - start_time, 3),
-                "requires_login": True,
-                "suggestion": "Đăng nhập để được tư vấn cá nhân hóa chính xác hơn"
+                "requires_login": False,
+                "suggestion": "Thông tin tổng quan về chủ đề bạn quan tâm"
             }
             
         except Exception as e:
             print(f"❌ Personal query error: {e}")
             return {
-                "response": "Để trả lời câu hỏi cá nhân này, tôi cần bạn đăng nhập trước. Sau khi đăng nhập, tôi có thể cung cấp thông tin chính xác dựa trên hồ sơ của bạn. Bạn có muốn biết thông tin chung về vay vốn sinh viên không?",
+                "response": "Tôi có thể cung cấp thông tin tổng quan về vay vốn sinh viên. Để có lời khuyên cụ thể hơn, bạn có thể chia sẻ thêm về tình huống của mình. Bạn có muốn biết về điều kiện vay, quy trình, hay lãi suất không?",
                 "source": "personal_fallback",
                 "processing_time": round(time.time() - start_time, 3),
-                "requires_login": True,
+                "requires_login": False,
                 "error": str(e)
             }
     
@@ -222,7 +222,7 @@ Thông tin ngữ cảnh: {context_info}
 
 Các loại câu hỏi và chiến lược:
 1. "direct_answer" - Câu hỏi chào hỏi, cảm ơn, hoặc câu hỏi chung không cần thông tin cá nhân
-2. "mcp_personal" - Câu hỏi về thông tin CÁ NHÂN của người dùng (yêu cầu có citizen_id)
+2. "personal" - Câu hỏi về thông tin cá nhân của người dùng
 3. "rag_search" - Câu hỏi cần thông tin từ tài liệu, quy định chung về vay vốn
 
 Ví dụ phân loại:
@@ -233,14 +233,13 @@ DIRECT_ANSWER:
 - "Vay vốn sinh viên là gì?" → direct_answer
 - "Bạn có thể giúp gì?" → direct_answer
 
-MCP_PERSONAL (cần citizen_id):
-- "Tôi có thể vay bao nhiều tiền?" → mcp_personal
-- "Hồ sơ của tôi như thế nào?" → mcp_personal
-- "Tình trạng đơn vay của tôi?" → mcp_personal
-- "Điểm GPA của tôi có đủ không?" → mcp_personal
-- "Lịch sử vay của tôi ra sao?" → mcp_personal
-- "Tôi đã KYC chưa?" → mcp_personal
-- "Thông tin sinh viên của tôi" → mcp_personal
+PERSONAL:
+- "Tôi có thể vay bao nhiều tiền?" → personal
+- "Hồ sơ của tôi như thế nào?" → personal
+- "Tình trạng đơn vay của tôi?" → personal
+- "Điểm GPA của tôi có đủ không?" → personal
+- "Lịch sử vay của tôi ra sao?" → personal
+- "Thông tin sinh viên của tôi" → personal
 
 RAG_SEARCH (thông tin chung từ tài liệu):
 - "Quy trình vay vốn như thế nào?" → rag_search
@@ -248,8 +247,8 @@ RAG_SEARCH (thông tin chung từ tài liệu):
 - "Điều kiện vay vốn là gì?" → rag_search
 - "Thời hạn vay tối đa bao lâu?" → rag_search
 - "Giấy tờ cần thiết để vay?" → rag_search
-
-Chỉ trả lời một từ: direct_answer, mcp_personal, hoặc rag_search
+- "System ứng dụng những công nghệ gì?" → rag_search
+Chỉ trả lời một từ: direct_answer, personal, hoặc rag_search
 """
         
         try:
@@ -259,22 +258,22 @@ Chỉ trả lời một từ: direct_answer, mcp_personal, hoặc rag_search
             except ImportError:
                 from llama_index_llms_openai import OpenAI
                 
-            classifier_llm = OpenAI(model="gpt-3.5-turbo", temperature=0, max_tokens=50)
+            classifier_llm = OpenAI(model="gpt-4.1-mini", temperature=0, max_tokens=50)
             
             response = await classifier_llm.acomplete(classification_prompt)
             result = str(response).strip().lower()
             
             if "direct_answer" in result:
                 return "direct_answer"
-            elif "mcp_personal" in result:
-                return "mcp_personal"
+            elif "personal" in result:
+                return "personal"
             elif "rag_search" in result:
                 return "rag_search"
             else:
                 # Smart fallback logic
-                personal_keywords = ["tôi", "của tôi", "hồ sơ", "đơn vay", "gpa", "kyc", "lịch sử"]
+                personal_keywords = ["tôi", "của tôi", "hồ sơ", "đơn vay", "gpa", "lịch sử"]
                 if any(keyword in message.lower() for keyword in personal_keywords):
-                    return "mcp_personal" if citizen_id else "direct_answer"
+                    return "personal"
                 else:
                     return "rag_search"  # Default to RAG for general info
                 
@@ -288,8 +287,8 @@ Chỉ trả lời một từ: direct_answer, mcp_personal, hoặc rag_search
             
             if any(keyword in message_lower for keyword in greeting_keywords):
                 return "direct_answer"
-            elif any(keyword in message_lower for keyword in personal_keywords) and citizen_id:
-                return "mcp_personal"
+            elif any(keyword in message_lower for keyword in personal_keywords):
+                return "personal"
             else:
                 return "rag_search"
     
@@ -387,13 +386,13 @@ Trả lời:
                 "pinecone_stats": pinecone_stats,
                 "features": {
                     "document_search": True,
-                    "function_calling": False,  # MCP function calling disabled
+                    "function_calling": False,  # No function calling
                     "personal_context": False,  # No personal data from database
                     "conversation_memory": True,
                     "smart_routing": True  # Auto-route to RAG/Direct based on question
                 },
-                "model": "gpt-3.5-turbo",
-                "embedding_model": "text-embedding-3-small",
+                "model": "gpt-4.1-mini",
+                "embedding_model": "text-embedding-3-large",
                 "response_strategies": ["direct_answer", "personal_general", "rag_search"]
             }
             
