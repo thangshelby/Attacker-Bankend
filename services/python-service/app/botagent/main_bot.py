@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 
 # Import existing components
 from app.botagent.vectordb import PineconeManager
-from app.botagent.mcp_server import AcademicMCPServer
+from app.botagent.mcp_server import StudentDataMCPServer
 
 # LlamaIndex imports with fallback
 try:
@@ -47,8 +47,8 @@ class RAGBot:
         # Set environment variables
         os.environ["OPENAI_API_KEY"] = openai_api_key
         
-        # Initialize MCP server for academic data
-        self.mcp_server = AcademicMCPServer()
+        # Initialize MCP server for student data
+        self.mcp_server = StudentDataMCPServer()
         self._mcp_initialized = False
         
         # Initialize Pinecone manager
@@ -152,39 +152,130 @@ class RAGBot:
         return refine_template
     
     async def chat(self, message: str, citizen_id: Optional[str] = None) -> Dict[str, Any]:
-        """Smart chat method using LLM to decide response strategy"""
+        """Smart chat method using LLM to decide response strategy with conversation memory"""
         
         start_time = time.time()
         
         try:
+            # Add user message to memory
+            from llama_index.core.llms import ChatMessage
+            user_message = ChatMessage(role="user", content=message)
+            self.memory.put(user_message)
+            
+            # Get conversation context for better classification
+            conversation_history = self._get_recent_conversation_context()
+            
             # Use LLM to classify the question and decide response strategy
-            response_strategy = await self._classify_question(message, citizen_id)
+            response_strategy = await self._classify_question(message, citizen_id, conversation_history)
+            
+            response_dict = {}
             
             if response_strategy == "direct_answer":
                 # LLM can answer directly without needing documents or personal data
-                return await self._handle_direct_response(message, start_time)
+                response_dict = await self._handle_direct_response(message, start_time, conversation_history)
             elif response_strategy == "call_data_db":
                 # Database questions - get data from MCP server
-                return await self._handle_database_data(message, citizen_id, start_time)
+                response_dict = await self._handle_database_data(message, citizen_id, start_time, conversation_history)
             elif response_strategy == "personal":
                 # Personal questions - provide general guidance since no personal data available
-                return await self._handle_personal_guidance(message, start_time)
+                response_dict = await self._handle_personal_guidance(message, start_time, conversation_history)
             elif response_strategy == "rag_search":
                 # Need to search documents for specific information
-                return await self._handle_rag_query(message, start_time)
+                response_dict = await self._handle_rag_query(message, start_time, conversation_history)
             else:
                 # Default to RAG if unsure
-                return await self._handle_rag_query(message, start_time)
+                response_dict = await self._handle_rag_query(message, start_time, conversation_history)
+            
+            # Add assistant response to memory
+            assistant_message = ChatMessage(role="assistant", content=response_dict["response"])
+            self.memory.put(assistant_message)
+            
+            # Add conversation info to response
+            response_dict["conversation_id"] = id(self.memory)
+            response_dict["memory_tokens"] = len(str(self.memory.get()))
+            
+            return response_dict
                 
         except Exception as e:
-            return {
+            error_response = {
                 "response": f"Xin lỗi, tôi gặp lỗi khi xử lý câu hỏi: {str(e)}",
                 "source": "error",
                 "processing_time": time.time() - start_time,
                 "error": str(e)
             }
+            
+            # Still add to memory for debugging
+            try:
+                from llama_index.core.llms import ChatMessage
+                error_message = ChatMessage(role="assistant", content=error_response["response"])
+                self.memory.put(error_message)
+            except:
+                pass
+                
+            return error_response
     
-    async def _handle_personal_guidance(self, message: str, start_time: float) -> Dict[str, Any]:
+    def _get_recent_conversation_context(self) -> str:
+        """Get recent conversation context for better understanding"""
+        try:
+            # Get recent messages from memory
+            chat_history = self.memory.get()
+            
+            if not chat_history:
+                return "Không có lịch sử trò chuyện."
+            
+            # Format recent conversation (last 4 messages)
+            recent_messages = chat_history[-6:] if len(chat_history) > 4 else chat_history
+            context_parts = []
+            
+            for msg in recent_messages:
+                role = "Người dùng" if msg.role == "user" else "Trợ lý"
+                context_parts.append(f"{role}: {msg.content[:100]}")
+            
+            return "Lịch sử trò chuyện gần đây:\n" + "\n".join(context_parts)
+            
+        except Exception as e:
+            print(f"❌ Error getting conversation context: {e}")
+            return "Không thể lấy lịch sử trò chuyện."
+    
+    def clear_memory(self):
+        """Clear conversation memory"""
+        try:
+            self.memory.reset()
+            print("✅ Conversation memory cleared")
+        except Exception as e:
+            print(f"❌ Error clearing memory: {e}")
+    
+    def get_conversation_summary(self) -> Dict[str, Any]:
+        """Get conversation summary and statistics"""
+        try:
+            chat_history = self.memory.get()
+            
+            if not chat_history:
+                return {
+                    "message_count": 0,
+                    "memory_tokens": 0,
+                    "status": "empty"
+                }
+            
+            user_messages = [msg for msg in chat_history if msg.role == "user"]
+            assistant_messages = [msg for msg in chat_history if msg.role == "assistant"]
+            
+            return {
+                "message_count": len(chat_history),
+                "user_messages": len(user_messages),
+                "assistant_messages": len(assistant_messages),
+                "memory_tokens": len(str(chat_history)),
+                "recent_topics": [msg.content[:50] + "..." for msg in user_messages[-3:]],
+                "status": "active"
+            }
+            
+        except Exception as e:
+            return {
+                "error": str(e),
+                "status": "error"
+            }
+    
+    async def _handle_personal_guidance(self, message: str, start_time: float, conversation_history: str = "") -> Dict[str, Any]:
         """Handle personal questions by providing general guidance"""
         
         try:
@@ -192,10 +283,14 @@ class RAGBot:
 Bạn là trợ lý AI chuyên về tín dụng sinh viên của Student Credit.
 Người dùng hỏi một câu hỏi cá nhân: "{message}"
 
+Lịch sử trò chuyện:
+{conversation_history}
+
 Hãy trả lời một cách hữu ích và hướng dẫn người dùng:
 - Đưa ra thông tin tổng quan hữu ích về chủ đề họ hỏi
 - Giải thích các yếu tố chung ảnh hưởng đến vấn đề này
 - Hướng dẫn cách tự đánh giá hoặc chuẩn bị
+- Tham khảo lịch sử trò chuyện để cung cấp câu trả lời phù hợp
 - Trả lời thân thiện, hữu ích
 
 Quy tắc trả lời:
@@ -228,7 +323,7 @@ Trả lời:
                 "error": str(e)
             }
     
-    async def _handle_database_data(self, message: str, citizen_id: Optional[str], start_time: float) -> Dict[str, Any]:
+    async def _handle_database_data(self, message: str, citizen_id: Optional[str], start_time: float, conversation_history: str = "") -> Dict[str, Any]:
         """Handle database data questions using MCP server"""
         
         if not citizen_id:
@@ -243,7 +338,40 @@ Trả lời:
             # Ensure MCP server is connected
             await self._ensure_mcp_connected()
             
-            # Get academic data from MCP server
+            # Check if this is a pure greeting message (not mixed with questions)
+            greeting_keywords = ["xin chào", "hello", "chào", "hi", "hey"]
+            academic_keywords = ["gpa", "điểm", "tín chỉ", "học bổng", "thành tích", "câu lạc bộ", "hoạt động", "lãnh đạo", "năm học", "học kỳ"]
+            
+            # Check if it's a pure greeting (no academic keywords)
+            is_pure_greeting = (
+                any(keyword in message.lower() for keyword in greeting_keywords) and
+                not any(keyword in message.lower() for keyword in academic_keywords) and
+                len(message.strip()) < 20  # Short message, likely just greeting
+            )
+            
+            if is_pure_greeting:
+                # Get user data for greeting
+                user_data = await self.mcp_server.get_user_data(citizen_id)
+                
+                if "error" not in user_data:
+                    user_name = user_data.get('name', 'bạn')
+                    return {
+                        "response": f"Xin chào {user_name}! Tôi là trợ lý AI của Student Credit. Tôi có thể giúp bạn tìm hiểu về thông tin học tập, hồ sơ sinh viên và các dịch vụ vay vốn. Bạn cần hỗ trợ gì hôm nay?",
+                        "source": "personalized_greeting",
+                        "processing_time": round(time.time() - start_time, 3),
+                        "user_data": user_data,
+                        "citizen_id": citizen_id
+                    }
+                else:
+                    # Fallback if user data not found
+                    return {
+                        "response": "Xin chào! Tôi là trợ lý AI của Student Credit. Tôi có thể giúp bạn tìm hiểu về thông tin học tập, hồ sơ sinh viên và các dịch vụ vay vốn. Bạn cần hỗ trợ gì hôm nay?",
+                        "source": "greeting_fallback",
+                        "processing_time": round(time.time() - start_time, 3),
+                        "citizen_id": citizen_id
+                    }
+            
+            # Get academic data from MCP server for other questions
             academic_data = await self.mcp_server.get_academic_data(citizen_id)
             
             if "error" in academic_data:
@@ -285,12 +413,16 @@ Thông tin học tập của sinh viên (ID: {academic_data['student_id']}):
 Bạn là trợ lý AI của Student Credit, chuyên tư vấn về tín dụng sinh viên.
 Người dùng hỏi: "{message}"
 
+Lịch sử trò chuyện:
+{conversation_history}
+
 Dựa vào thông tin học tập sau của sinh viên:
 {academic_context}
 
 Hãy trả lời câu hỏi một cách tự nhiên, thân thiện và hữu ích:
 - Trả lời trực tiếp câu hỏi được hỏi
 - Sử dụng thông tin cụ thể từ hồ sơ học tập
+- Tham khảo lịch sử trò chuyện để tránh lặp lại thông tin
 - Có thể đưa ra nhận xét hoặc lời khuyên phù hợp
 - Trả lời bằng tiếng Việt tự nhiên
 - Ngắn gọn, 2-3 câu
@@ -318,8 +450,8 @@ Trả lời:
                 "error": str(e)
             }
 
-    async def _classify_question(self, message: str, citizen_id: Optional[str] = None) -> str:
-        """Use LLM to classify question and decide response strategy"""
+    async def _classify_question(self, message: str, citizen_id: Optional[str] = None, conversation_history: str = "") -> str:
+        """Use LLM to classify question and decide response strategy with conversation context"""
         
         context_info = f"Người dùng {'có' if citizen_id else 'không có'} thông tin định danh (citizen_id)."
         
@@ -327,51 +459,54 @@ Trả lời:
 Bạn là một AI classifier cho hệ thống chatbot tư vấn vay vốn sinh viên.
 Hãy phân loại câu hỏi sau và quyết định chiến lược trả lời tốt nhất.
 
-Câu hỏi: "{message}"
+Câu hỏi hiện tại: "{message}"
 Thông tin ngữ cảnh: {context_info}
 
-Các loại câu hỏi và chiến lược:
-1. "direct_answer" - Câu hỏi chào hỏi, cảm ơn, hoặc câu hỏi chung không cần thông tin cá nhân
-2. "call_data_db" - Câu hỏi cần truy vấn database để lấy dữ liệu cá nhân (academic, profile, etc.)
-3. "personal" - Câu hỏi về thông tin cá nhân khác của người dùng (không cần database)
+Lịch sử trò chuyện:
+{conversation_history}
+
+QUY TẮC PHÂN LOẠI QUAN TRỌNG (dựa trên context và lịch sử):
+- Nếu câu hỏi CHỈ là chào hỏi thuần túy (không có từ khóa học tập) + user đã đăng nhập → call_data_db
+- Nếu câu hỏi có từ khóa học tập (gpa, điểm, tín chỉ, etc.) → call_data_db
+- Nếu câu hỏi chào hỏi + user chưa đăng nhập → direct_answer
+- Nếu câu hỏi chung về vay vốn hoặc follow-up từ conversation trước → rag_search
+- Nếu câu hỏi tiếp theo liên quan đến chủ đề đã thảo luận → giữ nguyên strategy từ context
+
+PHÂN LOẠI:
+1. "direct_answer" - Chào hỏi khi chưa đăng nhập, cảm ơn, câu hỏi chung không cần thông tin cá nhân
+2. "call_data_db" - Chào hỏi khi đã đăng nhập hoặc câu hỏi về dữ liệu cá nhân (academic, profile, etc.)
+3. "personal" - Câu hỏi về thông tin cá nhân khác không có trong database
 4. "rag_search" - Câu hỏi cần thông tin từ tài liệu, quy định chung về vay vốn
 
-Ví dụ phân loại:
+VÍ DỤ CỤ THỂ:
 
-DIRECT_ANSWER:
-- "Xin chào" → direct_answer
-- "Cảm ơn bạn" → direct_answer  
-- "Vay vốn sinh viên là gì?" → direct_answer
+DIRECT_ANSWER (chưa đăng nhập):
+- "Xin chào" (không có citizen_id) → direct_answer
+- "Cảm ơn bạn" → direct_answer
 - "Bạn có thể giúp gì?" → direct_answer
 
-CALL_DATA_DB (thông tin cá nhân từ database):
-- "Điểm GPA của tôi là bao nhiều?" → call_data_db
-- "Tôi có bao nhiêu tín chỉ?" → call_data_db
-- "Thông tin học tập của tôi như thế nào?" → call_data_db
-- "Tôi có học bổng không?" → call_data_db
-- "Kết quả học tập của tôi ra sao?" → call_data_db
-- "Tôi tham gia câu lạc bộ nào?" → call_data_db
-- "Hoạt động ngoại khóa của tôi?" → call_data_db
-- "Tôi có vai trò lãnh đạo không?" → call_data_db
-- "Năm học hiện tại của tôi?" → call_data_db
-- "Học kỳ này của tôi thế nào?" → call_data_db
+CALL_DATA_DB (cần dữ liệu từ database):
+- "Xin chào" (có citizen_id) → call_data_db (lấy tên để chào)
+- "Hello" (có citizen_id) → call_data_db (lấy tên để chào)
+- "GPA của tôi là bao nhiều?" → call_data_db
+- "điểm số của tôi" → call_data_db
+- "tín chỉ tôi đã học" → call_data_db
+- "học bổng của tôi" → call_data_db
+- "thành tích học tập" → call_data_db
+- "câu lạc bộ tôi tham gia" → call_data_db
+
+RAG_SEARCH (tài liệu chung):
+- "Quy trình vay vốn như thế nào?" → rag_search
+- "Lãi suất vay sinh viên" → rag_search
+- "Điều kiện vay vốn" → rag_search
+- "Giấy tờ cần thiết" → rag_search
+- Follow-up questions về vay vốn → rag_search
 
 PERSONAL (thông tin cá nhân khác):
 - "Tôi có thể vay bao nhiều tiền?" → personal
-- "Hồ sơ vay của tôi như thế nào?" → personal
-- "Tình trạng đơn vay của tôi?" → personal
-- "Lịch sử vay của tôi ra sao?" → personal
-- "Thông tin cá nhân của tôi" → personal
+- "Hồ sơ vay của tôi" → personal
 
-RAG_SEARCH (thông tin chung từ tài liệu):
-- "Quy trình vay vốn như thế nào?" → rag_search
-- "Lãi suất vay sinh viên hiện tại?" → rag_search
-- "Điều kiện vay vốn là gì?" → rag_search
-- "Thời hạn vay tối đa bao lâu?" → rag_search
-- "Giấy tờ cần thiết để vay?" → rag_search
-- "System ứng dụng những công nghệ gì?" → rag_search
-
-Chỉ trả lời một từ: direct_answer, call_data_db, personal, hoặc rag_search
+CHỈ TRẢ LỜI MỘT TỪ: direct_answer, call_data_db, personal, hoặc rag_search
 """
         
         try:
@@ -395,36 +530,44 @@ Chỉ trả lời một từ: direct_answer, call_data_db, personal, hoặc rag_
             elif "rag_search" in result:
                 return "rag_search"
             else:
-                # Smart fallback logic
-                database_keywords = ["gpa", "điểm", "tín chỉ", "học bổng", "thành tích", "câu lạc bộ", "hoạt động", "lãnh đạo", "năm học", "học kỳ"]
-                personal_keywords = ["tôi", "của tôi", "hồ sơ", "đơn vay", "lịch sử vay"]
+                # If LLM response is unclear, ask it again with simpler prompt
+                simple_prompt = f"""
+Classify this question into one category: direct_answer, call_data_db, personal, or rag_search
+
+Question: "{message}"
+Context: User {'has' if citizen_id else 'does not have'} login info.
+
+Rules:
+- Greetings with login → call_data_db
+- Academic questions → call_data_db  
+- General questions → direct_answer
+- Document questions → rag_search
+
+Answer with one word only:"""
                 
-                if any(keyword in message.lower() for keyword in database_keywords):
+                fallback_response = await classifier_llm.acomplete(simple_prompt)
+                fallback_result = str(fallback_response).strip().lower()
+                
+                if "call_data_db" in fallback_result:
                     return "call_data_db"
-                elif any(keyword in message.lower() for keyword in personal_keywords):
+                elif "direct_answer" in fallback_result:
+                    return "direct_answer"
+                elif "personal" in fallback_result:
                     return "personal"
                 else:
-                    return "rag_search"  # Default to RAG for general info
+                    return "rag_search"
                 
         except Exception as e:
             print(f"❌ Classification error: {e}")
-            # Fallback classification based on keywords
+            # Only use rule-based as absolute last resort when LLM fails
             database_keywords = ["gpa", "điểm", "tín chỉ", "học bổng", "thành tích", "câu lạc bộ", "hoạt động", "lãnh đạo", "năm học", "học kỳ"]
-            personal_keywords = ["tôi", "của tôi", "hồ sơ", "đơn vay", "thông tin cá nhân", "lịch sử vay"]
-            greeting_keywords = ["xin chào", "hello", "chào", "cảm ơn", "thank"]
             
-            message_lower = message.lower()
-            
-            if any(keyword in message_lower for keyword in greeting_keywords):
-                return "direct_answer"
-            elif any(keyword in message_lower for keyword in database_keywords):
+            if any(keyword in message.lower() for keyword in database_keywords):
                 return "call_data_db"
-            elif any(keyword in message_lower for keyword in personal_keywords):
-                return "personal"
             else:
-                return "rag_search"
+                return "direct_answer"  # Safe fallback
     
-    async def _handle_direct_response(self, message: str, start_time: float) -> Dict[str, Any]:
+    async def _handle_direct_response(self, message: str, start_time: float, conversation_history: str = "") -> Dict[str, Any]:
         """Handle direct LLM responses for general questions"""
         
         try:
@@ -434,10 +577,14 @@ Hãy trả lời câu hỏi sau một cách tự nhiên, thân thiện và hữu
 
 Câu hỏi: {message}
 
+Lịch sử trò chuyện:
+{conversation_history}
+
 Quy tắc trả lời:
 - Trả lời bằng tiếng Việt tự nhiên, thân thiện
 - Nếu là chào hỏi, hãy giới thiệu bản thân và dịch vụ
 - Nếu là câu hỏi chung về vay vốn, đưa ra thông tin tổng quan hữu ích
+- Tham khảo lịch sử trò chuyện để tránh lặp lại thông tin
 - Không cần tìm kiếm tài liệu cụ thể, dựa vào kiến thức chung
 - Khuyến khích người dùng hỏi thêm nếu cần thông tin chi tiết
 - Trả lời ngắn gọn, súc tích (2-3 câu)
@@ -464,7 +611,7 @@ Trả lời:
                 "error": str(e)
             }
     
-    async def _handle_rag_query(self, message: str, start_time: float) -> Dict[str, Any]:
+    async def _handle_rag_query(self, message: str, start_time: float, conversation_history: str = "") -> Dict[str, Any]:
         """Handle RAG document search queries"""
         
         if not self.query_engine:
@@ -475,8 +622,13 @@ Trả lời:
             }
         
         try:
+            # Enhance query with conversation context
+            enhanced_query = message
+            if conversation_history and "Lịch sử trò chuyện gần đây:" in conversation_history:
+                enhanced_query = f"{message} (Ngữ cảnh: {conversation_history[-200:]})"
+            
             # Query the knowledge base
-            response = self.query_engine.query(message)
+            response = self.query_engine.query(enhanced_query)
             
             # Extract source information
             sources = []
@@ -495,7 +647,8 @@ Trả lời:
                 "processing_time": time.time() - start_time,
                 "query_stats": {
                     "retrieved_documents": len(sources),
-                    "has_answer": len(str(response)) > 50
+                    "has_answer": len(str(response)) > 50,
+                    "enhanced_with_context": len(conversation_history) > 0
                 }
             }
             
@@ -508,24 +661,27 @@ Trả lời:
             }
     
     def get_stats(self) -> Dict[str, Any]:
-        """Get RAG bot statistics"""
+        """Get RAG bot statistics with memory info"""
         
         try:
             pinecone_stats = self.pinecone_manager.get_index_stats()
+            conversation_stats = self.get_conversation_summary()
             
             return {
                 "status": "ready",
                 "pinecone_stats": pinecone_stats,
+                "conversation_memory": conversation_stats,
                 "features": {
                     "document_search": True,
-                    "function_calling": False,  # No function calling
-                    "personal_context": False,  # No personal data from database
+                    "function_calling": True,  # MCP server integration
+                    "personal_context": True,  # Database integration with memory
                     "conversation_memory": True,
-                    "smart_routing": True  # Auto-route to RAG/Direct based on question
+                    "smart_routing": True  # LLM-based classification with context
                 },
                 "model": "gpt-4.1-mini",
                 "embedding_model": "text-embedding-3-large",
-                "response_strategies": ["direct_answer", "call_data_db", "personal", "rag_search"]
+                "response_strategies": ["direct_answer", "call_data_db", "personal", "rag_search"],
+                "memory_system": "ChatMemoryBuffer with conversation context"
             }
             
         except Exception as e:
