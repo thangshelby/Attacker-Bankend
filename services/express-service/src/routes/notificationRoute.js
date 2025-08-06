@@ -1,24 +1,31 @@
-import express from "express";
-import * as NotificationController from "../controllers/notificationController.js";
+import { Router } from "express";
+import {
+  getAllNotifications,
+  getNotificationsByCitizenId,
+  createNotification,
+  updateNotification,
+  markAllAsRead,
+  deleteNotification,
+} from "../controllers/notificationController.js";
 
-const notificationRouter = express.Router();
+const router = Router();
 
-notificationRouter.get("/", NotificationController.getNotifications);
-notificationRouter.get(
-  "/user/:citizen_id",
-  NotificationController.getNotificationsByCitizenId
-);
+// GET all notifications
+router.get("/", getAllNotifications);
 
-notificationRouter.post("/", NotificationController.createNotification);
-notificationRouter.patch("/:id", NotificationController.updateNotification);
-notificationRouter.post(
-  "/mark_all_as_read",
-  NotificationController.markAllAsRead
-);
-notificationRouter.delete("/:id", NotificationController.deleteNotification);
-notificationRouter.get(
-  "/global",
-  NotificationController.getGlobalNotifications
-);
+// GET notifications by citizen ID
+router.get("/user/:citizen_id", getNotificationsByCitizenId);
 
-export default notificationRouter;
+// POST create new notification
+router.post("/", createNotification);
+
+// PATCH update notification
+router.patch("/:notification_id", updateNotification);
+
+// POST mark all notifications as read
+router.post("/mark_all_as_read", markAllAsRead);
+
+// DELETE notification
+router.delete("/:notification_id", deleteNotification);
+
+export default router;
