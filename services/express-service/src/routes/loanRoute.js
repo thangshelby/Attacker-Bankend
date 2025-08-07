@@ -7,6 +7,9 @@ loanRouter.get  (
   "/create_proof_request/:student_id",
   loanController.createProofRequest
 );
+
+loanRouter.post("/create_loan",loanController.createLoanContract);
+
 loanRouter.post("/loan_request", async (req, res) => {
   const response = await fetch(`${process.env.SERVICE_2_API}/debate-loan`, {
     method: "POST",

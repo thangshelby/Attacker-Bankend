@@ -5,7 +5,8 @@ import identityRouter from "./identityRoute.js";
 import academicRouter from "./academicRoute.js";
 import chatRouter from "./chatRoute.js";
 import notificationRouter from "./notificationRoute.js";
-import { uploadImage } from "../services/cloudinary.service.js";
+
+import { uploadImage } from "../services/thirparty/cloudinary.service.js";
 import { upload } from "../server.js"; // Import the multer upload instance
 
 export default function routes(server) {

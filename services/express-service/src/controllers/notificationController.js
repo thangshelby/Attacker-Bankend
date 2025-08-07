@@ -28,7 +28,7 @@ export const getAllNotifications = async (req, res) => {
 
 export const getNotificationsByCitizenId = async (req, res) => {
   const { citizen_id } = req.params;
-  
+
   try {
     const results = await db.then(async (db) => {
       const notifications = await db
@@ -54,13 +54,18 @@ export const getNotificationsByCitizenId = async (req, res) => {
   }
 };
 
-export const createNotification = async (req, res) => {
-  const { citizen_id, title, message, type, is_read = false } = req.body;
-
+export const createNotification = async (newNotification) => {
+  const {
+    citizen_id,
+    headers,
+    message,
+    type,
+    is_read = false,
+  } = newNotification;
   try {
     const notification = {
       citizen_id,
-      title,
+      headers,
       message,
       type,
       is_read,

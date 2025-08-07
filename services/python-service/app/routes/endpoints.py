@@ -84,6 +84,7 @@ async def debate_loan(request: LoanApplicationRequest):
     request_id = str(uuid.uuid4())
     
     try:
+        print(request)
         # Tạo profile text từ dữ liệu đầu vào mới
         profile = (
             f"Hồ sơ sinh viên vay vốn (ID: {request_id}):\n"
@@ -222,7 +223,7 @@ async def chat_rag_bot(request: ChatRequest):
     try:
         # Get bot instance
         bot = get_rag_bot()
-        
+        print(request)
         # Chat with optional user context
         result = await bot.chat(
             message=request.message,

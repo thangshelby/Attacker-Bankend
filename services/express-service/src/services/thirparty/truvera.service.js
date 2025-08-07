@@ -136,8 +136,6 @@ export const createProofRequest = async (student_id) => {
   }
 };
 
-// createProofRequest("kk2414", "UEL")
-
 export const getProofRequestById = async (proofRequestId) => {
   try {
     const response = await api.get(`/proof-requests/${proofRequestId}`);
