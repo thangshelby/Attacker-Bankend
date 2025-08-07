@@ -8,7 +8,7 @@ const LoanContractSchema = mongoose.Schema({
   loan_purpose: { type: String, required: true },
   custom_purpose: { type: String, default: "" },
   guarantor: { type: String, default: "" },
-  family_income: { type: Number, required: true },
+  family_income: { type: String, required: true },
   payment_method: { type: String, required: true }, 
   payment_frequency: { type: String, required: true },
   monthly_installment: { type: Number, required: true },

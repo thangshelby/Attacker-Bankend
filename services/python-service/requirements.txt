@@ -1,3 +1,7 @@
+# MongoDB Dependencies
+motor
+pymongo
+
 llama-index
 llama-index-vector-stores-pinecone
 llama-index-embeddings-openai
@@ -21,10 +25,6 @@ aiofiles
 docx2txt
 requests
 python-dotenv
-
-# MongoDB Dependencies
-motor
-pymongo
 
 # MCP Server Dependencies
 mcp

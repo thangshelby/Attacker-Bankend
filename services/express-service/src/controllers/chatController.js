@@ -36,7 +36,7 @@ export const chatWithBot = async (req, res) => {
       sources: response.sources,
       processing_time: response.processing_time,
       response_time: responseTime,
-      conversation_id: conversation_id,
+    //   conversation_id: conversation_id,
     });
   } catch (error) {
     const responseTime = Date.now() - startTime;

@@ -3,12 +3,18 @@ import * as loanController from "../controllers/loanController.js";
 // import client from "../grpcClient.js"; // Adjust the path as necessary
 
 const loanRouter = express.Router();
+
+loanRouter.get("/", loanController.getAllLoanContracts);
+loanRouter.get("/:id", loanController.getLoanContractById);
+loanRouter.get('/student/:student_id', loanController.getLoanContractsByStudentId);
+loanRouter.get("/mas/:loan_id", loanController.getMASConversationById);
+
 loanRouter.get  (
   "/create_proof_request/:student_id",
   loanController.createProofRequest
 );
 
-loanRouter.post("/create_loan",loanController.createLoanContract);
+loanRouter.post("/contract",loanController.createLoanContract);
 
 loanRouter.post("/loan_request", async (req, res) => {
   const response = await fetch(`${process.env.SERVICE_2_API}/debate-loan`, {

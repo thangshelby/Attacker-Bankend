@@ -55,35 +55,12 @@ export const getNotificationsByCitizenId = async (req, res) => {
 };
 
 export const createNotification = async (newNotification) => {
-  const {
-    citizen_id,
-    headers,
-    message,
-    type,
-    is_read = false,
-  } = newNotification;
   try {
-    const notification = {
-      citizen_id,
-      headers,
-      message,
-      type,
-      is_read,
-      created_at: new Date(),
-      updated_at: new Date(),
-    };
-
     const result = await db.then(async (db) => {
       const insertResult = await db
         .collection("notifications")
-        .insertOne(notification);
+        .insertOne(newNotification);
       return insertResult;
-    });
-
-    res.status(201).json({
-      message: "Notification created successfully",
-      data: { ...notification, _id: result.insertedId },
-      status: true,
     });
   } catch (error) {
     console.error("Error creating notification:", error);

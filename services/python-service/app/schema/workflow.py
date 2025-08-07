@@ -6,6 +6,7 @@ class LoanApplicationRequest(BaseModel):
     Updated model based on dataset schema (excluding student_id, national_id, province)
     """
     # Demographics
+    loan_contract_id: str = Field(..., description="ID của hợp đồng vay vốn", example="loan-12345")
     age_group: str = Field(..., description="Nhóm tuổi", example="18-22")
     age: int = Field(..., ge=16, le=30, description="Tuổi sinh viên", example=20)
     gender: str = Field(..., description="Giới tính", example="Nam")
@@ -29,19 +30,19 @@ class LoanApplicationRequest(BaseModel):
     loan_amount_requested: int = Field(..., ge=1000000, le=500000000, description="Số tiền đề nghị vay (VND)", example=50000000)
     loan_purpose: str = Field(..., description="Mục đích vay", example="Học phí")
     
-    @validator('gender')
-    def validate_gender(cls, v):
-        valid_genders = ['Nam', 'Nữ', 'Khác']
-        if v not in valid_genders:
-            raise ValueError(f'Gender must be one of: {valid_genders}')
-        return v
+    # @validator('gender')
+    # def validate_gender(cls, v):
+    #     valid_genders = ['Nam', 'Nữ', 'Khác']
+    #     if v not in valid_genders:
+    #         raise ValueError(f'Gender must be one of: {valid_genders}')
+    #     return v
     
-    @validator('province_region')
-    def validate_province_region(cls, v):
-        valid_regions = ['Bắc', 'Trung', 'Nam']
-        if v not in valid_regions:
-            raise ValueError(f'Province region must be one of: {valid_regions}')
-        return v
+    # @validator('province_region')
+    # def validate_province_region(cls, v):
+    #     valid_regions = ['Bắc', 'Trung', 'Nam']
+    #     if v not in valid_regions:
+    #         raise ValueError(f'Province region must be one of: {valid_regions}')
+    #     return v
 
 class AgentResponse(BaseModel):
     """Individual agent response model"""
