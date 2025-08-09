@@ -12,9 +12,35 @@ import {
 export const register = async (req, res) => {
   console.log(req.body);
   try {
-    const isEmailExist = await UserModel.findOne({ email: req.body.email });
+    const existingUser = await UserModel.findOne({ email: req.body.email });
 
-    if (isEmailExist) {
+    // Nếu email đã tồn tại nhưng chưa xác minh, gửi lại OTP và cho phép tiếp tục
+    if (existingUser) {
+      if (existingUser.kyc_status !== "Verified") {
+        const otpToken = await sendOtpEmail(req.body.email);
+        existingUser.otp_token = otpToken;
+        await existingUser.save();
+
+        const accessToken = generateAccessToken(existingUser);
+        const refreshToken = generateRefreshToken(existingUser);
+
+        res.cookie("refreshToken", refreshToken, {
+          httpOnly: true,
+          secure: true,
+          sameSite: "strict",
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
+
+        return res.status(200).json({
+          message: "User exists, resend OTP and continue verification",
+          status: true,
+          data: {
+            user: existingUser,
+            accessToken,
+          },
+        });
+      }
+
       return res.status(400).json({
         message: "Email already exists",
         status: false,
@@ -37,6 +63,11 @@ export const register = async (req, res) => {
       email: req.body.email,
       password: hashPassword,
       otp_token: otpToken,
+      citizen_id: `CCCD${Date.now()}`, // Generate unique citizen ID
+      phone: req.body.phone || "",
+      birth: req.body.birth || new Date(),
+      gender: req.body.gender || "Nam",
+      address: req.body.address || ""
     });
     const result = await user.save();
 
@@ -146,6 +177,25 @@ export const verifyEmail = async (req, res) => {
     user.kyc_status = "Verified";
     user.otp_token = "";
     await user.save();
+
+    // Create student record if it doesn't exist
+    let student = await StudentModel.findOne({ citizen_id: user.citizen_id });
+    if (!student && user.citizen_id) {
+      student = new StudentModel({
+        citizen_id: user.citizen_id,
+        student_id: `SV${Date.now()}`, // Generate unique student ID
+        name: user.name,
+        email: user.email,
+        university: "Đại học Bách Khoa",
+        major_name: "Công nghệ thông tin",
+        birth: user.birth || new Date(),
+        gender: user.gender || "Nam",
+        address: user.address || "",
+        phone: user.phone || ""
+      });
+      await student.save();
+      console.log("Created student record for user:", student.student_id);
+    }
     res.status(200).json({
       message: "Email verified successfully",
       status: true,

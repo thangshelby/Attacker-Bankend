@@ -79,25 +79,80 @@ export const getLoanContractsByStudentId = async (req, res) => {
 
 export const createLoanContract = async (req, res) => {
   try {
+    console.log("Creating loan contract with data:", req.body);
     const { student_id } = req.body;
+    
+    if (!student_id) {
+      console.error("No student_id provided");
+      return res.status(400).json({
+        message: "student_id is required",
+        status: false,
+      });
+    }
+
     const student = await StudentModel.findOne({ student_id });
-    const newLoan = new LoanContractModel({
+    console.log("Found student:", student);
+    
+    if (!student) {
+      console.error("Student not found with student_id:", student_id);
+      return res.status(404).json({
+        message: "Student not found",
+        status: false,
+      });
+    }
+
+    console.log("Creating loan contract model...");
+
+    // Set default values for simplified form
+    const amount = parseInt(req.body.loan_amount_requested, 10) || 0;
+    const tenor = 12; // Default to 12 months
+    const interestRate = 0.08; // Default to 8% for "Pay at maturity" method
+
+    const totalInterest = Math.round(amount * interestRate * (tenor / 12));
+    const totalPayment = amount + totalInterest;
+
+    const loanData = {
       ...req.body,
-    });
+      citizen_id: student.citizen_id, // Add citizen_id from student record
+      loan_tenor: tenor,
+      payment_method: "Trả cả gốc và lãi vào ngày đáo hạn",
+      monthly_installment: 0,
+      total_interest: totalInterest,
+      total_payment: totalPayment,
+    };
+    console.log("Loan data to save:", loanData);
+
+    const newLoan = new LoanContractModel(loanData);
     await newLoan.save();
+    console.log("Loan contract saved successfully:", newLoan._id);
 
     // Create notification for loan creation
-    const notification = {
-      citizen_id: student.citizen_id,
-      headers: "Loan Contract Created",
-      content: `Your loan contract with ID ${newLoan._id} has been created successfully.`,
-      type: "success",
-      icon: "check-circle",
-      is_read: false,
-    };
+    try {
+      const notification = {
+        citizen_id: student.citizen_id,
+        headers: "Loan Contract Created",
+        content: `Your loan contract with ID ${newLoan._id} has been created successfully.`,
+        type: "success",
+        icon: "check-circle",
+        is_read: false,
+      };
 
-    await notificationController.createNotification(notification);
-    createLoanProfile(student.student_id, newLoan);
+      await notificationController.createNotification(notification);
+      console.log("Notification created successfully");
+    } catch (notificationError) {
+      console.error("Error creating notification:", notificationError);
+      // Don't fail the whole request for notification error
+    }
+
+    // Create loan profile (don't await to avoid blocking response)
+    try {
+      createLoanProfile(student.student_id, newLoan);
+      console.log("Loan profile creation initiated");
+    } catch (profileError) {
+      console.error("Error creating loan profile:", profileError);
+      // Don't fail the whole request for profile error
+    }
+
     return res.status(201).json({
       message: "Loan contract created successfully",
       data: {
@@ -107,7 +162,12 @@ export const createLoanContract = async (req, res) => {
     });
   } catch (error) {
     console.error("Error creating loan contract:", error);
-    return res.status(500).json({ error: "Internal server error" });
+    console.error("Error stack:", error.stack);
+    return res.status(500).json({ 
+      error: "Internal server error",
+      message: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 };
 
@@ -173,15 +233,23 @@ export const updateLoanContract = async (req, res) => {
 export const getMASConversationById = async (req, res) => {
   try {
     const { loan_id } = req.params;
+    console.log("Fetching MAS conversation for loan_id:", loan_id);
+    
+    // Find by loan_id field (not request_id) since that's how it's stored
     const conversation = await MASConversationModel.findOne({
-      request_id: loan_id,
+      loan_id: loan_id,
     });
     if (!conversation) {
+      console.log("No conversation found for loan_id:", loan_id);
       return res.status(404).json({
         message: "Conversation not found",
         status: false,
       });
     }
+    
+    console.log("Found conversation:", conversation._id);
+    console.log("Conversation decision:", conversation.decision);
+    
     return res.status(200).json({
       message: "Conversation retrieved successfully",
       status: true,
@@ -211,26 +279,33 @@ const createLoanProfile = async (student_id, loan) => {
     }
 
     const loanProfile = {
-      loan_contract_id: loan._id?.toString() || `loan-${Date.now()}`,
+      // Data from loan object (user input)
+      loan_amount_requested: loan.loan_amount_requested,
+      guarantor: loan.guarantor,
+      family_income: parseInt(loan.family_income, 10),
+      existing_debt: loan.existing_debt === "true",
+      loan_purpose: loan.loan_purpose,
+
+      // Data from student, user, academic records
       age_group: classifyAgeGroup(user.age) || "18-22",
       age: user.age || 20,
       gender: user.gender || "Nam",
-      province_region: "Nam",
-      // university: student.university,
-      university_tier: 1,
-      public_university: true,
       major_category: student.major_name || "STEM",
       gpa_normalized: (academic?.gpa || 3.0) / 4,
       study_year: parseInt(academic?.study_year || 3, 10),
       club: academic?.club || "Câu lạc bộ IT",
-      family_income: parseAverageIncome(loan.family_income),
+
+      // Hardcoded test data as requested
+      province_region: "Bắc",
+      university_tier: 1,
+      public_university: false,
       has_part_time_job: true,
-      existing_debt: false,
-      guarantor: loan.guarantor || "mẹ",
-      loan_amount_requested: loan.loan_amount_requested,
-      loan_purpose: loan.loan_purpose || loan.custom_purpose || "Học phí",
+
+      // Unique identifier
+      loan_contract_id: loan._id?.toString() || `loan-${Date.now()}`,
     };
-    console.log("Loan Profile:", JSON.stringify(loanProfile));
+
+    console.log("Loan Profile to be sent to MAS:", JSON.stringify(loanProfile, null, 2));
     
     const response = await fetch(`http://127.0.0.1:8000/api/v1/debate-loan`, {
       method: "POST",
@@ -290,13 +365,47 @@ const classifyAgeGroup = (age) => {
   return "18-22";
 };
 const parseAverageIncome = (rangeStr) => {
-  const [minStr, maxStr] = rangeStr.split("-");
-  const min = parseInt(minStr, 10);
-  const max = parseInt(maxStr, 10);
-  if (isNaN(min) || isNaN(max)) {
-    throw new Error("Invalid income range format");
+  if (!rangeStr || typeof rangeStr !== 'string') {
+    console.log("Invalid rangeStr:", rangeStr);
+    return 15000000; // Default fallback: 15M VND
   }
-  return Math.round((min + max) / 2);
+
+  console.log("Parsing income range:", rangeStr);
+
+  // Handle "<10000000" format
+  if (rangeStr.startsWith('<')) {
+    const maxValue = parseInt(rangeStr.substring(1), 10);
+    if (!isNaN(maxValue)) {
+      return Math.round(maxValue / 2); // Average from 0 to max
+    }
+  }
+
+  // Handle ">100000000" format  
+  if (rangeStr.startsWith('>')) {
+    const minValue = parseInt(rangeStr.substring(1), 10);
+    if (!isNaN(minValue)) {
+      return minValue + 25000000; // Add 25M to min value as estimate
+    }
+  }
+
+  // Handle "10000000-20000000" format
+  if (rangeStr.includes('-')) {
+    const [minStr, maxStr] = rangeStr.split("-");
+    const min = parseInt(minStr, 10);
+    const max = parseInt(maxStr, 10);
+    if (!isNaN(min) && !isNaN(max)) {
+      return Math.round((min + max) / 2);
+    }
+  }
+
+  // If all parsing fails, try to parse as single number
+  const singleValue = parseInt(rangeStr, 10);
+  if (!isNaN(singleValue)) {
+    return singleValue;
+  }
+
+  console.error("Could not parse income range:", rangeStr);
+  return 15000000; // Default fallback: 15M VND
 };
 const classifyUniversity = (university) => {};
 const classifyRegion = (province) => {};
