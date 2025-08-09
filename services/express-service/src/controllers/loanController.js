@@ -43,7 +43,7 @@ export const getLoanContractById = async (req, res) => {
       message: "Loan contract retrieved successfully",
       status: true,
       data: {
-        loanContract
+        loanContract,
       },
     });
   } catch (error) {
@@ -64,7 +64,7 @@ export const getLoanContractsByStudentId = async (req, res) => {
       message: "Loan contracts retrieved successfully",
       status: true,
       data: {
-        loanContracts,
+        loans: loanContracts,
       },
     });
   } catch (error) {
@@ -111,17 +111,75 @@ export const createLoanContract = async (req, res) => {
   }
 };
 
+export const updateLoanContract = async (req, res) => {
+  const { status } = req.body;
+  console.log(req.body)
+  try {
+    const { id } = req.params;
+    const updatedLoan = await LoanContractModel.findByIdAndUpdate(
+      id,
+      { ...req.body, updated_at: new Date() },
+      { new: true }
+    );
+    const citizen_id = updatedLoan.citizen_id;
+    if (status && status === "accepted") {
+      const notification = {
+        citizen_id: citizen_id,
+        header: "Khoan vay cua ban da duoc chap nhan",
+        content: updatedLoan.reason,
+        type: "success",
+        icon: "check-circle",
+        is_read: false,
+      };
+      await notificationController.createNotification(notification);
+      createLoanProfile(student.student_id, updatedLoan);
+    }
+    if (status && status === "rejected") {
+      const notification = {
+        citizen_id: citizen_id,
+        header: "Khoan vay cua ban da bi tu choi",
+        content: updatedLoan.reason,
+        type: "error",
+        icon: "times-circle",
+        is_read: false,
+      };
+      await notificationController.createNotification(notification);
+    }
+    // If the loan contract is not found, return a 404 error
+
+    if (!updatedLoan) {
+      return res.status(404).json({
+        message: "Loan contract not found",
+        status: false,
+      });
+    }
+    return res.status(200).json({
+      message: "Loan contract updated successfully",
+      status: true,
+      data: {
+        loan: updatedLoan,
+      },
+    });
+  } catch (error) {
+    console.error("Error updating loan contract:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      status: false,
+      error: error.message,
+    });
+  }
+};
+
 export const getMASConversationById = async (req, res) => {
   try {
     const { loan_id } = req.params;
-    console.log(loan_id)
     const conversation = await MASConversationModel.findOne({
       request_id: loan_id,
     });
     if (!conversation) {
       return res.status(404).json({
         message: "Conversation not found",
-        status: false,    
+        status: false,
       });
     }
     return res.status(200).json({

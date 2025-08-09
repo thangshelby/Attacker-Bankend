@@ -15,6 +15,7 @@ loanRouter.get  (
 );
 
 loanRouter.post("/contract",loanController.createLoanContract);
+loanRouter.put("/:id", loanController.updateLoanContract);
 
 loanRouter.post("/loan_request", async (req, res) => {
   const response = await fetch(`${process.env.SERVICE_2_API}/debate-loan`, {

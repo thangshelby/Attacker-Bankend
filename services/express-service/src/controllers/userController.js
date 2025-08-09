@@ -71,6 +71,31 @@ export const getUserById = async (req, res) => {
     });
   }
 };
+export const getUserByCitizenId = async (req, res) => {
+  try {
+    const { citizen_id } = req.params;
+    const user = await UserModel.findOne({ citizen_id }, "-password");
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+        status: false,
+      });
+    }
+    res.status(200).json({
+      message: "User fetched successfully",
+      data: {
+        user,
+      },
+      status: true,
+    });
+  } catch (err) {
+    res.status(500).json({
+      message: "Failed to fetch user",
+      error: err.message,
+      status: false,
+    });
+  }
+};
 
 export const getAllUsers = async (req, res) => {
   try {
