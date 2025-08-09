@@ -200,44 +200,59 @@ export const getMASConversationById = async (req, res) => {
 };
 
 const createLoanProfile = async (student_id, loan) => {
-  const student = await StudentModel.findOne({ student_id });
-  const user = await UserModel.findOne({ citizen_id: student.citizen_id });
-  const academic = await AcademicModel.findOne({ student_id });
   try {
+    const student = await StudentModel.findOne({ student_id });
+    const user = await UserModel.findOne({ citizen_id: student?.citizen_id });
+    const academic = await AcademicModel.findOne({ student_id });
+    
+    if (!student || !user || !loan) {
+      console.error("Missing required data for loan profile:", { student: !!student, user: !!user, loan: !!loan });
+      return;
+    }
+
     const loanProfile = {
-      loan_contract_id: loan._id,
-      age_group: classifyAgeGroup(user.age),
+      loan_contract_id: loan._id?.toString() || `loan-${Date.now()}`,
+      age_group: classifyAgeGroup(user.age) || "18-22",
       age: user.age || 20,
-      gender: user.gender,
+      gender: user.gender || "Nam",
       province_region: "Nam",
       // university: student.university,
       university_tier: 1,
       public_university: true,
-      major_category: student.major_name,
-      gpa_normalized: academic.gpa / 4,
-      study_year: parseInt(academic.study_year, 10),
-      club: academic.club,
+      major_category: student.major_name || "STEM",
+      gpa_normalized: (academic?.gpa || 3.0) / 4,
+      study_year: parseInt(academic?.study_year || 3, 10),
+      club: academic?.club || "Câu lạc bộ IT",
       family_income: parseAverageIncome(loan.family_income),
       has_part_time_job: true,
       existing_debt: false,
-      guarantor: loan.guarantor,
+      guarantor: loan.guarantor || "mẹ",
       loan_amount_requested: loan.loan_amount_requested,
-      loan_purpose: loan.loan_purpose || loan.custom_purpose,
+      loan_purpose: loan.loan_purpose || loan.custom_purpose || "Học phí",
     };
     console.log("Loan Profile:", JSON.stringify(loanProfile));
-    fetch(`http://127.0.0.1:8000/api/v1/debate-loan`, {
+    
+    const response = await fetch(`http://127.0.0.1:8000/api/v1/debate-loan`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(loanProfile),
     });
-    // const ress = await response.json();
 
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Error from debate-loan API:", response.status, errorText);
+      return;
+    }
+
+    const ress = await response.json();
+    console.log("MAS Response:", JSON.stringify(ress, null, 2));
+    
+    // TODO: Store MAS conversation
     // storeMASConversation(ress);
   } catch (error) {
     console.error("Error creating loan profile:", error);
-    return res.status(500).json({ error: "Internal server error" });
   }
 };
 

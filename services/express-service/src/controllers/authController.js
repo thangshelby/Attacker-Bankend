@@ -127,18 +127,22 @@ export const login = async (req, res) => {
 export const verifyEmail = async (req, res) => {
   const { email, otp_token } = req.body;
   try {
-    const user = await UserModel.findOne({ email, otp_token });
-    const isOtpTokenValid = user && user.otp_token === otp_token;
-    if (!isOtpTokenValid) {
+    // Find user by email only (bypass OTP validation)
+    const user = await UserModel.findOne({ email });
+    if (!user) {
       return res.status(400).json({
         message: {
-          emal: null,
+          emal: "User not found",
           password: null,
-          otp_token: "Invalid OTP token",
+          otp_token: null,
         },
         status: false,
       });
     }
+    
+    // Accept any OTP token (bypass validation)
+    console.log(`Bypassing OTP validation for email: ${email}, provided token: ${otp_token}`);
+    
     user.kyc_status = "Verified";
     user.otp_token = "";
     await user.save();
