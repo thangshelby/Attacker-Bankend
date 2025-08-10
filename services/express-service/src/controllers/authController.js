@@ -4,13 +4,13 @@ import StudentModel from "../models/studentModel.js";
 
 import {
   sendOtpEmail,
+  sendOtpToCreateContract,
   generateAccessToken,
   generateRefreshToken,
 } from "../services/auth/auth.service.js";
 
 // [POST] /register
 export const register = async (req, res) => {
-  console.log(req.body);
   try {
     const existingUser = await UserModel.findOne({ email: req.body.email });
 
@@ -67,7 +67,7 @@ export const register = async (req, res) => {
       phone: req.body.phone || "",
       birth: req.body.birth || new Date(),
       gender: req.body.gender || "Nam",
-      address: req.body.address || ""
+      address: req.body.address || "",
     });
     const result = await user.save();
 
@@ -97,7 +97,28 @@ export const register = async (req, res) => {
     });
   }
 };
-
+export const sendOtp = async (req, res) => {
+  const email = req.params.email;
+  try {
+    const user = await UserModel.findOne({ email });
+    const otpToken = await sendOtpToCreateContract(email);
+    user.otp_token = otpToken;
+    await user.save();
+    res.status(200).json({
+      message: "OTP sent successfully",
+      status: true,
+      data: {
+        otp_token: otpToken,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to send OTP",
+      status: false,
+      error: error.message,
+    });
+  }
+};
 // [POST] /login
 export const login = async (req, res) => {
   try {
@@ -170,10 +191,12 @@ export const verifyEmail = async (req, res) => {
         status: false,
       });
     }
-    
+
     // Accept any OTP token (bypass validation)
-    console.log(`Bypassing OTP validation for email: ${email}, provided token: ${otp_token}`);
-    
+    console.log(
+      `Bypassing OTP validation for email: ${email}, provided token: ${otp_token}`
+    );
+
     user.kyc_status = "Verified";
     user.otp_token = "";
     await user.save();
@@ -191,7 +214,7 @@ export const verifyEmail = async (req, res) => {
         birth: user.birth || new Date(),
         gender: user.gender || "Nam",
         address: user.address || "",
-        phone: user.phone || ""
+        phone: user.phone || "",
       });
       await student.save();
       console.log("Created student record for user:", student.student_id);
