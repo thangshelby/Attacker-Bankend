@@ -760,6 +760,7 @@ export const sendOtpToCreateContract = async (toEmailAddress) => {
     subject: "OTP for Creating Contract",
     html: htmlTemplate,
   };
+  console.log(toEmailAddress, otpToken);
   try {
     await transporter.sendMail(mailOptions);
     return otpToken;

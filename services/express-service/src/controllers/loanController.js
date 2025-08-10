@@ -12,8 +12,9 @@ export const getAllLoanContracts = async (req, res) => {
     const loanContracts = await LoanContractModel.find().sort({
       createdAt: -1,
     });
+
     return res.status(200).json({
-      message: "Loan contracts retrieved successfully",
+      message: "Khoản vay đã được tạo thành công",
       status: true,
       data: {
         loans: loanContracts,
@@ -79,9 +80,8 @@ export const getLoanContractsByStudentId = async (req, res) => {
 
 export const createLoanContract = async (req, res) => {
   try {
-    console.log("Creating loan contract with data:", req.body);
     const { student_id } = req.body;
-    
+
     if (!student_id) {
       console.error("No student_id provided");
       return res.status(400).json({
@@ -91,8 +91,7 @@ export const createLoanContract = async (req, res) => {
     }
 
     const student = await StudentModel.findOne({ student_id });
-    console.log("Found student:", student);
-    
+
     if (!student) {
       console.error("Student not found with student_id:", student_id);
       return res.status(404).json({
@@ -100,8 +99,7 @@ export const createLoanContract = async (req, res) => {
         status: false,
       });
     }
-
-    console.log("Creating loan contract model...");
+    const user = await UserModel.findOne({ citizen_id: student.citizen_id });
 
     // Set default values for simplified form
     const amount = parseInt(req.body.loan_amount_requested, 10) || 0;
@@ -113,6 +111,7 @@ export const createLoanContract = async (req, res) => {
 
     const loanData = {
       ...req.body,
+      name: user.name,
       citizen_id: student.citizen_id, // Add citizen_id from student record
       loan_tenor: tenor,
       payment_method: "Trả cả gốc và lãi vào ngày đáo hạn",
@@ -120,18 +119,16 @@ export const createLoanContract = async (req, res) => {
       total_interest: totalInterest,
       total_payment: totalPayment,
     };
-    console.log("Loan data to save:", loanData);
 
     const newLoan = new LoanContractModel(loanData);
     await newLoan.save();
-    console.log("Loan contract saved successfully:", newLoan._id);
 
     // Create notification for loan creation
     try {
       const notification = {
         citizen_id: student.citizen_id,
-        headers: "Loan Contract Created",
-        content: `Your loan contract with ID ${newLoan._id} has been created successfully.`,
+        header: "Khoản vay mới đã được tạo",
+        content: `Hợp đồng vay của bạn với ID ${newLoan._id} đã được tạo thành công.`,
         type: "success",
         icon: "check-circle",
         is_read: false,
@@ -163,10 +160,10 @@ export const createLoanContract = async (req, res) => {
   } catch (error) {
     console.error("Error creating loan contract:", error);
     console.error("Error stack:", error.stack);
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: "Internal server error",
       message: error.message,
-      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      details: process.env.NODE_ENV === "development" ? error.stack : undefined,
     });
   }
 };
@@ -175,10 +172,10 @@ export const updateLoanContract = async (req, res) => {
   const { status } = req.body;
   console.log("🔍 Update loan request body:", req.body);
   console.log("🔍 Loan ID from params:", req.params.id);
-  
+
   try {
     const { id } = req.params;
-    
+
     // Check if loan exists first
     const existingLoan = await LoanContractModel.findById(id);
     if (!existingLoan) {
@@ -196,15 +193,16 @@ export const updateLoanContract = async (req, res) => {
       { ...req.body, updated_at: new Date() },
       { new: true }
     );
-    
+
     const citizen_id = updatedLoan.citizen_id;
     console.log("📧 Creating notification for citizen_id:", citizen_id);
-    
+
     if (status && status === "accepted") {
       const notification = {
         citizen_id: citizen_id,
         header: "Khoản vay của bạn đã được chấp nhận",
-        content: updatedLoan.reason || "Khoản vay của bạn đã được duyệt thành công",
+        content:
+          updatedLoan.reason || "Khoản vay của bạn đã được duyệt thành công",
         type: "success",
         icon: "check-circle",
         is_read: false,
@@ -212,7 +210,7 @@ export const updateLoanContract = async (req, res) => {
       await notificationController.createNotification(notification);
       console.log("✅ Admin approved loan directly - no MAS needed");
     }
-    
+
     if (status && status === "rejected") {
       const notification = {
         citizen_id: citizen_id,
@@ -247,7 +245,7 @@ export const getMASConversationById = async (req, res) => {
   try {
     const { loan_id } = req.params;
     console.log("Fetching MAS conversation for loan_id:", loan_id);
-    
+
     // Find by loan_id field (not request_id) since that's how it's stored
     const conversation = await MASConversationModel.findOne({
       loan_id: loan_id,
@@ -259,10 +257,10 @@ export const getMASConversationById = async (req, res) => {
         status: false,
       });
     }
-    
+
     console.log("Found conversation:", conversation._id);
     console.log("Conversation decision:", conversation.decision);
-    
+
     return res.status(200).json({
       message: "Conversation retrieved successfully",
       status: true,
@@ -285,9 +283,13 @@ const createLoanProfile = async (student_id, loan) => {
     const student = await StudentModel.findOne({ student_id });
     const user = await UserModel.findOne({ citizen_id: student?.citizen_id });
     const academic = await AcademicModel.findOne({ student_id });
-    
+
     if (!student || !user || !loan) {
-      console.error("Missing required data for loan profile:", { student: !!student, user: !!user, loan: !!loan });
+      console.error("Missing required data for loan profile:", {
+        student: !!student,
+        user: !!user,
+        loan: !!loan,
+      });
       return;
     }
 
@@ -318,8 +320,11 @@ const createLoanProfile = async (student_id, loan) => {
       loan_contract_id: loan._id?.toString() || `loan-${Date.now()}`,
     };
 
-    console.log("Loan Profile to be sent to MAS:", JSON.stringify(loanProfile, null, 2));
-    
+    console.log(
+      "Loan Profile to be sent to MAS:",
+      JSON.stringify(loanProfile, null, 2)
+    );
+
     const response = await fetch(`http://127.0.0.1:8000/api/v1/debate-loan`, {
       method: "POST",
       headers: {
@@ -336,7 +341,7 @@ const createLoanProfile = async (student_id, loan) => {
 
     const ress = await response.json();
     console.log("MAS Response:", JSON.stringify(ress, null, 2));
-    
+
     // Store MAS conversation
     try {
       const conversation = await storeMASConversation(ress);
@@ -383,7 +388,7 @@ const classifyAgeGroup = (age) => {
   return "18-22";
 };
 const parseAverageIncome = (rangeStr) => {
-  if (!rangeStr || typeof rangeStr !== 'string') {
+  if (!rangeStr || typeof rangeStr !== "string") {
     console.log("Invalid rangeStr:", rangeStr);
     return 15000000; // Default fallback: 15M VND
   }
@@ -391,15 +396,15 @@ const parseAverageIncome = (rangeStr) => {
   console.log("Parsing income range:", rangeStr);
 
   // Handle "<10000000" format
-  if (rangeStr.startsWith('<')) {
+  if (rangeStr.startsWith("<")) {
     const maxValue = parseInt(rangeStr.substring(1), 10);
     if (!isNaN(maxValue)) {
       return Math.round(maxValue / 2); // Average from 0 to max
     }
   }
 
-  // Handle ">100000000" format  
-  if (rangeStr.startsWith('>')) {
+  // Handle ">100000000" format
+  if (rangeStr.startsWith(">")) {
     const minValue = parseInt(rangeStr.substring(1), 10);
     if (!isNaN(minValue)) {
       return minValue + 25000000; // Add 25M to min value as estimate
@@ -407,7 +412,7 @@ const parseAverageIncome = (rangeStr) => {
   }
 
   // Handle "10000000-20000000" format
-  if (rangeStr.includes('-')) {
+  if (rangeStr.includes("-")) {
     const [minStr, maxStr] = rangeStr.split("-");
     const min = parseInt(minStr, 10);
     const max = parseInt(maxStr, 10);

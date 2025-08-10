@@ -4,6 +4,7 @@ import mongooseUniqueValidator from "mongoose-unique-validator";
 const LoanContractSchema = mongoose.Schema({
   student_id: { type: String, ref: "Student", required: true },
   citizen_id: { type: String, ref: "Citizen", required: true },
+  name: { type: String},
   loan_amount_requested: { type: Number, required: true },
   loan_tenor: { type: Number, required: true }, // in months
   loan_purpose: { type: String, required: true },

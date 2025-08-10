@@ -63,10 +63,11 @@ export const register = async (req, res) => {
       email: req.body.email,
       password: hashPassword,
       otp_token: otpToken,
-      citizen_id: `CCCD${Date.now()}`, // Generate unique citizen ID
-      phone: req.body.phone || "",
-      birth: req.body.birth || new Date(),
-      gender: req.body.gender || "Nam",
+      kyc_status:'Verified',
+      // citizen_id: `CCCD${Date.now()}`, // Generate unique citizen ID
+      // phone: req.body.phone || "",
+      // birth: req.body.birth || new Date(),
+      // gender: req.body.gender || "Nam",
       address: req.body.address || "",
     });
     const result = await user.save();
