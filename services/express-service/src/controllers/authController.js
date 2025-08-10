@@ -297,8 +297,9 @@ export const getMe = async (req, res) => {
         status: false,
       });
     }
+    console.log(user)
     res.status(200).json({
-      message: "User fetched successfully",
+      message: "User fetched successfullyy",
       data: {
         user,
       },
@@ -342,7 +343,7 @@ export const getUserById = async (req, res) => {
     }
 
     res.status(200).json({
-      message: "User fetched successfully",
+      message: "User fetched successfullyy",
       data: user,
       status: true,
     });

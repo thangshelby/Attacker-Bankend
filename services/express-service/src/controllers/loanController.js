@@ -81,6 +81,7 @@ export const createLoanContract = async (req, res) => {
   try {
     console.log("Creating loan contract with data:", req.body);
     const { student_id } = req.body;
+  
     
     if (!student_id) {
       console.error("No student_id provided");
@@ -182,6 +183,7 @@ export const updateLoanContract = async (req, res) => {
       { new: true }
     );
     const citizen_id = updatedLoan.citizen_id;
+    const student = await StudentModel.findOne({ citizen_id });
     if (status && status === "accepted") {
       const notification = {
         citizen_id: citizen_id,
@@ -197,7 +199,7 @@ export const updateLoanContract = async (req, res) => {
     if (status && status === "rejected") {
       const notification = {
         citizen_id: citizen_id,
-        header: "Khoan vay cua ban da bi tu choi",
+        header: "Khoan vay cua ban da bi tu choi",  
         content: updatedLoan.reason,
         type: "error",
         icon: "times-circle",

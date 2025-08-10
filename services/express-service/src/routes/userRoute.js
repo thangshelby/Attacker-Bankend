@@ -5,11 +5,11 @@ import jwtMiddleware from "../middleware/middleware.js";
 const userRouter = express.Router();
 
 
+userRouter.get("/get-me", jwtMiddleware, authController.getMe);
 userRouter.get("/:citizen_id",  userController.getAllUsers);
 userRouter.post("/login", authController.login);
 userRouter.post("/register", authController.register);
 userRouter.post("/verify-email", authController.verifyEmail);
-userRouter.get("/get-me", jwtMiddleware, authController.getMe);
 userRouter.post("/logout", jwtMiddleware, authController.logout);
 
 userRouter.put("/update_user", userController.updateUser);
