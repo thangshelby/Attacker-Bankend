@@ -62,7 +62,7 @@ const transporter = nodemailer.createTransport({
 });
 
 export const sendOtpEmail = async (toEmailAddress) => {
-  const otpToken = await otpGenerator.generate(6, {
+  const otpToken = otpGenerator.generate(6, {
     upperCaseAlphabets: false,
     specialChars: false,
   });
@@ -417,4 +417,355 @@ export const sendOtpEmail = async (toEmailAddress) => {
 </html>
     `,
   };
+  try {
+    await transporter.sendMail(mailOptions);
+    return otpToken;
+  } catch (error) {
+    console.error("Error sending OTP email:", error);
+    throw new Error("Failed to send OTP email");
+  }
+};
+
+export const sendOtpToCreateContract = async (toEmailAddress) => {
+  const otpToken = otpGenerator.generate(6, {
+    upperCaseAlphabets: false,
+    specialChars: false,
+  });
+  const htmlTemplate = `
+    <!DOCTYPE html>
+    <html lang="vi">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Xác thực OTP - StudentCredit</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                line-height: 1.6;
+                color: #333333;
+                background-color: #f8fafc;
+            }
+            
+            .email-container {
+                max-width: 600px;
+                margin: 0 auto;
+                background-color: #ffffff;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            }
+            
+            .header {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                padding: 30px;
+                text-align: center;
+            }
+            
+            .logo {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-bottom: 10px;
+            }
+            
+            .logo-icon {
+                width: 40px;
+                height: 40px;
+                background: rgba(255, 255, 255, 0.2);
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-weight: bold;
+                font-size: 18px;
+                margin-right: 12px;
+            }
+            
+            .logo-text {
+                color: white;
+                font-size: 24px;
+                font-weight: 600;
+                margin: 0;
+            }
+            
+            .header-subtitle {
+                color: rgba(255, 255, 255, 0.9);
+                font-size: 16px;
+                margin: 0;
+            }
+            
+            .content {
+                padding: 40px 30px;
+            }
+            
+            .greeting {
+                font-size: 18px;
+                color: #2d3748;
+                margin-bottom: 20px;
+            }
+            
+            .message {
+                font-size: 16px;
+                color: #4a5568;
+                margin-bottom: 30px;
+                line-height: 1.7;
+            }
+            
+            .otp-section {
+                text-align: center;
+                margin: 40px 0;
+                padding: 30px;
+                background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+                border-radius: 12px;
+                border: 2px dashed #cbd5e0;
+            }
+            
+            .otp-label {
+                font-size: 14px;
+                color: #718096;
+                margin-bottom: 15px;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                font-weight: 600;
+            }
+            
+            .otp-code {
+                font-size: 36px;
+                font-weight: 700;
+                color: #2d3748;
+                letter-spacing: 8px;
+                margin: 15px 0;
+                padding: 15px 30px;
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                display: inline-block;
+                font-family: 'Courier New', monospace;
+            }
+            
+            .otp-validity {
+                font-size: 14px;
+                color: #e53e3e;
+                font-weight: 500;
+                margin-top: 10px;
+            }
+            
+            .security-notice {
+                background-color: #fff5f5;
+                border-left: 4px solid #fed7d7;
+                padding: 20px;
+                margin: 30px 0;
+                border-radius: 0 8px 8px 0;
+            }
+            
+            .security-notice h3 {
+                color: #c53030;
+                font-size: 16px;
+                margin-bottom: 10px;
+                display: flex;
+                align-items: center;
+            }
+            
+            .security-notice p {
+                color: #742a2a;
+                font-size: 14px;
+                margin: 8px 0;
+            }
+            
+            .warning-icon {
+                width: 20px;
+                height: 20px;
+                margin-right: 8px;
+                color: #c53030;
+            }
+            
+            .steps {
+                background-color: #f7fafc;
+                padding: 25px;
+                border-radius: 8px;
+                margin: 25px 0;
+            }
+            
+            .steps h3 {
+                color: #2d3748;
+                font-size: 16px;
+                margin-bottom: 15px;
+            }
+            
+            .steps ol {
+                padding-left: 20px;
+            }
+            
+            .steps li {
+                color: #4a5568;
+                font-size: 14px;
+                margin-bottom: 8px;
+            }
+            
+            .footer {
+                background-color: #2d3748;
+                padding: 30px;
+                text-align: center;
+                color: white;
+            }
+            
+            .footer h3 {
+                color: white;
+                font-size: 18px;
+                margin-bottom: 15px;
+            }
+            
+            .footer p {
+                color: #a0aec0;
+                font-size: 14px;
+                margin: 8px 0;
+            }
+            
+            .contact-info {
+                margin-top: 20px;
+                padding-top: 20px;
+                border-top: 1px solid #4a5568;
+            }
+            
+            .contact-info p {
+                margin: 5px 0;
+            }
+            
+            .social-links {
+                margin-top: 15px;
+            }
+            
+            .social-links a {
+                color: #60a5fa;
+                text-decoration: none;
+                margin: 0 10px;
+                font-size: 14px;
+            }
+            
+            @media (max-width: 600px) {
+                .email-container {
+                    margin: 0;
+                    box-shadow: none;
+                }
+                
+                .header, .content, .footer {
+                    padding: 20px 15px;
+                }
+                
+                .otp-code {
+                    font-size: 28px;
+                    letter-spacing: 4px;
+                    padding: 12px 20px;
+                }
+                
+                .otp-section {
+                    padding: 20px 15px;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="email-container">
+            <!-- Header -->
+            <div class="header">
+                <div class="logo">
+                    <div class="logo-icon">S</div>
+                    <h1 class="logo-text">StudentCredit</h1>
+                </div>
+                <p class="header-subtitle">Hệ thống cho vay sinh viên</p>
+            </div>
+            
+            <!-- Content -->
+            <div class="content">
+                <div class="greeting">Xin chào!</div>
+                
+                <div class="message">
+                    Chúng tôi đã nhận được yêu cầu xác thực để tạo hợp đồng vay từ tài khoản của bạn. 
+                    Để hoàn tất quá trình này, vui lòng sử dụng mã OTP bên dưới:
+                </div>
+                
+                <!-- OTP Section -->
+                <div class="otp-section">
+                    <div class="otp-label">Mã xác thực OTP</div>
+                    <div class="otp-code">${otpToken}</div>
+                    <div class="otp-validity">⏰ Mã có hiệu lực trong 5 phút</div>
+                </div>
+                
+                <!-- Steps -->
+                <div class="steps">
+                    <h3>Cách sử dụng mã OTP:</h3>
+                    <ol>
+                        <li>Quay lại trang xác thực trên StudentCredit</li>
+                        <li>Nhập mã 6 số: <strong>${otpToken}</strong></li>
+                        <li>Nhấn "Xác thực" để hoàn tất</li>
+                        <li>Tiếp tục quá trình tạo hợp đồng vay</li>
+                    </ol>
+                </div>
+                
+                <!-- Security Notice -->
+                <div class="security-notice">
+                    <h3>
+                        <svg class="warning-icon" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                        Lưu ý bảo mật
+                    </h3>
+                    <p><strong>• Không chia sẻ mã OTP</strong> với bất kỳ ai, kể cả nhân viên StudentCredit</p>
+                    <p><strong>• Mã chỉ có hiệu lực 5 phút</strong> kể từ thời điểm gửi email này</p>
+                    <p><strong>• Nếu bạn không yêu cầu</strong> mã này, vui lòng liên hệ ngay với chúng tôi</p>
+                    <p><strong>• Chỉ sử dụng mã trên website</strong> chính thức của StudentCredit</p>
+                </div>
+                
+                <div class="message">
+                    Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email này hoặc liên hệ 
+                    với đội ngũ hỗ trợ của chúng tôi ngay lập tức.
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="footer">
+                <h3>StudentCredit</h3>
+                <p>Đồng hành cùng sinh viên trên con đường học tập</p>
+                
+                <div class="contact-info">
+                    <p><strong>Hotline:</strong> 1900 1234</p>
+                    <p><strong>Email:</strong> support@studentcredit.edu.vn</p>
+                    <p><strong>Website:</strong> www.studentcredit.edu.vn</p>
+                    <p><strong>Địa chỉ:</strong> 123 Đường ABC, Quận XYZ, TP.HCM</p>
+                </div>
+                
+                <div class="social-links">
+                    <a href="#">Facebook</a>
+                    <a href="#">Zalo</a>
+                    <a href="#">Email</a>
+                </div>
+                
+                <p style="margin-top: 20px; font-size: 12px; color: #718096;">
+                    © 2024 StudentCredit. Tất cả quyền được bảo lưu.<br>
+                    Email này được gửi tự động, vui lòng không reply.
+                </p>
+            </div>
+        </div>
+    </body>
+    </html>
+    `;
+  const mailOptions = {
+    from: "<your-email@example.com>",
+    to: toEmailAddress,
+    subject: "OTP for Creating Contract",
+    html: htmlTemplate,
+  };
+  console.log(toEmailAddress, otpToken);
+  try {
+    await transporter.sendMail(mailOptions);
+    return otpToken;
+  } catch (error) {
+    console.error("Error sending OTP email:", error);
+    throw new Error("Failed to send OTP email");
+  }
 };
