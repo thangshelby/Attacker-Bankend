@@ -19,7 +19,7 @@ const LoanContractSchema = mongoose.Schema({
   status: {
     type: String,
     enum: ["pending", "rejected", "accepted"],
-    default: "pending",
+    default: "pending", 
   },
   reason: { type: String, default: "" },
   created_at: { type: Date, default: Date.now },

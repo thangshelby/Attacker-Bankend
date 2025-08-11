@@ -1,8 +1,4 @@
 import { Server } from "socket.io";
-
-/**
- * Socket.IO Configuration and Event Handlers
- */
 class SocketConfig {
   constructor() {
     this.io = null;
@@ -20,14 +16,14 @@ class SocketConfig {
       cors: {
         origin: "http://localhost:5173", // Frontend origin
         credentials: true,
-        methods: ["GET", "POST"]
+        methods: ["GET", "POST"],
       },
-      transports: ["websocket", "polling"]
+      transports: ["websocket", "polling"],
     });
 
     this.setupEventHandlers();
     console.log("✅ Socket.IO server initialized");
-    
+
     return this.io;
   }
 
@@ -36,8 +32,13 @@ class SocketConfig {
    */
   setupEventHandlers() {
     this.io.on("connection", (socket) => {
-      console.log(`🔌 User connected: ${socket.id}`);
-      
+      const { citizen_id } = socket.handshake.auth;
+      console.log(
+        `🔌 New socket connection: ${socket.id} (Citizen ID: ${citizen_id})`
+      );
+      this.connectedUsers.set(citizen_id, {
+        socketId: socket.id,
+      });
       // Handle user authentication/identification
       socket.on("user_join", (userData) => {
         this.handleUserJoin(socket, userData);
@@ -90,14 +91,14 @@ class SocketConfig {
   handleUserJoin(socket, userData) {
     try {
       const { userId, username, role } = userData;
-      
+
       // Store user info
       this.connectedUsers.set(socket.id, {
         userId,
         username,
         role,
         joinedAt: new Date(),
-        rooms: new Set()
+        rooms: new Set(),
       });
 
       socket.userId = userId;
@@ -107,18 +108,19 @@ class SocketConfig {
       // Join user to their personal room
       socket.join(`user_${userId}`);
 
-      console.log(`👤 User joined: ${username} (${role}) - Socket: ${socket.id}`);
+      console.log(
+        `👤 User joined: ${username} (${role}) - Socket: ${socket.id}`
+      );
 
       // Notify user of successful connection
       socket.emit("user_joined", {
         success: true,
         message: "Connected successfully",
-        socketId: socket.id
+        socketId: socket.id,
       });
 
       // Broadcast user online status to relevant users
       this.broadcastUserStatus(userId, "online");
-
     } catch (error) {
       console.error("Error handling user join:", error);
       socket.emit("user_join_error", { error: error.message });
@@ -145,15 +147,14 @@ class SocketConfig {
       socket.to(roomId).emit("user_joined_room", {
         username: socket.username,
         userId: socket.userId,
-        roomId
+        roomId,
       });
 
       // Send room info to user
       socket.emit("room_joined", {
         roomId,
-        message: `Joined room ${roomId} successfully`
+        message: `Joined room ${roomId} successfully`,
       });
-
     } catch (error) {
       console.error("Error joining room:", error);
       socket.emit("room_join_error", { error: error.message });
@@ -179,9 +180,8 @@ class SocketConfig {
       socket.to(roomId).emit("user_left_room", {
         username: socket.username,
         userId: socket.userId,
-        roomId
+        roomId,
       });
-
     } catch (error) {
       console.error("Error leaving room:", error);
     }
@@ -193,7 +193,7 @@ class SocketConfig {
   handleSendMessage(socket, messageData) {
     try {
       const { roomId, message, messageType = "text" } = messageData;
-      
+
       const messagePayload = {
         id: Date.now().toString(),
         userId: socket.userId,
@@ -201,7 +201,7 @@ class SocketConfig {
         message,
         messageType,
         timestamp: new Date(),
-        roomId
+        roomId,
       };
 
       // Send to room
@@ -211,7 +211,6 @@ class SocketConfig {
 
       // TODO: Save message to database
       // await saveMessageToDatabase(messagePayload);
-
     } catch (error) {
       console.error("Error sending message:", error);
       socket.emit("message_error", { error: error.message });
@@ -226,7 +225,7 @@ class SocketConfig {
     socket.to(roomId).emit("user_typing_start", {
       userId: socket.userId,
       username: socket.username,
-      roomId
+      roomId,
     });
   }
 
@@ -235,7 +234,7 @@ class SocketConfig {
     socket.to(roomId).emit("user_typing_stop", {
       userId: socket.userId,
       username: socket.username,
-      roomId
+      roomId,
     });
   }
 
@@ -251,11 +250,12 @@ class SocketConfig {
         loanId,
         status,
         message,
-        timestamp: new Date()
+        timestamp: new Date(),
       });
 
-      console.log(`💰 Loan notification sent to user ${targetUserId}: ${status}`);
-
+      console.log(
+        `💰 Loan notification sent to user ${targetUserId}: ${status}`
+      );
     } catch (error) {
       console.error("Error sending loan notification:", error);
     }
@@ -267,19 +267,20 @@ class SocketConfig {
   handleUserDisconnect(socket) {
     try {
       const user = this.connectedUsers.get(socket.id);
-      
+
       if (user) {
-        console.log(`👋 User disconnected: ${user.username} - Socket: ${socket.id}`);
-        
+        console.log(
+          `👋 User disconnected: ${user.username} - Socket: ${socket.id}`
+        );
+
         // Broadcast user offline status
         this.broadcastUserStatus(user.userId, "offline");
-        
+
         // Clean up user data
         this.connectedUsers.delete(socket.id);
       } else {
         console.log(`❓ Unknown user disconnected: ${socket.id}`);
       }
-
     } catch (error) {
       console.error("Error handling disconnect:", error);
     }
@@ -292,7 +293,7 @@ class SocketConfig {
     this.io.emit("user_status_update", {
       userId,
       status,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
   }
 
@@ -302,7 +303,7 @@ class SocketConfig {
   sendNotificationToUser(userId, notification) {
     this.io.to(`user_${userId}`).emit("notification", {
       ...notification,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
   }
 
@@ -312,7 +313,7 @@ class SocketConfig {
   broadcastNotification(notification) {
     this.io.emit("broadcast_notification", {
       ...notification,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
   }
 

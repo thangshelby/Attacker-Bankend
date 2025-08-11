@@ -13,7 +13,7 @@ export const getAllNotifications = async (req, res) => {
 
     res.status(200).json({
       message: "Notifications fetched successfully",
-      data: results,
+      data: results.slice(0,6),
       status: true,
     });
   } catch (error) {
@@ -41,7 +41,7 @@ export const getNotificationsByCitizenId = async (req, res) => {
 
     res.status(200).json({
       message: "User notifications fetched successfully",
-      data: results,
+      data: results.slice(0,6),
       status: true,
     });
   } catch (error) {

@@ -5,6 +5,7 @@ import UserModel from "../models/userModel.js";
 import LoanContractModel from "../models/loanContractModel.js";
 import AcademicModel from "../models/academicModel.js";
 import * as notificationController from "./notificationController.js";
+import socketConfig from "../config/socket.js";
 import { db } from "../server.js";
 
 export const getAllLoanContracts = async (req, res) => {
@@ -44,7 +45,7 @@ export const getLoanContractById = async (req, res) => {
       message: "Loan contract retrieved successfully",
       status: true,
       data: {
-        loanContract,
+        loan: loanContract,
       },
     });
   } catch (error) {
@@ -159,7 +160,6 @@ export const createLoanContract = async (req, res) => {
     });
   } catch (error) {
     console.error("Error creating loan contract:", error);
-    console.error("Error stack:", error.stack);
     return res.status(500).json({
       error: "Internal server error",
       message: error.message,
@@ -170,8 +170,6 @@ export const createLoanContract = async (req, res) => {
 
 export const updateLoanContract = async (req, res) => {
   const { status } = req.body;
-  console.log("🔍 Update loan request body:", req.body);
-  console.log("🔍 Loan ID from params:", req.params.id);
 
   try {
     const { id } = req.params;
@@ -179,26 +177,27 @@ export const updateLoanContract = async (req, res) => {
     // Check if loan exists first
     const existingLoan = await LoanContractModel.findById(id);
     if (!existingLoan) {
-      console.log("❌ Loan contract not found with ID:", id);
       return res.status(404).json({
         message: "Loan contract not found",
         status: false,
       });
     }
 
-    console.log("✅ Found existing loan:", existingLoan._id);
-
     const updatedLoan = await LoanContractModel.findByIdAndUpdate(
       id,
-      { ...req.body, updated_at: new Date() },
+      {
+        ...req.body,
+        // status: "pending",
+        updated_at: new Date(),
+      },
       { new: true }
     );
 
     const citizen_id = updatedLoan.citizen_id;
-    console.log("📧 Creating notification for citizen_id:", citizen_id);
 
+    let notification = {};
     if (status && status === "accepted") {
-      const notification = {
+      notification = {
         citizen_id: citizen_id,
         header: "Khoản vay của bạn đã được chấp nhận",
         content:
@@ -208,11 +207,10 @@ export const updateLoanContract = async (req, res) => {
         is_read: false,
       };
       await notificationController.createNotification(notification);
-      console.log("✅ Admin approved loan directly - no MAS needed");
     }
 
     if (status && status === "rejected") {
-      const notification = {
+      notification = {
         citizen_id: citizen_id,
         header: "Khoản vay của bạn đã bị từ chối",
         content: updatedLoan.reason || "Khoản vay của bạn không được chấp nhận",
@@ -223,7 +221,14 @@ export const updateLoanContract = async (req, res) => {
       await notificationController.createNotification(notification);
     }
 
-    console.log("✅ Loan contract updated successfully:", updatedLoan._id);
+    const socketId = socketConfig.connectedUsers.get(citizen_id)?.socketId;
+    socketConfig.io.emit("notification", {
+      title: "Loan Status Update",
+      message: updatedLoan.reason || "Loan status updated",
+      type: updatedLoan.status === "accepted" ? "success" : "error",
+      data: notification,
+      timestamp: new Date(),
+    });
     return res.status(200).json({
       message: "Loan contract updated successfully",
       status: true,
