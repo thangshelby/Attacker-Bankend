@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import mongooseUniqueValidator from "mongoose-unique-validator";
 
 const UserSchema = mongoose.Schema({
-  citizen_id: { type: String, unique: true },
+  citizen_id: { type: String },
   name: { type: String, required: true },
   birth: { type: Date },
   gender: { type: String, enum: ["male", "female", "others"] },

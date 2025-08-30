@@ -1,0 +1,35 @@
+### Test OCR API Endpoint
+POST http://localhost:3000/api/v1/users/test-ocr
+Content-Type: application/json
+
+{
+  "imageUrl": "https://example.com/sample-cccd.jpg"
+}
+
+### Test Upload Image + OCR
+POST http://localhost:3000/api/v1/images/upload_image
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="image"; filename="cccd.jpg"
+Content-Type: image/jpeg
+
+< ./cccd.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### Test Save OCR Data
+POST http://localhost:3000/api/v1/users/save-ocr-data
+Content-Type: application/json
+
+{
+  "userId": "user_id_here",
+  "ocrData": {
+    "name": "Ngô Nguyễn Đức Thắng",
+    "citizen_id": "075204000105",
+    "birth_date": "2004-03-21",
+    "gender": "Nam",
+    "address": "3740 Phú Thọ Hòa, Quận Tân Phú, TP Hồ Chí Minh"
+  },
+  "imageUrl": "https://cloudinary.com/...",
+  "side": "front"
+}

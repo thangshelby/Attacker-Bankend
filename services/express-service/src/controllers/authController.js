@@ -63,12 +63,9 @@ export const register = async (req, res) => {
       email: req.body.email,
       password: hashPassword,
       otp_token: otpToken,
-      kyc_status:'Verified',
-      // citizen_id: `CCCD${Date.now()}`, // Generate unique citizen ID
-      // phone: req.body.phone || "",
-      // birth: req.body.birth || new Date(),
-      // gender: req.body.gender || "Nam",
+      kyc_status: 'Verified',
       address: req.body.address || "",
+      citizen_id: `TEMP_${Date.now()}`, // Temporary ID to avoid null
     });
     const result = await user.save();
 
