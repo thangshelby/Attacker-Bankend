@@ -298,12 +298,29 @@ const createLoanProfile = async (student_id, loan) => {
       return;
     }
 
+    // Derive study year from Student first, then fallback to Academic, and normalize to 1..6
+    const yearFromStudent = Number(student?.year_of_study);
+    const yearFromAcademic = Number(academic?.study_year);
+    const rawStudyYear = !Number.isNaN(yearFromStudent) && yearFromStudent > 0
+      ? yearFromStudent
+      : yearFromAcademic;
+    const normalizedStudyYear = Math.min(
+      6,
+      Math.max(1, Number.isNaN(rawStudyYear) ? 3 : rawStudyYear)
+    );
+
+    // Coerce existing_debt to boolean in case FE sends string/boolean inconsistently
+    const existingDebtNormalized =
+      typeof loan.existing_debt === "string"
+        ? loan.existing_debt === "true"
+        : Boolean(loan.existing_debt);
+
     const loanProfile = {
       // Data from loan object (user input)
       loan_amount_requested: loan.loan_amount_requested,
       guarantor: loan.guarantor,
       family_income: parseInt(loan.family_income, 10),
-      existing_debt: loan.existing_debt === "true",
+      existing_debt: existingDebtNormalized,
       loan_purpose: loan.loan_purpose,
 
       // Data from student, user, academic records
@@ -312,7 +329,7 @@ const createLoanProfile = async (student_id, loan) => {
       gender: user.gender || "Nam",
       major_category: student.major_name || "STEM",
       gpa_normalized: (academic?.gpa || 3.0) / 4,
-      study_year: parseInt(academic?.study_year || 3, 10),
+      study_year: normalizedStudyYear,
       club: academic?.club || "Câu lạc bộ IT",
 
       // Hardcoded test data as requested
