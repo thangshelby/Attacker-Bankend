@@ -11,7 +11,7 @@ import { db } from "../server.js";
 export const getAllLoanContracts = async (req, res) => {
   try {
     const loanContracts = await LoanContractModel.find().sort({
-      createdAt: -1,
+      created_at: -1,
     });
 
     return res.status(200).json({
@@ -328,7 +328,7 @@ const createLoanProfile = async (student_id, loan) => {
       age: user.age || 20,
       gender: user.gender || "Nam",
       major_category: student.major_name || "STEM",
-      gpa_normalized: (academic?.gpa || 3.0) / 4,
+      gpa_normalized: Math.min((academic?.gpa || 8.0) / 10, 1.0),
       study_year: normalizedStudyYear,
       club: academic?.club || "Câu lạc bộ IT",
 
@@ -366,7 +366,7 @@ const createLoanProfile = async (student_id, loan) => {
 
     // Store MAS conversation
     try {
-      const conversation = await storeMASConversation(ress);
+      const conversation = await storeMASConversation(ress, loanProfile, loan._id?.toString());
       console.log("✅ MAS conversation stored with ID:", conversation._id);
     } catch (storeError) {
       console.error("❌ Error storing MAS conversation:", storeError);
@@ -387,15 +387,18 @@ export const createProofRequest = async (req, res) => {
   }
 };
 
-const storeMASConversation = async (data) => {
+const storeMASConversation = async (data, loanProfile, loanId) => {
   try {
+    // Generate unique request_id for each MAS conversation
+    const uniqueRequestId = `req-${loanId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
     const conversation = new MASConversationModel({
-      responses: data.responses,
-      rule_based: data.rule_based,
-      agent_status: data.agent_status,
-      final_result: data.final_result,
-      processing_time_seconds: data.processing_time_seconds,
-      request_id: data.request_id,
+      loan_id: loanId,
+      request_id: uniqueRequestId,
+      request_data: loanProfile,
+      result_stringify: JSON.stringify(data),
+      processing_time: data.processing_time_seconds * 1000 || 0, // Convert to milliseconds
+      decision: data.final_result?.decision || "unknown",
     });
 
     await conversation.save();
