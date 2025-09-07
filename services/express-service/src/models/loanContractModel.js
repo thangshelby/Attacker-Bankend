@@ -7,7 +7,7 @@ const LoanContractSchema = mongoose.Schema({
   name: { type: String},
   loan_amount_requested: { type: Number, required: true },
   loan_tenor: { type: Number, required: true }, // in months
-  loan_purpose: { type: String, required: true },
+  loan_purpose: { type: Number, required: true },
   custom_purpose: { type: String, default: "" },
   guarantor: { type: String, default: "" },
   family_income: { type: String, required: true },
@@ -21,6 +21,7 @@ const LoanContractSchema = mongoose.Schema({
     enum: ["pending", "rejected", "accepted"],
     default: "pending", 
   },
+  is_analyze:{ type: Boolean, default: false }, 
   reason: { type: String, default: "" },
   created_at: { type: Date, default: Date.now },
   updated_at: { type: Date, default: Date.now },

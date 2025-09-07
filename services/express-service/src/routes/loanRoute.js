@@ -8,6 +8,7 @@ loanRouter.get("/", loanController.getAllLoanContracts);
 loanRouter.get("/:id", loanController.getLoanContractById);
 loanRouter.get('/student/:student_id', loanController.getLoanContractsByStudentId);
 loanRouter.get("/mas/:loan_id", loanController.getMASConversationById);
+loanRouter.get("/can_create_loan/:user_id", loanController.canCreateLoan);
 
 loanRouter.get  (
   "/create_proof_request/:student_id",
@@ -31,5 +32,6 @@ loanRouter.post("/loan_request", async (req, res) => {
   //   console.log(ress);
   return res.status(response.status).json(ress);
 });
+// loanRouter.post("/analyze", loanController.analyzeLoan);
 
 export default loanRouter;

@@ -366,7 +366,7 @@ export const sendOtpEmail = async (toEmailAddress) => {
 
             <div class="code-container">
                 <div class="code-label">Mã xác nhận của bạn</div>
-                <div class="verification-code pulse">123456</div>
+                <div class="verification-code pulse">${otpToken}</div>
                 <div class="code-note">Mã này sẽ hết hạn sau 10 phút</div>
             </div>
 
@@ -418,7 +418,7 @@ export const sendOtpEmail = async (toEmailAddress) => {
     `,
   };
   try {
-    await transporter.sendMail(mailOptions);
+     transporter.sendMail(mailOptions);
     return otpToken;
   } catch (error) {
     console.error("Error sending OTP email:", error);

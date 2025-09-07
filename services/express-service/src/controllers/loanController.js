@@ -6,7 +6,11 @@ import LoanContractModel from "../models/loanContractModel.js";
 import AcademicModel from "../models/academicModel.js";
 import * as notificationController from "./notificationController.js";
 import socketConfig from "../config/socket.js";
-import { db } from "../server.js";
+import {
+  checkUserValid,
+  checkStudentValid,
+  checkAcademicValid,
+} from "../utils/checkCreateLoan.js";
 
 export const getAllLoanContracts = async (req, res) => {
   try {
@@ -168,6 +172,55 @@ export const createLoanContract = async (req, res) => {
   }
 };
 
+export const canCreateLoan = async (req, res) => {
+  const { user_id } = req.params;
+  console.log(user_id);
+  try {
+    const user = await UserModel.findById(user_id);
+    const userValid = checkUserValid(user);
+    if (!userValid) {
+      return res.status(200).json({
+        message:
+          "Thông tin người dùng không hợp lệ. Vui lòng cập nhật hồ sơ người dùng.",
+        status: false,
+      });
+    }
+    const student = await StudentModel.findOne({
+      citizen_id: user?.citizen_id,
+    });
+    const studentValid = checkStudentValid(student);
+    if (!studentValid) {
+      return res.status(200).json({
+        message:
+          "Dữ liệu của sinh viên chưa được hoàn thành đầy đủ. Vui lòng cập nhật hồ sơ của sinh viên !",
+        status: false,
+      });
+    }
+    const academic = await AcademicModel.findOne({
+      student_id: student?.student_id,
+    });
+    const academicValid = checkAcademicValid(academic);
+    if (!academicValid) {
+      return res.status(200).json({
+        message:
+          "Dữ liệu học tập chưa được hoàn thành đầy đủ. Vui lòng cập nhật hồ sơ học tập !",
+        status: false,
+      });
+    }
+    return res.status(200).json({
+      message: "User can create loan",
+      status: true,
+    });
+  } catch (error) {
+    console.error("Error in canCreateLoan:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      status: false,
+      error: error.message,
+    });
+  }
+};
+
 export const updateLoanContract = async (req, res) => {
   const { status } = req.body;
 
@@ -292,6 +345,7 @@ const createLoanProfile = async (student_id, loan) => {
     if (!student || !user || !loan) {
       console.error("Missing required data for loan profile:", {
         student: !!student,
+
         user: !!user,
         loan: !!loan,
       });
@@ -301,9 +355,10 @@ const createLoanProfile = async (student_id, loan) => {
     // Derive study year from Student first, then fallback to Academic, and normalize to 1..6
     const yearFromStudent = Number(student?.year_of_study);
     const yearFromAcademic = Number(academic?.study_year);
-    const rawStudyYear = !Number.isNaN(yearFromStudent) && yearFromStudent > 0
-      ? yearFromStudent
-      : yearFromAcademic;
+    const rawStudyYear =
+      !Number.isNaN(yearFromStudent) && yearFromStudent > 0
+        ? yearFromStudent
+        : yearFromAcademic;
     const normalizedStudyYear = Math.min(
       6,
       Math.max(1, Number.isNaN(rawStudyYear) ? 3 : rawStudyYear)
@@ -366,7 +421,11 @@ const createLoanProfile = async (student_id, loan) => {
 
     // Store MAS conversation
     try {
-      const conversation = await storeMASConversation(ress, loanProfile, loan._id?.toString());
+      const conversation = await storeMASConversation(
+        ress,
+        loanProfile,
+        loan._id?.toString()
+      );
       console.log("✅ MAS conversation stored with ID:", conversation._id);
     } catch (storeError) {
       console.error("❌ Error storing MAS conversation:", storeError);
@@ -390,8 +449,10 @@ export const createProofRequest = async (req, res) => {
 const storeMASConversation = async (data, loanProfile, loanId) => {
   try {
     // Generate unique request_id for each MAS conversation
-    const uniqueRequestId = `req-${loanId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
+    const uniqueRequestId = `req-${loanId}-${Date.now()}-${Math.random()
+      .toString(36)
+      .substr(2, 9)}`;
+
     const conversation = new MASConversationModel({
       loan_id: loanId,
       request_id: uniqueRequestId,
