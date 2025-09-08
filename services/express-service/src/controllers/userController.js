@@ -10,8 +10,8 @@ export const updateUser = async (req, res) => {
     address,
     email,
     phone,
-    citizen_image_front,
-    citizen_image_back,
+    citizen_card_front,
+    citizen_card_back,
     role,
     kyc_status,
     otp_token,
@@ -32,8 +32,8 @@ export const updateUser = async (req, res) => {
     user.address = address ?? user.address;
     user.email = email ?? user.email;
     user.phone = phone ?? user.phone;
-    user.citizen_image_front = citizen_image_front ?? user.citizen_image_front;
-    user.citizen_image_back = citizen_image_back ?? user.citizen_image_back;
+    user.citizen_card_front = citizen_card_front ?? user.citizen_card_front;
+    user.citizen_card_back = citizen_card_back ?? user.citizen_card_back;
     user.role = role ?? user.role;
     user.kyc_status = kyc_status ?? user.kyc_status;
     user.otp_token = otp_token ?? user.otp_token;

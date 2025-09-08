@@ -6,6 +6,10 @@ build:
 	docker compose down
 	docker compose up --build -d
 	docker image prune -f 
+express-service:
+	cd services/express-service && npm run start
+python-service:
+	cd services/python-service && source venv/bin/activate && uvicorn main_fastapi:app --reload
 logs:
 	docker compose logs -f
 gen-protobuf-python-service:

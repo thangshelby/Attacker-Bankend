@@ -42,7 +42,11 @@ export const register = async (req, res) => {
       }
 
       return res.status(400).json({
-        message: "Email already exists",
+        message: {
+          server: null,
+          email: "Địa chỉ Email đã tồn tại",
+          password: null,
+        },
         status: false,
       });
     }
@@ -63,7 +67,9 @@ export const register = async (req, res) => {
       email: req.body.email,
       password: hashPassword,
       otp_token: otpToken,
-      kyc_status: 'Verified',
+
+      kyc_status: "Pending",
+      // citizen_id:new Date().toISOString(),
       address: req.body.address || "",
       citizen_id: `TEMP_${Date.now()}`, // Temporary ID to avoid null
     });
@@ -90,11 +96,44 @@ export const register = async (req, res) => {
   } catch (err) {
     console.error("Error creating user:", err);
     res.status(500).json({
-      message: "Failed to create user",
+      message: {
+        password: null,
+        email: null,
+        server: err.message,
+      },
       error: err.message,
     });
   }
 };
+
+export const resendOtp = async (req, res) => {
+  const { email } = req.body;
+  try {
+    const user = await UserModel.findOne({ email });
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+        status: false,
+      });
+    }
+
+    const otpToken = await sendOtpEmail(email);
+    user.otp_token = otpToken;
+    await user.save();
+
+    res.status(200).json({
+      message: "OTP resent successfully",
+      status: true,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to resend OTP",
+      status: false,
+      error: error.message,
+    });
+  }
+};
+
 export const sendOtp = async (req, res) => {
   const email = req.params.email;
   try {
@@ -189,11 +228,12 @@ export const verifyEmail = async (req, res) => {
         status: false,
       });
     }
-
-    // Accept any OTP token (bypass validation)
-    console.log(
-      `Bypassing OTP validation for email: ${email}, provided token: ${otp_token}`
-    );
+    if (otp_token != user.otp_token) {
+      return res.status(400).json({
+        message: "Invalid OTP token",
+        status: false,
+      });
+    }
 
     user.kyc_status = "Verified";
     user.otp_token = "";
@@ -258,8 +298,10 @@ export const deleteAccount = async (req, res) => {
 
 // [PUT] /users/:id
 export const updateUser = async (req, res) => {
+  console.log("sadasd", req.body);
   try {
     const updateData = { ...req.body };
+    console.log(updateData);
     if (updateData.password) {
       updateData.password = await bcrypt.hash(updateData.password, 10);
     }

@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import mongooseUniqueValidator from "mongoose-unique-validator";
 
 const UserSchema = mongoose.Schema({
-  citizen_id: { type: String },
+  citizen_id: { type: String, unique: true, sparse: true },
   name: { type: String, required: true },
   birth: { type: Date },
   gender: { type: String, enum: ["male", "female", "others"] },
@@ -10,8 +10,8 @@ const UserSchema = mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   phone: { type: String },
-  citizen_image_front: { type: String },
-  citizen_image_back: { type: String },
+  citizen_card_front: { type: String },
+  citizen_card_back: { type: String },
   role: { type: String, enum: ["Admin", "User"], default: "User" },
   kyc_status: {
     type: String,
