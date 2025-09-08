@@ -19,7 +19,7 @@ export const createIdentityProfile = async (req, res) => {
     } = req.body;
 
     const academicData = await AcademicModel.findOne({
-      student_id: "k224141694",
+      // student_id: "k224141694",
       // study_year:3,
       // term:3,
     });
