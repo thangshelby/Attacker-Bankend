@@ -174,10 +174,28 @@ export const createLoanContract = async (req, res) => {
 
 export const canCreateLoan = async (req, res) => {
   const { user_id } = req.params;
-  console.log(user_id);
+  console.log("🔍 Checking loan eligibility for user:", user_id);
   try {
     const user = await UserModel.findById(user_id);
+    console.log("👤 User found:", user ? "✅" : "❌");
+    if (user) {
+      console.log("🏷️ User KYC status:", user.kyc_status);
+      console.log("🆔 User citizen_id:", user.citizen_id ? "✅" : "❌");
+      console.log("🖼️ User citizen cards:", {
+        front: user.citizen_card_front ? "✅" : "❌",
+        back: user.citizen_card_back ? "✅" : "❌"
+      });
+      console.log("📍 User profile completion:", {
+        address: user.address ? "✅" : "❌",
+        phone: user.phone ? "✅" : "❌", 
+        birth: user.birth ? "✅" : "❌",
+        gender: user.gender ? "✅" : "❌",
+        email: user.email ? "✅" : "❌"
+      });
+    }
+    
     const userValid = checkUserValid(user);
+    console.log("✅ User validation result:", userValid);
     if (!userValid) {
       return res.status(200).json({
         message:
@@ -188,7 +206,19 @@ export const canCreateLoan = async (req, res) => {
     const student = await StudentModel.findOne({
       citizen_id: user?.citizen_id,
     });
+    console.log("🎓 Student found:", student ? "✅" : "❌");
+    if (student) {
+      console.log("🆔 Student profile completion:", {
+        student_id: student.student_id ? "✅" : "❌",
+        class_id: student.class_id ? "✅" : "❌", 
+        university: student.university ? "✅" : "❌",
+        student_card_front: student.student_card_front ? "✅" : "❌",
+        student_card_back: student.student_card_back ? "✅" : "❌"
+      });
+    }
+    
     const studentValid = checkStudentValid(student);
+    console.log("✅ Student validation result:", studentValid);
     if (!studentValid) {
       return res.status(200).json({
         message:
@@ -199,7 +229,16 @@ export const canCreateLoan = async (req, res) => {
     const academic = await AcademicModel.findOne({
       student_id: student?.student_id,
     });
+    console.log("📚 Academic record found:", academic ? "✅" : "❌");
+    if (academic) {
+      console.log("📊 Academic data completion:", {
+        gpa: academic.gpa ? "✅" : "❌",
+        transcripts_count: academic.transcripts?.length || 0
+      });
+    }
+    
     const academicValid = checkAcademicValid(academic);
+    console.log("✅ Academic validation result:", academicValid);
     if (!academicValid) {
       return res.status(200).json({
         message:
@@ -376,7 +415,7 @@ const createLoanProfile = async (student_id, loan) => {
       guarantor: loan.guarantor,
       family_income: parseInt(loan.family_income, 10),
       existing_debt: existingDebtNormalized,
-      loan_purpose: loan.loan_purpose,
+      loan_purpose: String(loan.loan_purpose), // ✅ Convert to string
 
       // Data from student, user, academic records
       age_group: classifyAgeGroup(user.age) || "18-22",

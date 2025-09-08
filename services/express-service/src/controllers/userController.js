@@ -1,6 +1,9 @@
 import UserModel from "../models/userModel.js";
 
 export const updateUser = async (req, res) => {
+  console.log('🚀 User Controller - Update user request received');
+  console.log('📊 Request body:', req.body);
+  
   const {
     _id,
     citizen_id,
@@ -18,33 +21,86 @@ export const updateUser = async (req, res) => {
   } = req.body;
 
   try {
+    if (!_id) {
+      console.log('❌ Missing _id in request');
+      return res.status(400).json({ message: "User ID is required" });
+    }
+    
+    console.log('🔍 Looking for user with _id:', _id);
     const user = await UserModel.findOne({ _id });
 
     if (!user) {
+      console.log('❌ User not found with _id:', _id);
       return res.status(404).json({ message: "User not found." });
     }
+    
+    console.log('✅ User found:', user.email);
+
+    // ✅ Convert and validate data types
+    const parsedBirth = birth ? new Date(birth) : user.birth;
+    const validGender = gender && ["male", "female", "others"].includes(gender) ? gender : user.gender;
+    
+    // ✅ Extract URL from Cloudinary response object
+    const extractImageUrl = (imageData) => {
+      if (!imageData) return null;
+      if (typeof imageData === 'string') return imageData; // Already a URL
+      if (typeof imageData === 'object' && imageData.url) return imageData.url; // Extract URL from object
+      return null;
+    };
+    
+    const citizenCardFrontUrl = extractImageUrl(citizen_card_front) ?? user.citizen_card_front;
+    const citizenCardBackUrl = extractImageUrl(citizen_card_back) ?? user.citizen_card_back;
 
     // Cập nhật từng trường nếu có truyền vào
     user.name = name ?? user.name;
     user.citizen_id = citizen_id ?? user.citizen_id;
-    user.birth = birth ?? user.birth;
-    user.gender = gender ?? user.gender;
+    user.birth = parsedBirth;
+    user.gender = validGender;
     user.address = address ?? user.address;
     user.email = email ?? user.email;
     user.phone = phone ?? user.phone;
-    user.citizen_card_front = citizen_card_front ?? user.citizen_card_front;
-    user.citizen_card_back = citizen_card_back ?? user.citizen_card_back;
+    user.citizen_card_front = citizenCardFrontUrl;
+    user.citizen_card_back = citizenCardBackUrl;
     user.role = role ?? user.role;
     user.kyc_status = kyc_status ?? user.kyc_status;
     user.otp_token = otp_token ?? user.otp_token;
     user.updated_at = new Date();
 
+    console.log('💾 Saving user updates...');
+    console.log('📊 Data to save:', {
+      name: user.name,
+      birth: user.birth,
+      gender: user.gender,
+      email: user.email,
+      citizen_card_front: user.citizen_card_front,
+      citizen_card_back: user.citizen_card_back
+    });
     await user.save();
+    console.log('✅ User updated successfully');
 
     res.status(200).json({ message: "User updated successfully", user });
   } catch (error) {
-    console.error("Update error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    console.error("❌ Update user error:", error);
+    
+    // ✅ Better error handling
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ 
+        message: "Validation error", 
+        details: error.message 
+      });
+    }
+    
+    if (error.code === 11000) {
+      return res.status(400).json({ 
+        message: "Duplicate data error", 
+        details: "Email or Citizen ID already exists" 
+      });
+    }
+    
+    res.status(500).json({ 
+      message: "Internal server error",
+      details: error.message 
+    });
   }
 };
 
