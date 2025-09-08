@@ -8,6 +8,7 @@ import threading
 import time
 import signal
 import sys
+import os
 
 def start_fastapi():
     """Start FastAPI server"""
@@ -23,8 +24,11 @@ def start_fastapi():
 def start_grpc():
     """Start gRPC server"""  
     print("📡 Starting gRPC server on port 50051...")
+    # Resolve full path to main_grpc.py to ensure it's found regardless of cwd
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    grpc_script = os.path.join(script_dir, "main_grpc.py")
     return subprocess.Popen([
-        sys.executable, "main_grpc.py"
+        sys.executable, grpc_script
     ])
 
 def signal_handler(sig, frame):
