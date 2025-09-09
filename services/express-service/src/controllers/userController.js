@@ -1,4 +1,5 @@
 import UserModel from "../models/userModel.js";
+import StudentModel from "../models/studentModel.js";
 
 export const updateUser = async (req, res) => {
   console.log('🚀 User Controller - Update user request received');
@@ -75,8 +76,34 @@ export const updateUser = async (req, res) => {
       citizen_card_front: user.citizen_card_front,
       citizen_card_back: user.citizen_card_back
     });
+    
+    // ✅ Check if citizen_id is being updated (before saving)
+    const oldCitizenId = user.citizen_id;
+    const newCitizenId = citizen_id;
+    
     await user.save();
     console.log('✅ User updated successfully');
+    
+    // ✅ If citizen_id changed, update student record too
+    if (newCitizenId && newCitizenId !== oldCitizenId) {
+      console.log('🔄 Citizen ID changed, updating student record...');
+      console.log('📝 Old citizen_id:', oldCitizenId);
+      console.log('📝 New citizen_id:', newCitizenId);
+      
+      try {
+        const student = await StudentModel.findOne({ citizen_id: oldCitizenId });
+        if (student) {
+          student.citizen_id = newCitizenId;
+          await student.save();
+          console.log('✅ Student record updated with new citizen_id');
+        } else {
+          console.log('📭 No student record found with old citizen_id');
+        }
+      } catch (studentError) {
+        console.error('❌ Error updating student record:', studentError);
+        // Don't fail the user update if student update fails
+      }
+    }
 
     res.status(200).json({ message: "User updated successfully", user });
   } catch (error) {
@@ -240,4 +267,52 @@ export const getUsersByRole = async (req, res) => {
 export const deleteUserById = async (req, res) => {
   try {
   } catch (error) {}
+};
+
+// ✅ Temporary endpoint to sync citizen_id between user and student
+export const syncCitizenId = async (req, res) => {
+  try {
+    console.log('🔄 Starting citizen_id sync...');
+    
+    // Get all users with real citizen_id (not TEMP_)
+    const users = await UserModel.find({
+      citizen_id: { $not: /^TEMP_/ }
+    });
+    
+    console.log(`📊 Found ${users.length} users with real citizen_id`);
+    
+    let syncedCount = 0;
+    
+    for (const user of users) {
+      // Find student record with old citizen_id
+      const student = await StudentModel.findOne({
+        citizen_id: { $regex: /^TEMP_/ }
+      });
+      
+      if (student) {
+        // Check if this student belongs to this user by checking if they have the same email or other identifier
+        // For now, we'll update the first TEMP_ student we find
+        // In production, you might want to add more sophisticated matching logic
+        
+        console.log(`🔄 Updating student ${student._id} citizen_id from ${student.citizen_id} to ${user.citizen_id}`);
+        student.citizen_id = user.citizen_id;
+        await student.save();
+        syncedCount++;
+        break; // Only update one for now
+      }
+    }
+    
+    res.status(200).json({
+      message: "Citizen ID sync completed",
+      syncedCount,
+      totalUsers: users.length
+    });
+    
+  } catch (error) {
+    console.error("❌ Sync citizen_id error:", error);
+    res.status(500).json({
+      message: "Sync failed",
+      error: error.message
+    });
+  }
 };

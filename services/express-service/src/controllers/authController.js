@@ -213,6 +213,42 @@ export const login = async (req, res) => {
   }
 };
 
+// ✅ Verify OTP for newloan (without changing kyc_status)
+export const verifyOtpForLoan = async (req, res) => {
+  const { email, otp_token } = req.body;
+  try {
+    const user = await UserModel.findOne({ email });
+    if (!user) {
+      return res.status(400).json({
+        message: "User not found",
+        status: false,
+      });
+    }
+    
+    if (otp_token != user.otp_token) {
+      return res.status(400).json({
+        message: "Mã OTP không chính xác",
+        status: false,
+      });
+    }
+
+    // ✅ Don't change kyc_status, just verify OTP
+    console.log(`✅ OTP verified for loan creation: ${email}`);
+    
+    res.status(200).json({
+      message: "OTP verified successfully",
+      status: true,
+    });
+  } catch (error) {
+    console.error('❌ Verify OTP for loan error:', error);
+    res.status(500).json({
+      message: "Failed to verify OTP",
+      status: false,
+      error: error.message,
+    });
+  }
+};
+
 export const verifyEmail = async (req, res) => {
   const { email, otp_token } = req.body;
   try {

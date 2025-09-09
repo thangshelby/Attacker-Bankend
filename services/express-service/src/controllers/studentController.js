@@ -48,6 +48,19 @@ export const updateStudent = async (req, res) => {
     console.log('🔍 Looking for student with citizen_id:', citizen_id);
     let student = await StudentModel.findOne({ citizen_id });
 
+    // ✅ If not found by citizen_id, try to find by student_id (in case of citizen_id mismatch)
+    if (!student && student_id) {
+      console.log('🔍 Student not found by citizen_id, trying by student_id:', student_id);
+      student = await StudentModel.findOne({ student_id });
+      
+      if (student) {
+        console.log('✅ Found existing student by student_id:', student._id);
+        console.log('🔄 Updating citizen_id from', student.citizen_id, 'to', citizen_id);
+        // Update citizen_id to match the new one
+        student.citizen_id = citizen_id;
+      }
+    }
+
     if (!student) {
       console.log('➕ Creating new student');
       student = new StudentModel({ citizen_id }); // Khởi tạo luôn với citizen_id
@@ -63,8 +76,23 @@ export const updateStudent = async (req, res) => {
       return null;
     };
 
-    // Cập nhật chỉ khi có giá trị (đảm bảo không override field đang có với undefined/null)
-    if (student_id !== undefined && student_id != student.student_id) {
+    // Cập nhật student_id chỉ khi có giá trị và khác với giá trị hiện tại
+    if (student_id !== undefined && student_id !== student.student_id) {
+      // Check if student_id already exists for another student
+      const existingStudent = await StudentModel.findOne({ 
+        student_id, 
+        _id: { $ne: student._id } 
+      });
+      
+      if (existingStudent) {
+        console.log('❌ Student ID already exists for another student:', student_id);
+        return res.status(400).json({ 
+          message: "Student ID already exists",
+          error: "DUPLICATE_STUDENT_ID"
+        });
+      }
+      
+      console.log('🔄 Updating student_id from', student.student_id, 'to', student_id);
       student.student_id = student_id;
     }
     if (university !== undefined) student.university = university;
@@ -97,12 +125,68 @@ export const updateStudent = async (req, res) => {
     await student.save();
     console.log('✅ Student saved successfully');
 
-    res.status(200).json({ message: "Student updated successfully", student });
+    res.status(200).json({ 
+      message: "Student updated successfully", 
+      data: {
+        student
+      },
+      status: true
+    });
   } catch (error) {
     console.error("❌ Update Student Error:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
+// ✅ Temporary endpoint to fix student citizen_id
+export const fixStudentCitizenId = async (req, res) => {
+  try {
+    console.log('🔧 Starting student citizen_id fix...');
+    
+    // Find the student with TEMP_ citizen_id and student_id = 23520123
+    const student = await StudentModel.findOne({ 
+      student_id: "23520123",
+      citizen_id: { $regex: /^TEMP_/ }
+    });
+    
+    if (!student) {
+      return res.status(404).json({
+        message: "Student with TEMP_ citizen_id not found",
+        status: false
+      });
+    }
+    
+    console.log('📋 Found student:', {
+      id: student._id,
+      student_id: student.student_id,
+      old_citizen_id: student.citizen_id
+    });
+    
+    // Update to the real citizen_id
+    const newCitizenId = "083205001819"; // Replace with the real citizen_id
+    student.citizen_id = newCitizenId;
+    await student.save();
+    
+    console.log('✅ Student citizen_id updated successfully');
+    
+    res.status(200).json({
+      message: "Student citizen_id fixed successfully",
+      data: {
+        student_id: student.student_id,
+        old_citizen_id: student.citizen_id,
+        new_citizen_id: newCitizenId
+      },
+      status: true
+    });
+    
+  } catch (error) {
+    console.error("❌ Fix student citizen_id error:", error);
+    res.status(500).json({
+      message: "Fix failed",
+      error: error.message
+    });
+  }
+};
+
 export const updateStudentDIDById = async (req, res) => {
   const { id } = req.params;
   const { did } = req.body;
