@@ -77,17 +77,20 @@ class Chatbot {
   }
 
   async chat_v2(message, citizen_id) {
-    const response = await fetch("http://127.0.0.1:8000/api/v1/chat", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        message,
-        citizen_id: citizen_id,
-        // conversation_id: conversationId,
-      }),
-    });
+    const response = await fetch(
+      "https://attacker-bankend-t6av.onrender.com/api/v1/chat",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message,
+          citizen_id: citizen_id,
+          // conversation_id: conversationId,
+        }),
+      }
+    );
 
     if (!response.ok) {
       console.error("❌ HTTP Error:", response.statusText);
