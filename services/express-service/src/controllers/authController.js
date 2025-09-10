@@ -273,6 +273,47 @@ export const verifyEmail = async (req, res) => {
   }
 };
 
+export const verifyOtpLoan = async (req, res) => {
+  const { email, otp_token } = req.body;
+  try {
+    // Find user by email only (bypass OTP validation)
+    const user = await UserModel.findOne({ email });
+    if (!user) {
+      return res.status(400).json({
+        message: {
+          emal: "User not found",
+          password: null,
+          otp_token: null,
+        },
+        status: false,
+      });
+    }
+    if (otp_token != user.otp_token) {
+      return res.status(400).json({
+        message: "Invalid OTP token",
+        status: false,
+      });
+    }
+
+    user.otp_token = "";
+    await user.save();
+
+    res.status(200).json({
+      message: "OTP verified successfully",
+      status: true,
+      data: {
+        user,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to verify OTP",
+      status: false,
+      error: error.message,
+    });
+  }
+};
+
 // [DELETE] /delete_account/:id
 export const deleteAccount = async (req, res) => {
   try {
