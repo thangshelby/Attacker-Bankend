@@ -441,7 +441,7 @@ const createLoanProfile = async (student_id, loan) => {
       JSON.stringify(loanProfile, null, 2)
     );
 
-    const response = await fetch(`http://127.0.0.1:8000/api/v1/debate-loan`, {
+    const response = await fetch(`https://attacker-bankend-t6av.onrender.com/api/v1/debate-loan`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
