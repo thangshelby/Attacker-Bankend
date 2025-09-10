@@ -16,7 +16,7 @@ class SocketConfig {
       cors: {
         origin: [
           "http://localhost:5173",
-          "https://your-backend-app.onrender.com",
+          "https://attacker-frontend-1.onrender.com/",
         ], // Frontend origin
         credentials: true,
         methods: ["GET", "POST"],
