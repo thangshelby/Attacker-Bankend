@@ -9,30 +9,30 @@ export function checkUserValid(user) {
     user.citizen_id === ""
   )
     return false;
-  if (
-    user.citizen_card_front === null ||
-    user.citizen_card_front === undefined ||
-    user.citizen_card_front === ""
-  )
-    return false;
-  if (
-    user.citizen_card_back === null ||
-    user.citizen_card_back === undefined ||
-    user.citizen_card_back === ""
-  )
-    return false;
-  if (
-    user.address === null ||
-    user.address === undefined ||
-    user.address === ""
-  )
-    return false;
-  if (user.phone === null || user.phone === undefined || user.phone === "")
-    return false;
-  if (user.birth === null || user.birth === undefined || user.birth === "")
-    return false;
-  if (user.gender === null || user.gender === undefined || user.gender === "")
-    return false;
+  // if (
+  //   user.citizen_card_front === null ||
+  //   user.citizen_card_front === undefined ||
+  //   user.citizen_card_front === ""
+  // )
+  //   return false;
+  // if (
+  //   user.citizen_card_back === null ||
+  //   user.citizen_card_back === undefined ||
+  //   user.citizen_card_back === ""
+  // )
+  //   return false;
+  // if (
+  //   user.address === null ||
+  //   user.address === undefined ||
+  //   user.address === ""
+  // )
+  //   return false;
+  // if (user.phone === null || user.phone === undefined || user.phone === "")
+  //   return false;
+  // if (user.birth === null || user.birth === undefined || user.birth === "")
+  //   return false;
+  // if (user.gender === null || user.gender === undefined || user.gender === "")
+  //   return false;
   if (user.email === null || user.email === undefined || user.email === "")
     return false;
 
