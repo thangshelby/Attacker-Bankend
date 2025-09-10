@@ -26,7 +26,10 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(
   cors({
-    origin: "*", // Frontend origin
+    origin: [
+      "http://localhost:5173",
+      "https://attacker-frontend-1.onrender.com",
+    ], // Frontend origin
     credentials: true, // Allow cookies and credentials
   })
 );
