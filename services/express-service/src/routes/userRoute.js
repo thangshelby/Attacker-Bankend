@@ -14,7 +14,7 @@ userRouter.post("/verify-email", authController.verifyEmail);
 userRouter.post('/resend-otp', authController.resendOtp);
 userRouter.post("/logout", jwtMiddleware, authController.logout);
 userRouter.put("/update_user", userController.updateUser);
-userRouter.pose("/verify-otp-loan", authController.verifyOtpLoan);
+userRouter.post("/verify-otp-loan", authController.verifyOtpLoan);
 
 
 // userRouter.get("/all_users", userController.getAllUsers);
