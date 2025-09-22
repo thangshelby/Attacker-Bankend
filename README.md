@@ -2,7 +2,7 @@
 
 ## 🎯 Giới Thiệu
 
-**Đây là một nền tảng công nghệ tiên tiến được thiết kế để cách mạng hóa ngành tín dụng sinh viên tại Việt Nam. Hệ thống kết hợp trí tuệ nhân tạo, blockchain và công nghệ real-time để tạo ra một giải pháp toàn diện, minh bạch và hiệu quả.
+Đây là một nền tảng công nghệ tiên tiến được thiết kế để cách mạng hóa ngành tín dụng sinh viên tại Việt Nam. Hệ thống kết hợp trí tuệ nhân tạo, blockchain và công nghệ real-time để tạo ra một giải pháp toàn diện, minh bạch và hiệu quả.
 
 ### 🌟 Tại sao chọn sản phẩm của chúng tôi?
 
