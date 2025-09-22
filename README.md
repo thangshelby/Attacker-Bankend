@@ -1,10 +1,10 @@
-# 🏦 Attacker Backend - Hệ Thống Tín Dụng Sinh Viên Thông Minh
+# 🏦 Hệ Thống Tín Dụng Sinh Viên Thông Minh
 
 ## 🎯 Giới Thiệu
 
-**Attacker Backend** là một nền tảng công nghệ tiên tiến được thiết kế để cách mạng hóa ngành tín dụng sinh viên tại Việt Nam. Hệ thống kết hợp trí tuệ nhân tạo, blockchain và công nghệ real-time để tạo ra một giải pháp toàn diện, minh bạch và hiệu quả.
+**Đây là một nền tảng công nghệ tiên tiến được thiết kế để cách mạng hóa ngành tín dụng sinh viên tại Việt Nam. Hệ thống kết hợp trí tuệ nhân tạo, blockchain và công nghệ real-time để tạo ra một giải pháp toàn diện, minh bạch và hiệu quả.
 
-### 🌟 Tại Sao Chọn Attacker Backend?
+### 🌟 Tại sao chọn sản phẩm của chúng tôi?
 
 - **🤖 Quyết định thông minh**: AI đánh giá hồ sơ vay một cách khách quan và chính xác
 - **⛓️ Minh bạch tuyệt đối**: Blockchain đảm bảo tính xác thực và không thể giả mạo
@@ -15,7 +15,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                   ATTACKER BACKEND ECOSYSTEM                   │
+│                   ECOSYSTEM                                     │
 ├─────────────────────────────────────────────────────────────────┤
 │  🌐 Dịch Vụ Chính (Express.js)                                │
 │  ├── API quản lý người dùng & hồ sơ vay                       │
@@ -127,9 +127,8 @@ Hệ thống lưu trữ và xử lý dữ liệu hiệu quả:
 
 ### 🤖 Artificial Intelligence
 - **OpenAI GPT-4**: Large Language Model cho chatbot
-- **LlamaIndex**: Framework RAG cho tìm kiếm thông tin
+- **LlamaIndex**: Framework phát triển hệ thống chatbot và hệ thống phê duyệt cho vay
 - **Pinecone**: Vector database cho semantic search
-- **Custom Multi-Agent**: Hệ thống đa tác nhân tự phát triển
 
 ### ⛓️ Blockchain & Security
 - **Truvera**: Blockchain platform cho verifiable credentials
@@ -349,9 +348,7 @@ make python-service
 ## 🆘 Hỗ Trợ & Liên Hệ
 
 ### 📞 Kênh Hỗ Trợ
-- **Email**: support@attacker-backend.com
-- **GitHub Issues**: [Báo lỗi và đề xuất](https://github.com/your-repo/issues)
-- **Documentation**: [Wiki chi tiết](https://github.com/your-repo/wiki)
+- **Email**: 23520123@gm.uit.edu.vn
 
 ### 🐛 Báo Lỗi
 Khi gặp vấn đề, vui lòng cung cấp:
@@ -367,11 +364,5 @@ Khi gặp vấn đề, vui lòng cung cấp:
 - **Pinecone**: Vector database platform
 - **Truvera**: Blockchain infrastructure
 - **MongoDB**: Cloud database solutions
-
-### 👥 Đội Ngũ Phát Triển
-- **AI/ML Engineering**: Phát triển hệ thống AI
-- **Backend Development**: Xây dựng API và services
-- **Blockchain Integration**: Tích hợp công nghệ blockchain
-- **DevOps & Infrastructure**: Quản lý hạ tầng và deployment
 
 *Cách mạng hóa ngành tín dụng sinh viên thông qua công nghệ AI và Blockchain*
